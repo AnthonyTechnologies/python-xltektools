@@ -1,5 +1,5 @@
 """ hdf5xltekframe.py
-
+The frame for an HDF5 XLTEK File.
 """
 # Package Header #
 from ..header import *
@@ -10,41 +10,25 @@ __credits__ = __credits__
 __maintainer__ = __maintainer__
 __email__ = __email__
 
+
 # Imports #
 # Standard Libraries #
 
 # Third-Party Packages #
+from hdf5objects.arrayframes import HDF5EEGFrame
 
 # Local Packages #
-from ..fileobjects import HDF5XLTEK
-from .hdf5baseframe import HDF5BaseFrame
+from .hdf5xltek import HDF5XLTEK
 
 
 # Definitions #
 # Classes #
-class HDF5XLTEKFrame(HDF5BaseFrame):
+class HDF5XLTEKFrame(HDF5EEGFrame):
+    """The frame for an HDF5 XLTEK File.
+
+    Class Attributes:
+        file_type: The type of file this object will be wrapping.
+        default_data_container: The default data container to use when making new data container frames.
+    """
     file_type: type = HDF5XLTEK
-    default_data_container = None
-
-    # Magic Methods
-    # Construction/Destruction
-    def __init__(self, file=None, s_id=None, s_dir=None, start=None, mode='r', init=True, **kwargs):
-        # Parent Attributes #
-        super().__init__(init=False)
-
-        # Object Construction #
-        if init:
-            self.construct(file=file, s_id=s_id, s_dir=s_dir, start=start, mode=mode, **kwargs)
-
-    # Instance Methods
-    # Constructors/Destructors
-    def construct(self, file=None, s_id=None, s_dir=None, start=None, mode=None, **kwargs):
-        if mode is not None:
-            self.mode = mode
-
-        if file is not None:
-            self.set_file(file, s_id=s_id, s_dir=s_dir, start=start, mode=self.mode, **kwargs)
-        elif s_id is not None or s_dir is not None or start is not None or kwargs:
-            self.file = self.file_type(s_id=s_id, s_dir=s_dir, start=start, mode=self.mode, **kwargs)
-
-        super().construct(file=None)
+    default_data_container: type | None = None
