@@ -10,11 +10,12 @@ __credits__ = __credits__
 __maintainer__ = __maintainer__
 __email__ = __email__
 
+
 # Imports #
 # Standard Libraries #
 import datetime
 import pathlib
-from typing import Any
+from typing import Any, Union
 
 # Third-Party Packages #
 from baseobjects import singlekwargdispatchmethod
@@ -98,7 +99,7 @@ class HDF5XLTEK(HDF5EEG):
         Returns:
             If this is a valid file type.
         """
-        raise ValueError(f"{type(file)} is not a valid type for validate_file_type.")
+        raise TypeError(f"{type(file)} is not a valid type for validate_file_type.")
 
     @validate_file_type.register
     @classmethod
@@ -181,7 +182,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @singlekwargdispatchmethod("file")
     @classmethod
-    def new_validated(cls, file: pathlib.Path | str | HDF5File | h5py.File, **kwargs: Any) -> "HDF5XLTEK" | None:
+    def new_validated(cls, file: pathlib.Path | str | HDF5File | h5py.File, **kwargs: Any) -> Union["HDF5XLTEK", None]:
         """Checks if the given file or path is a valid type and returns the file if valid.
 
         Args:
@@ -190,11 +191,11 @@ class HDF5XLTEK(HDF5EEG):
         Returns:
             The file or None.
         """
-        raise ValueError(f"{type(file)} is not a valid type for new_validate.")
+        raise TypeError(f"{type(file)} is not a valid type for new_validate.")
 
     @new_validated.register
     @classmethod
-    def _(cls, file: pathlib.Path, **kwargs: Any) -> "HDF5XLTEK" | None:
+    def _(cls, file: pathlib.Path, **kwargs: Any) -> Any:
         """Checks if the given path is a valid type and returns the file if valid.
 
         Args:
@@ -209,7 +210,7 @@ class HDF5XLTEK(HDF5EEG):
             try:
                 file = h5py.File(file)
                 if start_name in file.attrs:
-                    return cls(obj=file, **kwargs)
+                    return cls(file=file, **kwargs)
             except OSError:
                 return None
         else:
@@ -217,7 +218,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @new_validated.register
     @classmethod
-    def _(cls, file: str, **kwargs: Any) -> "HDF5XLTEK" | None:
+    def _(cls, file: str, **kwargs: Any) -> Any:
         """Checks if the given path is a valid type and returns the file if valid.
 
         Args:
@@ -241,7 +242,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @new_validated.register
     @classmethod
-    def _(cls, file: HDF5File, **kwargs: Any) -> "HDF5XLTEK" | None:
+    def _(cls, file: HDF5File, **kwargs: Any) -> Any:
         """Checks if the given file is a valid type and returns the file if valid.
 
         Args:
@@ -259,7 +260,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @new_validated.register
     @classmethod
-    def _(cls, file: h5py.File, **kwargs: Any) -> "HDF5XLTEK" | None:
+    def _(cls, file: h5py.File, **kwargs: Any) -> Any:
         """Checks if the given file is a valid type and returns the file if valid.
 
         Args:

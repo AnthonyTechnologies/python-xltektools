@@ -12,6 +12,7 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
+from .hdf5xltek import HDF5XLTEK
 from .hdf5xltekframe import HDF5XLTEKFrame
 from .xltekdayframe import XLTEKDayFrame
 from .xltekstudyframe import XLTEKStudyFrame
