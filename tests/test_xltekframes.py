@@ -65,7 +65,7 @@ class TestXLTEKStudy(ClassTest):
         assert 1
 
     def test_load_study_profile(self):
-        s_id = "EC228"
+        s_id = "EC212"
         pr = cProfile.Profile()
         pr.enable()
 
@@ -130,7 +130,27 @@ class TestXLTEKStudy(ClassTest):
 
         assert data is not None
 
-    def test_get_data_range_time(self):
+    def test_find_data_range_time(self):
+        s_id = "EC212"
+        first = datetime.datetime(2020, 1, 28, 0, 00, 00)
+        second = datetime.datetime(2020, 1, 28, 0, 00, 10)
+        with XLTEKStudyFrame(s_id=s_id, studies_path=self.studies_path) as study_frame:
+            data_object1 = study_frame.find_data_range(first, second, approx=True)
+            pr = cProfile.Profile()
+            pr.enable()
+
+            data_object = study_frame.find_data_range(first, second, approx=True)
+
+            pr.disable()
+            s = io.StringIO()
+            sortby = pstats.SortKey.TIME
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            print(s.getvalue())
+
+        assert data_object.data is not None
+
+    def test_find_data_range_time_full(self):
         s_id = "EC212"
         first = datetime.datetime(2020, 1, 28, 0, 00, 00)
         second = datetime.datetime(2020, 1, 28, 0, 00, 10)

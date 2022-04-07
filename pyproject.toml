@@ -21,8 +21,8 @@ Changelog = "https://github.com/fonganthonym/python-xltektools/releases"
 [tool.poetry.dependencies]
 python = "^3.10"
 click = ">=8.0.1"
-framestructure = ""
-hdf5objects = ""
+framestructure = ">=0.4.0"
+hdf5objects = ">=0.3.0"
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"

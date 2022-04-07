@@ -23,7 +23,7 @@ from classversioning import VersionType, Version, TriNumberVersion
 import h5py
 from hdf5objects import HDF5Dataset
 from hdf5objects.hdf5bases import HDF5Map, HDF5File
-from hdf5objects.datasets import TimeSeriesMap, Axis
+from hdf5objects.datasets import TimeSeriesDataset, TimeSeriesMap, Axis
 from hdf5objects.fileobjects import HDF5EEG, HDF5EEGMap
 import numpy as np
 
@@ -41,6 +41,26 @@ class XLTEKDataMap(TimeSeriesMap):
     default_map_names = {"channel_axis": "channel indices",
                          "sample_axis": "samplestamp axis",
                          "time_axis": "timestamp axis"}
+
+
+class XLTEKData(TimeSeriesDataset):
+    """An HDF5 Dataset which is for holding XLTEK Data."""
+    default_map: HDF5Map = XLTEKDataMap()
+    # Todo: Fix writing sample rate to file.
+
+    @property
+    def sample_rate(self) -> float | h5py.Empty:
+        """The sample rate of this timeseries."""
+        return self.attributes["sample_rate"]
+
+    @sample_rate.setter
+    def sample_rate(self, value: int | float | None) -> None:
+        self._sample_rate = value
+        self.attributes["sample_rate"] = value
+
+
+# Assign Cyclic Definitions
+XLTEKData.default_type = XLTEKDataMap
 
 
 class HDF5XLTEKMap(HDF5EEGMap):
