@@ -56,11 +56,13 @@ class XLTEKData(TimeSeriesDataset):
     @sample_rate.setter
     def sample_rate(self, value: int | float | None) -> None:
         self._sample_rate = value
+        if self.time_axis is not None:
+            self._time_axis.sample_rate = value
         self.attributes["sample_rate"] = value
 
 
 # Assign Cyclic Definitions
-XLTEKData.default_type = XLTEKDataMap
+XLTEKDataMap.default_type = XLTEKData
 
 
 class HDF5XLTEKMap(HDF5EEGMap):
@@ -76,7 +78,7 @@ class HDF5XLTEKMap(HDF5EEGMap):
     default_map_names = {"data": "ECoG Array",
                          "entry_axis": "entry vector"}
     default_maps = {"data": XLTEKDataMap(),
-                    "entry_axis": HDF5Map(type_=Axis)}
+                    "entry_axis": HDF5Map(type_=Axis, shape=(0, 0), dtype='i', maxshape=(None, 4))}
 
 
 class HDF5XLTEK(HDF5EEG):
@@ -351,7 +353,7 @@ class HDF5XLTEK(HDF5EEG):
         start: datetime.datetime | float | None = None,
         map_: HDF5Map = None,
         load: bool = False,
-        build: bool = False,
+        require: bool = False,
     ) -> None:
         """Creates the attributes for this group.
 
@@ -359,9 +361,9 @@ class HDF5XLTEK(HDF5EEG):
             start: The start time of the data, if creating.
             map_: The map to use to create the attributes.
             load: Determines if this object will load the attribute values from the file on construction.
-            build: Determines if this object will create and fill the attributes in the file on construction.
+            require: Determines if this object will create and fill the attributes in the file on construction.
         """
-        super().construct_file_attributes(start=start, map_=map_, load=load, build=build)
+        super().construct_file_attributes(start=start, map_=map_, load=load, require=require)
         if self.data.exists:
             self.attributes["total_samples"] = self.data.n_samples
 

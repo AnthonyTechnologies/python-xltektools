@@ -20,6 +20,7 @@ import pathlib
 import timeit
 
 # Third-Party Packages #
+from classversioning import VersionType, TriNumberVersion, Version
 import pytest
 import numpy as np
 
@@ -50,6 +51,8 @@ class ClassTest:
 
 
 class TestHDF5XLTEK(ClassTest):
+    _VERSION_TYPE: VersionType = VersionType(name="HDF5EEG", class_=TriNumberVersion)
+    VERSION: Version = TriNumberVersion(0, 0, 0)
     class_ = HDF5XLTEK
     load_path = pathlib.Path.cwd().joinpath("tests/pytest_cache/EC228_2020-09-21_14~53~19.h5")
     save_path = pathlib.Path.cwd().joinpath("tests/pytest_cache/")
@@ -119,7 +122,7 @@ class TestHDF5XLTEK(ClassTest):
 
     def test_create_file_build_empty(self, tmpdir):
         start = datetime.datetime.now()
-        f_obj = self.class_(s_id="EC_test", s_dir=tmpdir, start=start, create=True, mode="a", build=True)
+        f_obj = self.class_(s_id="EC_test", s_dir=tmpdir, start=start, create=True, mode="a", require=True)
         assert f_obj.is_open
         f_obj.close()
         assert True
@@ -131,10 +134,11 @@ class TestHDF5XLTEK(ClassTest):
         data = np.random.rand(n_samples, n_channels)
         start = datetime.datetime.now()
 
-        f_obj = self.class_(s_id="EC_test", s_dir=tmpdir, start=start, create=True, mode="a", build=True)
+        f_obj = self.class_(s_id="EC_test", s_dir=tmpdir, start=start, create=True, mode="a", require=True)
 
         dataset = f_obj.data
         dataset.require(data=data, sample_rate=sample_rate, start=start)
+        dataset.sample_rate = 1024
 
         f_obj.close()
         assert True
