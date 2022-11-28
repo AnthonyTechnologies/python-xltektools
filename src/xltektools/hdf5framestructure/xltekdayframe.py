@@ -35,6 +35,7 @@ class XLTEKDayFrame(DirectoryTimeFrame):
 
     Attributes:
         glob_condition: The glob string to use when using the glob method.
+        date_format: The format of the date string.
         subject_id: The subject ID of the file.
 
     Args:
@@ -49,6 +50,29 @@ class XLTEKDayFrame(DirectoryTimeFrame):
         **kwargs: The keyword arguments to create contained frames.
     """
     default_frame_type = HDF5XLTEKFrame
+
+    # Class Methods #
+    @classmethod
+    def validate_path(cls, path: str | pathlib.Path) -> bool:
+        """Validates if the path can be used as a XLTEK Day.
+
+        Args:
+            path: The path to directory/file object that this frame will wrap.
+
+        Returns:
+            If the path is usable.
+        """
+        if not isinstance(path, pathlib.Path):
+            path = pathlib.Path(path)
+
+        try:
+            files = list(path.glob("*.h5"))
+            if files:
+                return True
+            else:
+                return False
+        except IOError:
+            return False
 
     # Magic Methods #
     # Construction/Destruction
@@ -69,6 +93,7 @@ class XLTEKDayFrame(DirectoryTimeFrame):
 
         # Set Attributes #
         self.glob_condition: str = "*.h5"
+        self.date_format: str = "%Y-%m-%d"
 
         self.subject_id: str | None = None
 

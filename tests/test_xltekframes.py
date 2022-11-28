@@ -112,14 +112,14 @@ class TestXLTEKStudy(ClassTest):
         assert data is not None
 
     def test_get_timestamp_range_time_profile(self):
-        s_id = "EC228"
-        first = datetime.datetime(2020, 9, 22, 0, 00, 00)
-        second = datetime.datetime(2020, 9, 22, 0, 10, 00)
+        s_id = "EC212"
+        first = datetime.datetime(2020, 1, 31, 20, 38, 43, 653012)
+        second = datetime.datetime(2020, 1, 31, 20, 48, 43, 653012)
         pr = cProfile.Profile()
         pr.enable()
 
         with XLTEKStudyFrame(s_id=s_id, studies_path=self.studies_path) as study_frame:
-            data, true_start, true_end = study_frame.get_timestamp_range_time(first, second, aprox=True)
+            data = study_frame.find_data_range(first, second, approx=True)
 
         pr.disable()
         s = io.StringIO()
@@ -171,11 +171,11 @@ class TestXLTEKStudy(ClassTest):
         assert data_object.data is not None
 
     def test_data_range_time_mount(self):
-        s_id = "EC228"
-        timestamps = [{"first": datetime.datetime(2020, 9, 22, 0, 00, 00),
-                       "second": datetime.datetime(2020, 9, 22, 0, 20, 00)},
-                      {"first": datetime.datetime(2020, 9, 23, 11, 00, 00),
-                       "second": datetime.datetime(2020, 9, 23, 11, 20, 00)}]
+        s_id = "EC152"
+        timestamps = [{"first": datetime.datetime(2017, 5, 9, 0, 00, 00),
+                       "second": datetime.datetime(2017, 5, 9, 0, 20, 00)},
+                      {"first": datetime.datetime(2017, 5, 10, 11, 00, 00),
+                       "second": datetime.datetime(2017, 5, 10, 11, 20, 00)}]
         pr = cProfile.Profile()
         pr.enable()
 
@@ -194,15 +194,14 @@ class TestXLTEKStudy(ClassTest):
 
     def test_date_range_time_one_second(self):
         s_id = "EC212"
-        timestamps = [{"first": datetime.datetime(2020, 1, 31, 13, 38, 43, 653012),
-                       "second": datetime.datetime(2020, 1, 31, 13, 38, 44, 653012)}]
+        timestamps = [{"first": datetime.datetime(2020, 1, 31, 20, 38, 43, 653012),
+                       "second": datetime.datetime(2020, 1, 31, 20, 38, 44, 653012)}]
         pr = cProfile.Profile()
         pr.enable()
 
         study_frame = XLTEKStudyFrame(s_id=s_id, studies_path=self.mount_path)
         for timestamp in timestamps:
-            data, true_start, true_end = study_frame.data_range_time(timestamp["first"], timestamp["second"], aprox=True)
-            print(data.shape)
+            data = study_frame.find_data_range(timestamp["first"], timestamp["second"], approx=True)
         study_frame.close()
 
         pr.disable()
