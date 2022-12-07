@@ -171,18 +171,18 @@ class TestXLTEKStudy(ClassTest):
         assert data_object.data is not None
 
     def test_data_range_time_mount(self):
-        s_id = "EC152"
-        timestamps = [{"first": datetime.datetime(2017, 5, 9, 0, 00, 00),
-                       "second": datetime.datetime(2017, 5, 9, 0, 20, 00)},
-                      {"first": datetime.datetime(2017, 5, 10, 11, 00, 00),
-                       "second": datetime.datetime(2017, 5, 10, 11, 20, 00)}]
+        s_id = "EC154"
+        timestamps = [{"first": datetime.datetime(2017, 5, 23, 0, 00, 00),
+                       "second": datetime.datetime(2017, 5, 23, 0, 20, 00)},
+                      {"first": datetime.datetime(2017, 5, 24, 11, 00, 00),
+                       "second": datetime.datetime(2017, 5, 24, 11, 20, 00)}]
         pr = cProfile.Profile()
         pr.enable()
 
         study_frame = XLTEKStudyFrame(s_id=s_id, studies_path=self.mount_path)
         for timestamp in timestamps:
-            data, true_start, true_end = study_frame.get_data_range_time(timestamp["first"], timestamp["second"], aprox=True)
-            print(data.shape)
+            data = study_frame.find_data_range(timestamp["first"], timestamp["second"], approx=True)
+            print(data.data.shape)
         study_frame.close()
 
         pr.disable()
