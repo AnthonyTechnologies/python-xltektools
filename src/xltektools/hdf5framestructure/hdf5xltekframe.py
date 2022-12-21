@@ -13,9 +13,11 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+import datetime
 from decimal import Decimal
 
 # Third-Party Packages #
+from dspobjects.time import nanostamp
 from hdf5objects.arrayframes import HDF5EEGFrame
 
 # Local Packages #
@@ -33,6 +35,44 @@ class HDF5XLTEKFrame(HDF5EEGFrame):
     """
     file_type: type = HDF5XLTEK
     default_data_container: type | None = None
+
+    @property
+    def start_nanostamp(self) -> float | None:
+        """The start nanosecond timestamp of this frame."""
+        return nanostamp(self.file.attributes["start"])
+
+    @property
+    def start_timestamp(self) -> float:
+        """The start time of the data as a unix timestamp from the file attributes."""
+        return self.file.attributes["start"]
+
+    @start_timestamp.setter
+    def start_timestamp(self, value: float) -> None:
+        self.file.attributes.set_attribute("start", value)
+
+    @property
+    def start_datetime(self) -> datetime.datetime:
+        """The start time of the data as a datetime from the file attributes."""
+        return datetime.datetime.fromtimestamp(self.start_timestamp)
+
+    @property
+    def end_nanostamp(self) -> float | None:
+        """The end nanosecond timestamp of this frame."""
+        return nanostamp(self.file.attributes["end"])
+
+    @property
+    def end_timestamp(self) -> float:
+        """The end time of the data as a unix timestamp from the file attributes."""
+        return self.file.attributes["end"]
+
+    @end_timestamp.setter
+    def end_timestamp(self, value: float) -> None:
+        self.file.attributes.set_attribute("end", value)
+
+    @property
+    def end_datetime(self) -> datetime.datetime:
+        """The end time of the data as a datetime from the file attributes."""
+        return datetime.datetime.fromtimestamp(self.end_timestamp)
 
     def get_sample_rate(self) -> float | None:
         """Get the sample rate of this frame from the contained frames/objects.
