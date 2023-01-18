@@ -55,7 +55,8 @@ class ClassTest:
 class TestXLTEKStudy(ClassTest):
     class_ = XLTEKStudyFrame
     studies_path = pathlib.Path("/common/xltek/subjects")
-    mount_path = pathlib.Path("/data_store0/human/converted_clinical")
+    server_path = pathlib.Path("/data_store0/human/converted_clinical")
+    mount_path = pathlib.Path("/mnt/changserver/data_store0/human/converted_clinical")
     load_path = pathlib.Path("/common/xltek/subjects/")
     save_path = pathlib.Path("~/Documents/Projects/Epilepsy Spike Detection")
 
@@ -82,7 +83,7 @@ class TestXLTEKStudy(ClassTest):
 
     def test_load_study_mount(self):
         s_id = "EC228"
-        study_frame = XLTEKStudyFrame(s_id=s_id, studies_path=self.mount_path)
+        study_frame = XLTEKStudyFrame(s_id=s_id, studies_path=self.server_path)
         assert 1
 
     def test_get_data(self):
@@ -179,7 +180,7 @@ class TestXLTEKStudy(ClassTest):
         pr = cProfile.Profile()
         pr.enable()
 
-        study_frame = XLTEKStudyFrame(s_id=s_id, studies_path=self.mount_path)
+        study_frame = XLTEKStudyFrame(s_id=s_id, studies_path=self.server_path)
         for timestamp in timestamps:
             data = study_frame.find_data_range(timestamp["first"], timestamp["second"], approx=True)
             print(data.data.shape)
@@ -195,11 +196,11 @@ class TestXLTEKStudy(ClassTest):
     def test_date_range_time_one_second(self):
         s_id = "EC212"
         timestamps = [{"first": datetime.datetime(2020, 1, 31, 20, 38, 43, 653012),
-                       "second": datetime.datetime(2020, 1, 31, 20, 38, 44, 653012)}]
+                       "second": datetime.datetime(2020, 1, 31, 20, 38, 53, 653012)}]
         pr = cProfile.Profile()
         pr.enable()
 
-        study_frame = XLTEKStudyFrame(s_id=s_id, studies_path=self.mount_path)
+        study_frame = XLTEKStudyFrame(s_id=s_id, studies_path=self.server_path)
         for timestamp in timestamps:
             data = study_frame.find_data_range(timestamp["first"], timestamp["second"], approx=True)
         study_frame.close()
