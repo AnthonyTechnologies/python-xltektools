@@ -23,7 +23,7 @@ from classversioning import VersionType, Version, TriNumberVersion
 import h5py
 from hdf5objects import HDF5Dataset
 from hdf5objects.hdf5bases import HDF5Map, HDF5File
-from hdf5objects.datasets import TimeSeriesDataset, TimeSeriesMap, Axis
+from hdf5objects.dataset import TimeSeriesDataset, TimeSeriesMap, Axis
 from hdf5objects.fileobjects import HDF5EEG, HDF5EEGMap
 import numpy as np
 
