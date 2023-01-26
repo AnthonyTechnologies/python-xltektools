@@ -54,8 +54,8 @@ class TestHDF5XLTEK(ClassTest):
     _VERSION_TYPE: VersionType = VersionType(name="HDF5EEG", class_=TriNumberVersion)
     VERSION: Version = TriNumberVersion(0, 0, 0)
     class_ = HDF5XLTEK
-    load_path = pathlib.Path.cwd().joinpath("tests/pytest_cache/EC228_2020-09-21_14~53~19.h5")
-    save_path = pathlib.Path.cwd().joinpath("tests/pytest_cache/")
+    load_path = pathlib.Path.cwd().joinpath("pytest_cache/EC212_2020-01-28_00~25~11.h5")
+    save_path = pathlib.Path.cwd().joinpath("pytest_cache/")
 
     @pytest.fixture
     def load_file(self):

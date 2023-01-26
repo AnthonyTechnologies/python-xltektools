@@ -2,7 +2,7 @@
 The frame for an HDF5 XLTEK File.
 """
 # Package Header #
-from ..header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -21,7 +21,7 @@ from dspobjects.time import nanostamp
 from hdf5objects.arrayframes import HDF5EEGFrame
 
 # Local Packages #
-from .hdf5xltek import HDF5XLTEK
+from ...hdf5xltek import HDF5XLTEK
 
 
 # Definitions #

@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ..header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -17,7 +17,7 @@ from collections.abc import Mapping
 
 # Third-Party Packages #
 from hdf5objects import HDF5Map
-from cdfs.contentsfile import TimeContentsFileMap, TimeContentsFile, TimeNodeMap, TimeLeafMap
+from cdfs.contentsfile import TimeContentsFileMap, TimeContentsFile, TimeNodeMap, TimeLeafMap, ContentsFileComponent
 
 # Local Packages #
 from .xltekdatagroupcomponent import XLTEKDataGroupComponent
@@ -43,3 +43,4 @@ class XLTEKContentsFileMap(TimeContentsFileMap):
 class XLTEKContentsFile(TimeContentsFile):
     FILE_TYPE: str = "ContentsFile"
     default_map: HDF5Map = XLTEKContentsFileMap()
+    default_component_types = {"contents": (ContentsFileComponent, {"data_location": "data_content/days"})}

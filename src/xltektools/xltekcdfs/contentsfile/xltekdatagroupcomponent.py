@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ..header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -13,12 +13,16 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from datetime import datetime
+from decimal import Decimal
 from typing import Any
+import uuid
 
 # Third-Party Packages #
 from dspobjects.time import Timestamp
 from hdf5objects import HDF5Map, HDF5Dataset
 from hdf5objects import HDF5BaseComponent
+import numpy as np
 
 # Local Packages #
 
@@ -95,7 +99,19 @@ class XLTEKDataGroupComponent(HDF5BaseComponent):
 
         super().construct(composite=composite, **kwargs)
 
-    def create_day(self, start, end=None, name=None, path=None, length=0, map_=None, id_=None):
+    def create_day(
+        self,
+        start: datetime | float | int | np.dtype,
+        end: datetime | float | int | np.dtype | None = None,
+        name: str | None = None,
+        path: str | None = None,
+        map_: HDF5Map | None = None,
+        sample_rate: float | str | Decimal | None = None,
+        length: int = 0,
+        min_shape: tuple[int] = (),
+        max_shape: tuple[int] = (),
+        id_: str | uuid.UUID | None = None,
+    ) -> None:
         if name is None:
             name = start.date().strftime(self.date_format)
 
@@ -106,18 +122,33 @@ class XLTEKDataGroupComponent(HDF5BaseComponent):
             map_ = self.day_map_type(name=f"{self.composite.name}/{name}")
             self.composite.map.set_item(map_)
 
-        self.days_dataset.components["node_content"].insert_entry(
+        self.days_dataset.components["node_content"].insert_entry_start(
             path=path,
             length=length,
             map_=map_,
             start=start,
             end=end,
+            min_shape=min_shape,
+            max_shape=max_shape,
+            sample_rate=sample_rate,
             id_=id_,
         )
 
-        return map_.get_object()
+        return self.composite[map_.name]
 
-    def insert_entry(self, path, start, end=None, length=0, file_id=None, day_path=None, day_id=None):
+    def insert_entry_start(
+        self,
+        path: str,
+        start: datetime | float | int | np.dtype,
+        end: datetime | float | int | np.dtype | None = None,
+        length: int = 0,
+        min_shape: tuple[int] = (),
+        max_shape: tuple[int] = (),
+        sample_rate: float | str | Decimal | None = None,
+        file_id: str | uuid.UUID | None = None,
+        day_path: str | None = None,
+        day_id: str | uuid.UUID | None = None,
+    ) -> None:
         if self.days_dataset.size == 0:
             index = 0
             day_start = None
@@ -131,22 +162,37 @@ class XLTEKDataGroupComponent(HDF5BaseComponent):
         if day_start is not None and day_start.date() == start.date():
             day = self.days_dataset.components["object_reference"].get_object(index)
         else:
-            day = self.create_day(start=start, end=end, length=length, path=day_path, id_=day_id)
+            day = self.create_day(
+                start=start,
+                end=end,
+                length=length,
+                min_shape=min_shape,
+                max_shape=max_shape,
+                sample_rate=sample_rate,
+                path=day_path,
+                id_=day_id,
+            )
 
-        day.components["leaf_content"].insert_entry(
+        day.components["leaf_content"].insert_entry_start(
             path=path,
             length=length,
             start=start,
             end=end,
+            min_shape=min_shape,
+            max_shape=max_shape,
+            sample_rate=sample_rate,
             id_=file_id,
         )
         day_length = day.get_field("Length").sum()
         true_day_start = day.components["start_times"].start_nanostamp
         true_day_end = day.components["end_times"].end_nanostamp
-        self.days_dataset.components["node_content"].set_item(
+        self.days_dataset.components["node_content"].set_entry(
             index=index,
             start=true_day_start,
             end=true_day_end,
             length=day_length,
+            min_shape=min_shape,
+            max_shape=max_shape,
+            sample_rate=sample_rate,
         )
 
