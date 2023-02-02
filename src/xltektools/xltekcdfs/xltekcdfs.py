@@ -14,19 +14,20 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from typing import Any
-from datetime import datetime
+from datetime import datetime, date, timezone
 from decimal import Decimal
 import pathlib
 import uuid
 
 # Third-Party Packages #
 from cdfs import CDFS
+from dspobjects.time import Timestamp
 from hdf5objects import HDF5Map
 import numpy as np
 
 # Local Packages #
 from ..hdf5xltek import HDF5XLTEK
-from .contentsfile import XLTEKContentsFile
+from .contentsfile import XLTEKContentsFile, XLTEKDataGroupComponent
 from .frames import XLTEKDataContentFrame
 
 
@@ -66,7 +67,7 @@ class XLTEKCDFS(CDFS):
         self._subjects_dir: pathlib.Path | None = None
 
         self.date_format: str = "%d"
-        self.time_format: str = "%d_%h~%m~%s"
+        self.time_format: str = "%H~%M~%S"
 
         # Parent Attributes #
         super().__init__(init=False)
@@ -95,6 +96,10 @@ class XLTEKCDFS(CDFS):
             self._subjects_dir = value
         else:
             self._subjects_dir = pathlib.Path(value)
+
+    @property
+    def xltek_data_group(self) -> XLTEKDataGroupComponent:
+        return  self.contents_file["data_content"].components["xltek_data"]
 
     # Instance Methods
     # Constructors/Destructors
@@ -133,39 +138,75 @@ class XLTEKCDFS(CDFS):
 
         super().construct(path=path, mode=mode, update=update, open_=open_, load=load, **kwargs)
 
+    def get_start_datetime(self):
+        return self.xltek_data_group.get_start_datetime()
+
+    def get_end_datetime(self):
+        return self.xltek_data_group.get_end_datetime()
+
     def create_day(
         self,
-        start: datetime | float | int | np.dtype,
+        start: datetime | date | float | int | np.dtype,
         end: datetime | float | int | np.dtype | None = None,
-        name: str | None = None,
+        path: str | None = None,
         sample_rate: float | str | Decimal | None = None,
         length: int = 0,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
         id_: str | uuid.UUID | None = None,
     ) -> None:
-        if name is None:
-            name = f"{self.subject_id}_{start.date().strftime(self.date_format)}"
+        if path is None:
+            path = f"{self.subject_id}_{start.date().strftime(self.date_format)}"
 
-        day_path = self.path / name
+        day_path = self.path / path
         day_path.mkdir()
 
         self.contents_file["data_content"].components["xltek_data"].create_day(
-            path=name,
-            length=length,
             start=start,
             end=end,
+            path=name,
+            length=length,
             min_shape=min_shape,
             max_shape=max_shape,
             sample_rate=sample_rate,
             id_=id_,
         )
 
+    def require_day(
+        self,
+        start: datetime | date | float | int | np.dtype,
+        end: datetime | float | int | np.dtype | None = None,
+        path: str | None = None,
+        sample_rate: float | str | Decimal | None = None,
+        length: int = 0,
+        min_shape: tuple[int] = (),
+        max_shape: tuple[int] = (),
+        id_: str | uuid.UUID | None = None,
+    ) -> None:
+        if path is None:
+            path = f"{self.subject_id}_{start.date().strftime(self.date_format)}"
+
+        day_path = self.path / path
+        day_path.mkdir(exist_ok=True)
+
+        day_dataset = self.xltek_data_group.require_day(
+            start=start,
+            end=end,
+            path=name,
+            length=length,
+            min_shape=min_shape,
+            max_shape=max_shape,
+            sample_rate=sample_rate,
+            id_=id_,
+        )
+
+        return day_path, day_dataset
+
     def generate_file_name(self, start: datetime):
         return f"{self.subject_id}_{start.strftime(self.time_format)}"
 
     def add_file(self, file: HDF5XLTEK):
-        self.contents_file["data_content"].components["xltek_data"].insert_entry_start(
+        self.xltek_data_group.insert_entry_start(
             path=file.path.name,
             start=file.start_datetime,
             end=file.end_datetime,
@@ -175,3 +216,51 @@ class XLTEKCDFS(CDFS):
             sample_rate=file.sample_rate,
             day_path=file.path.parts[-2],
         )
+
+    def create_file(self, data, sample_rate, nanostamps, tzinfo=None, open_=False):
+        start = Timestamp.fromnanostamp(nanostamps[0], tz=timezone.utc)
+        index, _ = self.xltek_data_group.find_day_start(start, approx=True, tails=True, sentinel=(0, None))
+
+        day_name = f"{self.subject_id}_Day-{index + 1}"
+        day_path = self.path / day_name
+        day_path.mkdir(exist_ok=True)
+
+        file_name = f"{day_name}_{start.strftime(self.time_format)}.h5"
+        file_path = day_path / file_name
+        if file_path.is_file():
+            file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')}.h5"
+            file_path = day_path / file_name
+
+        f_obj = self.data_file_type(
+            file=file_path,
+            s_id=self.subject_id,
+            start=start,
+            mode="a",
+            create=True,
+            require=True,
+        )
+
+        f_obj.data.require(
+            data=data,
+            axes_kwargs = [{"time_axis": {
+                "data": nanostamps,
+                "component_kwargs": {"axis": {"rate": sample_rate}},
+            }}],
+        )
+        f_obj.data.components["timeseries"].time_axis.set_time_zone(tzinfo)
+
+        if not open_:
+            f_obj.close()
+
+        self.xltek_data_group.insert_entry_start(
+            path=file_name,
+            start=start,
+            end=Timestamp.fromnanostamp(nanostamps[-1]),
+            length=len(nanostamps),
+            min_shape=data.shape,
+            max_shape=data.shape,
+            sample_rate=sample_rate,
+            day_path=day_name,
+        )
+
+        return f_obj

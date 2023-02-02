@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from datetime import datetime
+from datetime import datetime, date, tzinfo
 from decimal import Decimal
 from typing import Any
 import uuid
@@ -49,14 +49,9 @@ class XLTEKDataGroupComponent(HDF5BaseComponent):
         **kwargs: Any,
     ) -> None:
         # New Attributes #
-        self.subject_id: str = ""
-
         self.day_map_type: type | None = None
-        self.date_format: str = "%Y-%m-%d"
         self.days_dataset_name = "days"
         self._days_dataset = None
-
-        self.time_format: str = "%Y-%m-%d_%h~%m~%s"
 
         # Parent Attributes #
         super().__init__(self, init=False)
@@ -99,27 +94,60 @@ class XLTEKDataGroupComponent(HDF5BaseComponent):
 
         super().construct(composite=composite, **kwargs)
 
+    def get_start_datetime(self):
+        if self.days_dataset.size == 0:
+            return None
+        else:
+            return self.days_dataset.components["start_times"].start_datetime
+
+    def get_end_datetime(self):
+        if self.days_dataset.size == 0:
+            return None
+        else:
+            return self.days_dataset.components["end_times"].end_datetime
+
+    def set_time_zone(self, value: str | tzinfo | None = None, offset: float | None = None) -> None:
+        """Sets the timezone of the start and end time axes.
+
+        Args:
+            value: The time zone to set this axis to.
+            offset: The time zone offset from UTC.
+        """
+        self.days_dataset.components["start_times"].set_tzinfo(value)
+        self.days_dataset.components["end_times"].set_tzinfo(value)
+        if self.days_dataset.size != 0:
+            for day in self.days_dataset.components["object_reference"].get_objects_iter():
+                day.components["start_times"].set_tzinfo(value)
+                day.components["end_times"].set_tzinfo(value)
+
+    def find_day_start(self, start, approx=True, tails=True, sentinel: Any = (None, None)):
+        start = Timestamp(start.date(), tz=start.tzinfo)
+
+        if self.days_dataset.size != 0:
+            return self.days_dataset.components["start_times"].find_time_index(start, approx=approx, tails=tails)
+        else:
+            return sentinel
+
     def create_day(
         self,
-        start: datetime | float | int | np.dtype,
+        start: datetime | date | float | int | np.dtype,
         end: datetime | float | int | np.dtype | None = None,
-        name: str | None = None,
         path: str | None = None,
         map_: HDF5Map | None = None,
-        sample_rate: float | str | Decimal | None = None,
         length: int = 0,
         min_shape: tuple[int] = (),
         max_shape: tuple[int] = (),
+        sample_rate: float | str | Decimal | None = None,
         id_: str | uuid.UUID | None = None,
     ) -> None:
-        if name is None:
-            name = start.date().strftime(self.date_format)
+        if isinstance(start, date):
+            start = Timestamp(start)
 
         if path is None:
-            path = f"{self.subject_id}_{name}"
+            path = start.date().strftime(self.date_format)
 
         if map_ is None:
-            map_ = self.day_map_type(name=f"{self.composite.name}/{name}")
+            map_ = self.day_map_type(name=f"{self.composite.name}/{path}")
             self.composite.map.set_item(map_)
 
         self.days_dataset.components["node_content"].insert_entry_start(
@@ -134,7 +162,51 @@ class XLTEKDataGroupComponent(HDF5BaseComponent):
             id_=id_,
         )
 
-        return self.composite[map_.name]
+        start_tz = self.days_dataset.components["start_times"].time_axis.time_zone
+        end_tz = self.days_dataset.components["end_times"].time_axis.time_zone
+
+        day = self.composite[map_.name]
+        if start_tz is not None:
+            day.components["start_times"].set_tzinfo(start_tz)
+
+        if end_tz is not None:
+            day.components["end_times"].set_tzinfo(end_tz)
+
+        return day
+
+    def require_day(
+        self,
+        start: datetime | date | float | int | np.dtype,
+        end: datetime | float | int | np.dtype | None = None,
+        path: str | None = None,
+        map_: HDF5Map | None = None,
+        length: int = 0,
+        min_shape: tuple[int] = (),
+        max_shape: tuple[int] = (),
+        sample_rate: float | str | Decimal | None = None,
+        id_: str | uuid.UUID | None = None,
+    ) -> None:
+        if isinstance(start, date):
+            start = Timestamp(start)
+
+        if self.days_dataset.size != 0:
+            index, dt = self.days_dataset.components["start_times"].find_time_index(start, approx=True, tails=True)
+
+            if dt.date() == start.date():
+                return self.days_dataset.components["object_reference"].get_object(index)
+
+        return self.create_day(
+            start=start,
+            end=end,
+            path=path,
+            map_=map_,
+            length=length,
+            min_shape=min_shape,
+            max_shape=max_shape,
+            sample_rate=sample_rate,
+            id_=id_,
+        )
+
 
     def insert_entry_start(
         self,
@@ -149,17 +221,9 @@ class XLTEKDataGroupComponent(HDF5BaseComponent):
         day_path: str | None = None,
         day_id: str | uuid.UUID | None = None,
     ) -> None:
-        if self.days_dataset.size == 0:
-            index = 0
-            day_start = None
-        else:
-            index, day_start = self.days_dataset.components["start_times"].find_time_index(
-                Timestamp(start.date()),
-                approx=True,
-                tails=True,
-            )
+        index, day_start = self.find_day_start(start, approx=True, tails=True, sentinel=(0, None))
 
-        if day_start is not None and day_start.date() == start.date():
+        if day_start is not None and date.fromtimestamp(day_start.timestamp()) == date.fromtimestamp(start.timestamp()):
             day = self.days_dataset.components["object_reference"].get_object(index)
         else:
             day = self.create_day(
@@ -195,4 +259,6 @@ class XLTEKDataGroupComponent(HDF5BaseComponent):
             max_shape=max_shape,
             sample_rate=sample_rate,
         )
+
+
 
