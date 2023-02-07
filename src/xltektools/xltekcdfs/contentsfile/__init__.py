@@ -15,3 +15,4 @@ __email__ = __email__
 # Local Packages #
 from .xltekdatagroupcomponent import XLTEKDataGroupComponent
 from .xltekcontentsfile import XLTEKContentsFile
+from .xltekdatamaps import XLTEKDataDayGroupMap, XLTEKDataContentGroupMap

@@ -63,8 +63,12 @@ class XLTEKCDFS(CDFS):
         **kwargs: Any,
     ) -> None:
         # New Attributes #
-        self.subject_id: str | None = None
         self._subjects_dir: pathlib.Path | None = None
+
+        self._subject_id: str | None = None
+        self._age: str | None = None
+        self._sex: str | None = None
+        self._species: str | None = None
 
         self.date_format: str = "%d"
         self.time_format: str = "%H~%M~%S"
@@ -98,8 +102,64 @@ class XLTEKCDFS(CDFS):
             self._subjects_dir = pathlib.Path(value)
 
     @property
+    def subject_id(self) -> str | None:
+        """The subject ID from the file attributes."""
+        if self.contents_file is None or not self.contents_file.is_open:
+            return self._subject_id
+        else:
+            return self.contents_file.attributes.get("subject_id", None)
+
+    @subject_id.setter
+    def subject_id(self, value: str) -> None:
+        if self.contents_file is not None and not self.contents_file.is_open:
+            self.contents_file.attributes.set_attribute("subject_id", value)
+        self._subject_id = value
+
+    @property
+    def age(self) -> str | None:
+        """The subject age from the file attributes."""
+        if self.contents_file is None or not self.contents_file.is_open:
+            return self._age
+        else:
+            return self.contents_file.attributes.get("age", None)
+
+    @age.setter
+    def age(self, value: str) -> None:
+        if self.contents_file is not None and not self.contents_file.is_open:
+            self.contents_file.attributes.set_attribute("age", value)
+        self._age = value
+
+    @property
+    def sex(self) -> str | None:
+        """The subject sex from the file attributes."""
+        if self.contents_file is None or not self.contents_file.is_open:
+            return self._sex
+        else:
+            return self.contents_file.attributes.get("sex", None)
+
+    @sex.setter
+    def sex(self, value: str) -> None:
+        if self.contents_file is not None and not self.contents_file.is_open:
+            self.contents_file.attributes.set_attribute("sex", value)
+        self._sex = value
+
+    @property
+    def species(self) -> str | None:
+        """The subject species from the file attributes."""
+        if self.contents_file is None or not self.contents_file.is_open:
+            return self._species
+        else:
+            return self.contents_file.attributes.get("species", None)
+
+    @species.setter
+    def species(self, value: str) -> None:
+        if self.contents_file is not None and not self.contents_file.is_open:
+            self.contents_file.attributes.set_attribute("species", value)
+        self._species = value
+    
+    @property
     def xltek_data_group(self) -> XLTEKDataGroupComponent:
-        return  self.contents_file["data_content"].components["xltek_data"]
+        return  self.contents_file.components["contents"].get_data_root()
 
     # Instance Methods
     # Constructors/Destructors
@@ -128,7 +188,7 @@ class XLTEKCDFS(CDFS):
             **kwargs: The keyword arguments to create contained frames.
         """
         if s_id is not None:
-            self.subject_id = s_id
+            self._subject_id = s_id
 
         if s_dir is not None:
             self.subjects_dir = s_dir
@@ -137,7 +197,16 @@ class XLTEKCDFS(CDFS):
             self.path = self.subjects_dir / self.subject_id
 
         super().construct(path=path, mode=mode, update=update, open_=open_, load=load, **kwargs)
+    
+    def require(self, **kwargs):
+        self.path.mkdir(exist_ok=True)
 
+        if self.contents_file is None:
+            self.construct_contents_file(create=True, require=True, **kwargs)
+            self.construct_data()
+        else:
+            self.contents_file.require(**kwargs)
+    
     def get_start_datetime(self):
         return self.xltek_data_group.get_start_datetime()
 
@@ -219,7 +288,7 @@ class XLTEKCDFS(CDFS):
 
     def create_file(self, data, sample_rate, nanostamps, tzinfo=None, open_=False):
         start = Timestamp.fromnanostamp(nanostamps[0], tz=timezone.utc)
-        index, _ = self.xltek_data_group.find_day_start(start, approx=True, tails=True, sentinel=(0, None))
+        index, _ = self.xltek_data_group.find_child_index_start_day(start, approx=True, tails=True, sentinel=(0, None))
 
         day_name = f"{self.subject_id}_Day-{index + 1}"
         day_path = self.path / day_name
@@ -252,15 +321,14 @@ class XLTEKCDFS(CDFS):
         if not open_:
             f_obj.close()
 
-        self.xltek_data_group.insert_entry_start(
-            path=file_name,
+        self.xltek_data_group.insert_recursive_entry(
+            paths=[day_name, file_name],
             start=start,
             end=Timestamp.fromnanostamp(nanostamps[-1]),
             length=len(nanostamps),
             min_shape=data.shape,
             max_shape=data.shape,
             sample_rate=sample_rate,
-            day_path=day_name,
         )
 
         return f_obj
