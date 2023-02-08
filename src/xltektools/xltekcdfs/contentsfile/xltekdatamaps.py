@@ -25,13 +25,16 @@ from cdfs.contentsfile import TimeContentGroupMap, TimeContentGroupComponent
 class XLTEKDataDayGroupMap(TimeContentGroupMap):
     """A group map which outlines a group with basic node methods."""
     default_attributes = {"tree_type": "Leaf"}
+    default_component_types = {
+        "tree_node": (TimeContentGroupComponent, {"insert_name": "insert_recursive_entry_start"}),
+    }
 
 
 class XLTEKDataContentGroupMap(TimeContentGroupMap):
     """A group map which outlines a group with basic node methods."""
     default_attributes = {"tree_type": "Node"}
     default_component_types = {
-        "tree_node": (TimeContentGroupComponent, {"insert_name": "insert_recursive_start_day",
+        "tree_node": (TimeContentGroupComponent, {"insert_name": "insert_recursive_entry_start_date",
                                                   "child_map_type": XLTEKDataDayGroupMap
                                                   }),
     }

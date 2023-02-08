@@ -21,6 +21,7 @@ import uuid
 
 # Third-Party Packages #
 from cdfs import CDFS
+from cdfs.contentsfile import TimeContentGroupComponent
 from dspobjects.time import Timestamp
 from hdf5objects import HDF5Map
 import numpy as np
@@ -158,8 +159,8 @@ class XLTEKCDFS(CDFS):
         self._species = value
     
     @property
-    def xltek_data_group(self) -> XLTEKDataGroupComponent:
-        return  self.contents_file.components["contents"].get_data_root()
+    def xltek_data_root(self) -> TimeContentGroupComponent:
+        return self.contents_file.components["contents"].get_data_root().components["tree_node"]
 
     # Instance Methods
     # Constructors/Destructors
@@ -206,12 +207,15 @@ class XLTEKCDFS(CDFS):
             self.construct_data()
         else:
             self.contents_file.require(**kwargs)
+
+        if self.contents_file.attributes.get("subject_id", None) is None and self._subject_id is not None:
+            self.contents_file.attributes.set_attribute("subject_id", self._subject_id)
     
     def get_start_datetime(self):
-        return self.xltek_data_group.get_start_datetime()
+        return self.xltek_data_root.get_start_datetime()
 
     def get_end_datetime(self):
-        return self.xltek_data_group.get_end_datetime()
+        return self.xltek_data_root.get_end_datetime()
 
     def create_day(
         self,
@@ -258,7 +262,7 @@ class XLTEKCDFS(CDFS):
         day_path = self.path / path
         day_path.mkdir(exist_ok=True)
 
-        day_dataset = self.xltek_data_group.require_day(
+        day_dataset = self.xltek_data_root.require_day(
             start=start,
             end=end,
             path=name,
@@ -275,7 +279,7 @@ class XLTEKCDFS(CDFS):
         return f"{self.subject_id}_{start.strftime(self.time_format)}"
 
     def add_file(self, file: HDF5XLTEK):
-        self.xltek_data_group.insert_entry_start(
+        self.xltek_data_root.insert_entry_start(
             path=file.path.name,
             start=file.start_datetime,
             end=file.end_datetime,
@@ -287,8 +291,8 @@ class XLTEKCDFS(CDFS):
         )
 
     def create_file(self, data, sample_rate, nanostamps, tzinfo=None, open_=False):
-        start = Timestamp.fromnanostamp(nanostamps[0], tz=timezone.utc)
-        index, _ = self.xltek_data_group.find_child_index_start_day(start, approx=True, tails=True, sentinel=(0, None))
+        start = Timestamp(nanostamps[0], tz=tzinfo)
+        index, _ = self.xltek_data_root.find_child_index_start_date(start, sentinel=(0, None))
 
         day_name = f"{self.subject_id}_Day-{index + 1}"
         day_path = self.path / day_name
@@ -311,7 +315,7 @@ class XLTEKCDFS(CDFS):
 
         f_obj.data.require(
             data=data,
-            axes_kwargs = [{"time_axis": {
+            axes_kwargs=[{"time_axis": {
                 "data": nanostamps,
                 "component_kwargs": {"axis": {"rate": sample_rate}},
             }}],
@@ -321,7 +325,7 @@ class XLTEKCDFS(CDFS):
         if not open_:
             f_obj.close()
 
-        self.xltek_data_group.insert_recursive_entry(
+        self.xltek_data_root.insert_recursive_entry(
             paths=[day_name, file_name],
             start=start,
             end=Timestamp.fromnanostamp(nanostamps[-1]),

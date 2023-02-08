@@ -17,7 +17,7 @@ from collections.abc import Mapping
 
 # Third-Party Packages #
 from hdf5objects import HDF5Map
-from cdfs.contentsfile import TimeContentsFileMap, TimeContentsFile, TimeNodeMap, TimeLeafMap, ContentsFileComponent
+from cdfs.contentsfile import TimeContentsFileMap, TimeContentsFile, ContentsFileComponent
 
 # Local Packages #
 from .xltekdatamaps import XLTEKDataContentGroupMap
@@ -34,7 +34,7 @@ class XLTEKContentsFileMap(TimeContentsFileMap):
         "species": "species",
     }
     default_attributes = TimeContentsFileMap.default_attributes | {"age": "", "sex": "U", "species": "Homo Sapien"}
-    default_maps: Mapping[str, HDF5Map] = {
+    default_maps = {
         "data_content": XLTEKDataContentGroupMap(),
     }
 
