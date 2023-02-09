@@ -16,11 +16,12 @@ __email__ = __email__
 from collections.abc import Mapping
 
 # Third-Party Packages #
-from hdf5objects import HDF5Map
+from hdf5objects import HDF5Map, HDF5Group
 from cdfs.contentsfile import TimeContentsFileMap, TimeContentsFile, ContentsFileComponent
 
 # Local Packages #
-from .xltekdatamaps import XLTEKDataContentGroupMap
+from .data import XLTEKDataContentGroupMap
+from .video import XLTEKVideoContentGroupMap, XLTEKVideoGroupComponent
 
 
 # Definitions #
@@ -32,14 +33,33 @@ class XLTEKContentsFileMap(TimeContentsFileMap):
         "age": "age",
         "sex": "sex",
         "species": "species",
+        "units": "units",
     }
-    default_attributes = TimeContentsFileMap.default_attributes | {"age": "", "sex": "U", "species": "Homo Sapien"}
+    default_attributes = TimeContentsFileMap.default_attributes | {
+        "age": "",
+        "sex": "U",
+        "species": "Homo Sapien",
+        "units": "volts"
+    }
+    default_map_names = TimeContentsFileMap.default_map_names | {"video_contents": "video_contents"}
     default_maps = {
-        "data_content": XLTEKDataContentGroupMap(),
+        "contents": XLTEKDataContentGroupMap(),
+        "video_contents": XLTEKVideoContentGroupMap(),
     }
 
 
 class XLTEKContentsFile(TimeContentsFile):
     FILE_TYPE: str = "ContentsFile"
     default_map: HDF5Map = XLTEKContentsFileMap()
-    default_component_types = {"contents": (ContentsFileComponent, {"data_location": "data_content"})}
+    default_component_types = {
+        "contents": (ContentsFileComponent, {"root_location": "contents"}),
+        "videos": (ContentsFileComponent, {"root_location": "video_contents"}),
+    }
+
+    @property
+    def video_root(self) -> HDF5Group:
+        return self.components["videos"].get_root()
+
+    @property
+    def video_root_node(self) -> XLTEKVideoGroupComponent:
+        return self.components["videos"].get_root_node_component()

@@ -23,12 +23,12 @@ import uuid
 from cdfs import CDFS
 from cdfs.contentsfile import TimeContentGroupComponent
 from dspobjects.time import Timestamp
-from hdf5objects import HDF5Map
+from hdf5objects import HDF5Map, HDF5Group
 import numpy as np
 
 # Local Packages #
 from ..hdf5xltek import HDF5XLTEK
-from .contentsfile import XLTEKContentsFile, XLTEKDataGroupComponent
+from .contentsfile import XLTEKContentsFile, XLTEKDataGroupComponent, XLTEKVideoGroupComponent
 from .frames import XLTEKDataContentFrame
 
 
@@ -70,6 +70,7 @@ class XLTEKCDFS(CDFS):
         self._age: str | None = None
         self._sex: str | None = None
         self._species: str | None = None
+        self._units: str | None = None
 
         self.date_format: str = "%d"
         self.time_format: str = "%H~%M~%S"
@@ -157,10 +158,28 @@ class XLTEKCDFS(CDFS):
         if self.contents_file is not None and not self.contents_file.is_open:
             self.contents_file.attributes.set_attribute("species", value)
         self._species = value
-    
+
     @property
-    def xltek_data_root(self) -> TimeContentGroupComponent:
-        return self.contents_file.components["contents"].get_data_root().components["tree_node"]
+    def units(self) -> str | None:
+        """The subject's data units from the file attributes."""
+        if self.contents_file is None or not self.contents_file.is_open:
+            return self._units
+        else:
+            return self.contents_file.attributes.get("units", None)
+
+    @units.setter
+    def units(self, value: str) -> None:
+        if self.contents_file is not None and not self.contents_file.is_open:
+            self.contents_file.attributes.set_attribute("units", value)
+        self._units = value
+
+    @property
+    def video_root(self) -> HDF5Group:
+        return self.contents_file.video_root
+
+    @property
+    def video_root_node(self) -> XLTEKVideoGroupComponent:
+        return self.contents_file.video_root_node
 
     # Instance Methods
     # Constructors/Destructors
@@ -210,76 +229,14 @@ class XLTEKCDFS(CDFS):
 
         if self.contents_file.attributes.get("subject_id", None) is None and self._subject_id is not None:
             self.contents_file.attributes.set_attribute("subject_id", self._subject_id)
-    
-    def get_start_datetime(self):
-        return self.xltek_data_root.get_start_datetime()
 
-    def get_end_datetime(self):
-        return self.xltek_data_root.get_end_datetime()
+    def generate_day_name(self, start: datetime):
+        absolute_start = self.get_start_datetime()
+        n_days = 1 if absolute_start is None else (start.date() - absolute_start.date()).days + 1
+        return f"{self.subject_id}_Day-{n_days}"
 
-    def create_day(
-        self,
-        start: datetime | date | float | int | np.dtype,
-        end: datetime | float | int | np.dtype | None = None,
-        path: str | None = None,
-        sample_rate: float | str | Decimal | None = None,
-        length: int = 0,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
-        id_: str | uuid.UUID | None = None,
-    ) -> None:
-        if path is None:
-            path = f"{self.subject_id}_{start.date().strftime(self.date_format)}"
-
-        day_path = self.path / path
-        day_path.mkdir()
-
-        self.contents_file["data_content"].components["xltek_data"].create_day(
-            start=start,
-            end=end,
-            path=name,
-            length=length,
-            min_shape=min_shape,
-            max_shape=max_shape,
-            sample_rate=sample_rate,
-            id_=id_,
-        )
-
-    def require_day(
-        self,
-        start: datetime | date | float | int | np.dtype,
-        end: datetime | float | int | np.dtype | None = None,
-        path: str | None = None,
-        sample_rate: float | str | Decimal | None = None,
-        length: int = 0,
-        min_shape: tuple[int] = (),
-        max_shape: tuple[int] = (),
-        id_: str | uuid.UUID | None = None,
-    ) -> None:
-        if path is None:
-            path = f"{self.subject_id}_{start.date().strftime(self.date_format)}"
-
-        day_path = self.path / path
-        day_path.mkdir(exist_ok=True)
-
-        day_dataset = self.xltek_data_root.require_day(
-            start=start,
-            end=end,
-            path=name,
-            length=length,
-            min_shape=min_shape,
-            max_shape=max_shape,
-            sample_rate=sample_rate,
-            id_=id_,
-        )
-
-        return day_path, day_dataset
-
-    def generate_file_name(self, start: datetime):
-        return f"{self.subject_id}_{start.strftime(self.time_format)}"
-
-    def add_file(self, file: HDF5XLTEK):
-        self.xltek_data_root.insert_entry_start(
+    def add_data_file(self, file: HDF5XLTEK):
+        self.contents_root_node.insert_entry_start(
             path=file.path.name,
             start=file.start_datetime,
             end=file.end_datetime,
@@ -290,11 +247,10 @@ class XLTEKCDFS(CDFS):
             day_path=file.path.parts[-2],
         )
 
-    def create_file(self, data, sample_rate, nanostamps, tzinfo=None, open_=False):
+    def create_data_file(self, data, sample_rate, nanostamps, tzinfo=None, open_=False):
         start = Timestamp(nanostamps[0], tz=tzinfo)
-        index, _ = self.xltek_data_root.find_child_index_start_date(start, sentinel=(0, None))
 
-        day_name = f"{self.subject_id}_Day-{index + 1}"
+        day_name = self.generate_day_name(start)
         day_path = self.path / day_name
         day_path.mkdir(exist_ok=True)
 
@@ -325,7 +281,7 @@ class XLTEKCDFS(CDFS):
         if not open_:
             f_obj.close()
 
-        self.xltek_data_root.insert_recursive_entry(
+        self.contents_root_node.insert_recursive_entry(
             paths=[day_name, file_name],
             start=start,
             end=Timestamp.fromnanostamp(nanostamps[-1]),
@@ -336,3 +292,15 @@ class XLTEKCDFS(CDFS):
         )
 
         return f_obj
+
+    def insert_video_entry_start(self, name, start, end, length=0, sample_rate=np.nan, tzinfo=None):
+        self.video_root_node.insert_recursive_entry(
+            paths=[self.generate_day_name(start), name],
+            start=start,
+            end=end,
+            length=length,
+            sample_rate=sample_rate,
+        )
+
+
+

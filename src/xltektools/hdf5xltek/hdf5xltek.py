@@ -17,7 +17,7 @@ __email__ = __email__
 # Third-Party Packages #
 from classversioning import VersionType, Version, TriNumberVersion
 from hdf5objects.hdf5bases import HDF5Map
-from hdf5objects.dataset import BaseTimeSeriesMap
+from hdf5objects.dataset import ElectricalSeriesMap
 from hdf5objects.fileobjects import HDF5EEG, HDF5EEGMap
 
 # Local Packages #
@@ -29,7 +29,7 @@ class HDF5XLTEKMap(HDF5EEGMap):
     """A map for HDF5XLTEK files."""
     default_attributes = HDF5EEGMap.default_attributes | {"age": "", "sex": "U", "species": "Homo Sapien"}
     default_map_names = {"data": "ECoG"}
-    default_maps = {"data": BaseTimeSeriesMap()}
+    default_maps = {"data": ElectricalSeriesMap(attributes={"units": "volts"})}
 
 
 class HDF5XLTEK(HDF5EEG):
