@@ -55,7 +55,7 @@ class XLTEKVideoDatasetMap(BaseNodeDatasetMap):
         "end_times": (TimeSeriesComponent, {"scale_name": "end_time_axis"}),
         "tree_node": (XLTEKVideoDatsetComponent, {}),
     }
-    default_kwargs = {"shape": (0,), "maxshape": (None,)}
+    default_kwargs = {"shape": (0, 1), "maxshape": (None, 1)}
 
 
 class BaseXLTEKVideoGroupMap(BaseNodeGroupMap):
