@@ -285,7 +285,6 @@ class XLTEKCDFS(CDFS):
             paths=[day_name, file_name],
             start=start,
             end=Timestamp.fromnanostamp(nanostamps[-1]),
-            length=len(nanostamps),
             min_shape=data.shape,
             max_shape=data.shape,
             sample_rate=sample_rate,

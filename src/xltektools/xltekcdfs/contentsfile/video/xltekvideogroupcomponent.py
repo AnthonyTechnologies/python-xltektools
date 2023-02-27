@@ -71,12 +71,12 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
     @property
     def length(self) -> int:
         """The minimum shape of this node."""
-        return self.map_dataset.get_field("Length").sum()
+        return self.node_map.get_field("Length").sum()
 
     @property
     def sample_rate(self) -> float:
         """The sample rate of this node if all children have the same sample_rate."""
-        sample_rates = self.map_dataset.get_field("Sample Rate")
+        sample_rates = self.node_map.get_field("Sample Rate")
         min_sample_rate = sample_rates.min()
         return min_sample_rate if (sample_rates == min_sample_rate).all() else np.nan
 
@@ -119,7 +119,7 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
         Returns:
             The start datetime of this node.
         """
-        return self.map_dataset.components["start_times"].start_datetime if self.map_dataset.size != 0 else None
+        return self.node_map.components["start_times"].start_datetime if self.node_map.size != 0 else None
 
     def get_end_datetime(self):
         """Gets the end datetime of this node.
@@ -127,7 +127,7 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
         Returns:
             The end datetime of this node.
         """
-        return self.map_dataset.components["end_times"].end_datetime if self.map_dataset.size != 0 else None
+        return self.node_map.components["end_times"].end_datetime if self.node_map.size != 0 else None
 
     def set_time_zone(self, value: str | tzinfo | None = None, offset: float | None = None) -> None:
         """Sets the timezone of the start and end time axes.
@@ -136,10 +136,10 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
             value: The time zone to set this axis to.
             offset: The time zone offset from UTC.
         """
-        self.map_dataset.components["start_times"].set_tzinfo(value)
-        self.map_dataset.components["end_times"].set_tzinfo(value)
-        if self.map_dataset.size != 0:
-            for group in self.map_dataset.components["object_reference"].get_objects_iter():
+        self.node_map.components["start_times"].set_tzinfo(value)
+        self.node_map.components["end_times"].set_tzinfo(value)
+        if self.node_map.size != 0:
+            for group in self.node_map.components["object_reference"].get_objects_iter():
                 group.components["contents_node"].set_time_zone(value)
 
     def find_child_index_start(
@@ -160,8 +160,8 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
         Returns:
             The index of in the child and the datetime at that index.
         """
-        if self.map_dataset.size != 0:
-            return self.map_dataset.components["start_times"].find_time_index(start, approx=approx, tails=tails)
+        if self.node_map.size != 0:
+            return self.node_map.components["start_times"].find_time_index(start, approx=approx, tails=tails)
         else:
             return sentinel
 
@@ -192,8 +192,8 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
 
         start = Timestamp(start, tz=tz)
 
-        if self.map_dataset.size != 0:
-            return self.map_dataset.components["start_times"].find_time_index(start, approx=approx, tails=tails)
+        if self.node_map.size != 0:
+            return self.node_map.components["start_times"].find_time_index(start, approx=approx, tails=tails)
         else:
             return sentinel
 
@@ -224,7 +224,7 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
             map_ = self.child_map_type(name=f"{self.composite.name}/{path}")
             self.composite.map.set_item(map_)
 
-        self.map_dataset.components[self.node_component_name].insert_entry(
+        self.node_map.components[self.node_component_name].insert_entry(
             index=index,
             path=path,
             start=start,
@@ -238,15 +238,15 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
         if map_ is None:
             return None
         else:
-            start_tz = self.map_dataset.components["start_times"].time_axis.time_zone
-            end_tz = self.map_dataset.components["end_times"].time_axis.time_zone
+            start_tz = self.node_map.components["start_times"].time_axis.time_zone
+            end_tz = self.node_map.components["end_times"].time_axis.time_zone
 
             child = map_.get_object(require=True, file=self.composite.file)
             if start_tz is not None:
-                child.components[self.child_component_name].map_dataset.components["start_times"].set_tzinfo(start_tz)
+                child.components[self.child_component_name].node_map.components["start_times"].set_tzinfo(start_tz)
 
             if end_tz is not None:
-                child.components[self.child_component_name].map_dataset.components["end_times"].set_tzinfo(end_tz)
+                child.components[self.child_component_name].node_map.components["end_times"].set_tzinfo(end_tz)
 
             return child
 
@@ -273,12 +273,12 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
         """
         start = nanostamp(start)
 
-        if self.map_dataset.size != 0:
-            index, dt = self.map_dataset.components["start_times"].find_time_index(start, approx=True, tails=True)
+        if self.node_map.size != 0:
+            index, dt = self.node_map.components["start_times"].find_time_index(start, approx=True, tails=True)
 
             if nanostamp(dt) == start:
                 if self.child_map_type is not None:
-                    return index, self.map_dataset.components["object_reference"].get_object(index, ref_name="node")
+                    return index, self.node_map.components["object_reference"].get_object(index, ref_name="node")
                 else:
                     return index, None
         else:
@@ -329,12 +329,12 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
 
         start_date = Timestamp(start_date, tz=tz)
 
-        if self.map_dataset.size != 0:
-            index, dt = self.map_dataset.components["start_times"].find_time_index(start_date, approx=True, tails=True)
+        if self.node_map.size != 0:
+            index, dt = self.node_map.components["start_times"].find_time_index(start_date, approx=True, tails=True)
 
             if dt.date() == start_date.date():
                 if self.child_map_type is not None:
-                    return index, self.map_dataset.components["object_reference"].get_object(index, ref_name="node")
+                    return index, self.node_map.components["object_reference"].get_object(index, ref_name="node")
                 else:
                     return index, None
         else:
@@ -407,7 +407,7 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
                 ids=ids,
             )
 
-            self.map_dataset.components[self.node_component_name].set_entry(
+            self.node_map.components[self.node_component_name].set_entry(
                 index=index,
                 start=child.get_start_datetime(),
                 end=child.get_end_datetime(),
@@ -465,7 +465,7 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
                 ids=ids,
             )
 
-            self.map_dataset.components[self.node_component_name].set_entry(
+            self.node_map.components[self.node_component_name].set_entry(
                 index=index,
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),
@@ -523,7 +523,7 @@ class XLTEKVideoGroupComponent(NodeGroupComponent):
                 ids=ids,
             )
 
-            self.map_dataset.components[self.node_component_name].set_entry(
+            self.node_map.components[self.node_component_name].set_entry(
                 index=index,
                 start=child_node_component.get_start_datetime(),
                 end=child_node_component.get_end_datetime(),

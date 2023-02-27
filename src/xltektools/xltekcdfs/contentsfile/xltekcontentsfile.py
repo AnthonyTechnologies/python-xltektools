@@ -63,3 +63,6 @@ class XLTEKContentsFile(TimeContentsFile):
     @property
     def video_root_node(self) -> XLTEKVideoGroupComponent:
         return self.components["videos"].get_root_node_component()
+
+    def build_swmr(self, **kwargs) -> None:
+        self.contents_root_node.build_range()

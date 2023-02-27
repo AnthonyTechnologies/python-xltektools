@@ -55,15 +55,15 @@ class XLTEKVideoDatasetMap(BaseNodeDatasetMap):
         "end_times": (TimeSeriesComponent, {"scale_name": "end_time_axis"}),
         "tree_node": (XLTEKVideoDatsetComponent, {}),
     }
-    default_kwargs = {"shape": (0, 1), "maxshape": (None, 1)}
+    default_kwargs = {"shape": (0,), "maxshape": (None,)}
 
 
 class BaseXLTEKVideoGroupMap(BaseNodeGroupMap):
     """A group map which outlines a group with basic node methods."""
     default_attribute_names = {"tree_type": "tree_type"}
     default_attributes = {"tree_type": "Node"}
-    default_map_names = {"map_dataset": "map_dataset"}
-    default_maps = {"map_dataset": XLTEKVideoDatasetMap()}
+    default_map_names = {"node_map": "node_map"}
+    default_maps = {"node_map": XLTEKVideoDatasetMap()}
     default_component_types = {
         "tree_node": (XLTEKVideoGroupComponent, {}),
     }
