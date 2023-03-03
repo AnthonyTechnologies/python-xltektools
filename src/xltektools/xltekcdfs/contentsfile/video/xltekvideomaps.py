@@ -42,7 +42,7 @@ class XLTEKVideoDatasetMap(BaseNodeDatasetMap):
         ("Sample Rate", np.float64),
     )
     default_axis_maps = [{
-        "id_axis": IDAxisMap(component_kwargs = {"axis": {"is_uuid": True}}),
+        "id_axis": IDAxisMap(component_kwargs={"axis": {"is_uuid": True}}),
         "start_time_axis": TimeAxisMap(),
         "end_time_axis": TimeAxisMap(),
     }]

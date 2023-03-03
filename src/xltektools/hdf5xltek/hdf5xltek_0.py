@@ -19,7 +19,7 @@ import pathlib
 from typing import Any, Union
 
 # Third-Party Packages #
-from baseobjects import singlekwargdispatchmethod
+from baseobjects.functions import singlekwargdispatch
 from classversioning import Version, TriNumberVersion
 import h5py
 from hdf5objects import HDF5Dataset
@@ -112,7 +112,7 @@ class HDF5XLTEK_0(HDF5XLTEK):
     default_map: HDF5Map = HDF5XLTEKMap_0()
 
     # File Validation
-    @singlekwargdispatchmethod("file")
+    @singlekwargdispatch("file")
     @classmethod
     def validate_file_type(cls, file: pathlib.Path | str | HDF5File | h5py.File) -> bool:
         """Checks if the given file or path is a valid type.
@@ -204,7 +204,7 @@ class HDF5XLTEK_0(HDF5XLTEK):
         end_name = cls.default_map.attribute_names["end"]
         return start_name in file.attrs and end_name in file.attrs
 
-    @singlekwargdispatchmethod("file")
+    @singlekwargdispatch("file")
     @classmethod
     def new_validated(cls, file: pathlib.Path | str | HDF5File | h5py.File, **kwargs: Any) -> Union["HDF5XLTEK", None]:
         """Checks if the given file or path is a valid type and returns the file if valid.
