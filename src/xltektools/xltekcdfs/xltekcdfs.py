@@ -28,7 +28,7 @@ import numpy as np
 
 # Local Packages #
 from ..hdf5xltek import HDF5XLTEK
-from .contentsfile import XLTEKContentsFile, XLTEKDataGroupComponent, XLTEKVideoGroupComponent
+from .contentsfile import XLTEKContentsFile, XLTEKVideoGroupComponent
 from .frames import XLTEKDataContentFrame
 
 

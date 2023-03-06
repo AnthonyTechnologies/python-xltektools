@@ -13,7 +13,8 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from collections.abc import Mapping
+from collections.abc import Mapping, Iterable
+import datetime
 
 # Third-Party Packages #
 from hdf5objects import HDF5Map, HDF5Group
@@ -64,5 +65,13 @@ class XLTEKContentsFile(TimeContentsFile):
     def video_root_node(self) -> XLTEKVideoGroupComponent:
         return self.components["videos"].get_root_node_component()
 
-    def build_swmr(self, **kwargs) -> None:
-        self.contents_root_node.build_range()
+    def build_swmr(
+        self,
+        paths: Iterable[str | Iterable[str], ...],
+        datetimes: Iterable[datetime.date],
+        **kwargs,
+    ) -> None:
+
+        for path, dt in zip(paths, datetimes):
+            self.contents_root_node.insert_recursive_entry(paths, dt)
+            self.video_root_node.insert_recursive_entry(paths, dt)
