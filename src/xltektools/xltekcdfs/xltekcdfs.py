@@ -14,7 +14,7 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from typing import Any
-from datetime import datetime, date, timezone
+from datetime import datetime, date, timezone, timedelta
 from decimal import Decimal
 import pathlib
 import uuid
@@ -229,6 +229,12 @@ class XLTEKCDFS(CDFS):
 
         if self.contents_file.attributes.get("subject_id", None) is None and self._subject_id is not None:
             self.contents_file.attributes.set_attribute("subject_id", self._subject_id)
+
+    def build_swmr(self, end_delta: timedelta, start: datetime | None = None, **kwargs) -> None:
+        start = self.get_start_datetime() if start is None else start
+        dates = (Timestamp((start + timedelta(days=d)).date(), tzinfo=start.tzinfo) for d in range(end_delta.days))
+        paths = ((f"{self.subject_id}_Day-{d}",) for d in range(1, end_delta.days + 1))
+        self.contents_file.build_swmr(paths=paths, starts=dates, **kwargs)
 
     def generate_day_name(self, start: datetime):
         absolute_start = self.get_start_datetime()

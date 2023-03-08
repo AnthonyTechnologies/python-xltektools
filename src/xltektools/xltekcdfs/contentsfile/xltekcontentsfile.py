@@ -68,10 +68,9 @@ class XLTEKContentsFile(TimeContentsFile):
     def build_swmr(
         self,
         paths: Iterable[str | Iterable[str], ...],
-        datetimes: Iterable[datetime.date],
+        starts: Iterable[datetime.date],
         **kwargs,
     ) -> None:
-
-        for path, dt in zip(paths, datetimes):
-            self.contents_root_node.insert_recursive_entry(paths, dt)
-            self.video_root_node.insert_recursive_entry(paths, dt)
+        for entry_paths, start in zip(paths, starts):
+            self.contents_root_node.insert_recursive_entry(paths=entry_paths, start=start)
+            self.video_root_node.insert_recursive_entry(paths=entry_paths, start=start)
