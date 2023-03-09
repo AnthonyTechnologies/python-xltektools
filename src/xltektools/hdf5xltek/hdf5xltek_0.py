@@ -82,7 +82,7 @@ class HDF5XLTEKMap_0(HDF5EEGMap):
     default_map_names = {"data": "ECoG Array",
                          "entry_axis": "entry vector"}
     default_maps = {"data": XLTEKDataMap_0(),
-                    "entry_axis": AxisMap(shape=(0, 0), dtype='i', maxshape=(None, 4))}
+                    "entry_axis": AxisMap(object_kwargs={"shape": (0, 0), "dtype": 'i', "maxshape": (None, 4)})}
 
 
 class HDF5XLTEK_0(HDF5XLTEK):

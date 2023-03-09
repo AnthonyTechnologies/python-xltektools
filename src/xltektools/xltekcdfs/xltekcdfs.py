@@ -274,15 +274,9 @@ class XLTEKCDFS(CDFS):
             create=True,
             require=True,
         )
-
-        f_obj.data.require(
-            data=data,
-            axes_kwargs=[{"time_axis": {
-                "data": nanostamps,
-                "component_kwargs": {"axis": {"rate": sample_rate}},
-            }}],
-        )
-        f_obj.data.components["timeseries"].time_axis.set_time_zone(tzinfo)
+        f_obj.time_axis.components["axis"].set_time_zone(tzinfo)
+        f_obj.time_axis.components["axis"].sample_rate = sample_rate
+        f_obj.data.set_data(data, component_kwargs={"timeseries": {"data": nanostamps}})
 
         if not open_:
             f_obj.close()

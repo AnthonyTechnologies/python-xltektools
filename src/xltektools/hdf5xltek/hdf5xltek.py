@@ -29,7 +29,12 @@ class HDF5XLTEKMap(HDF5EEGMap):
     """A map for HDF5XLTEK files."""
     default_attributes = HDF5EEGMap.default_attributes | {"age": "", "sex": "U", "species": "Homo Sapien"}
     default_map_names = {"data": "ECoG"}
-    default_maps = {"data": ElectricalSeriesMap(attributes={"units": "volts"})}
+    default_maps = {
+        "data": ElectricalSeriesMap(
+            attributes={"units": "volts"},
+            object_kwargs={"shape": (0,0), "maxshape": (None, None)},
+        ),
+    }
 
 
 class HDF5XLTEK(HDF5EEG):
