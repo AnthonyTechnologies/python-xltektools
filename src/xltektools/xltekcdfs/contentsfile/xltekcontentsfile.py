@@ -18,11 +18,11 @@ import datetime
 
 # Third-Party Packages #
 from hdf5objects import HDF5Map, HDF5Group
-from cdfs.contentsfile import TimeContentsFileMap, TimeContentsFile, ContentsFileComponent
+from cdfs.contentsfile import TimeContentsFileMap, TimeContentsFile, ContentsFileComponent, TimeContentGroupComponent
 
 # Local Packages #
 from .data import XLTEKDataContentGroupMap
-from .video import XLTEKVideoContentGroupMap, XLTEKVideoGroupComponent
+from .video import XLTEKVideoContentGroupMap
 
 
 # Definitions #
@@ -62,7 +62,7 @@ class XLTEKContentsFile(TimeContentsFile):
         return self.components["videos"].get_root()
 
     @property
-    def video_root_node(self) -> XLTEKVideoGroupComponent:
+    def video_root_node(self) -> TimeContentGroupComponent:
         return self.components["videos"].get_root_node_component()
 
     def build_swmr(

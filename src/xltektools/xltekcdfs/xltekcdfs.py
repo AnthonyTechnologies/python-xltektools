@@ -13,11 +13,10 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from typing import Any
 from datetime import datetime, date, timezone, timedelta
-from decimal import Decimal
+from multiprocessing import Event, Queue
 import pathlib
-import uuid
+from typing import Any
 
 # Third-Party Packages #
 from cdfs import CDFS
@@ -27,8 +26,8 @@ from hdf5objects import HDF5Map, HDF5Group
 import numpy as np
 
 # Local Packages #
-from ..hdf5xltek import HDF5XLTEK
-from .contentsfile import XLTEKContentsFile, XLTEKVideoGroupComponent
+from ..hdf5xltek import HDF5XLTEK, HDF5XLTEKWriterProcess, WriteDataItem, WriteFileItem
+from .contentsfile import XLTEKContentsFile
 from .frames import XLTEKDataContentFrame
 
 
@@ -74,6 +73,8 @@ class XLTEKCDFS(CDFS):
 
         self.date_format: str = "%d"
         self.time_format: str = "%H~%M~%S"
+
+        self.writer_process: HDF5XLTEKWriterProcess | None = None
 
         # Parent Attributes #
         super().__init__(init=False)
@@ -178,8 +179,12 @@ class XLTEKCDFS(CDFS):
         return self.contents_file.video_root
 
     @property
-    def video_root_node(self) -> XLTEKVideoGroupComponent:
+    def video_root_node(self) -> TimeContentGroupComponent:
         return self.contents_file.video_root_node
+
+    def __del__(self) -> None:
+        if self.writer_process is not None and self.writer_process.is_alive():
+            self.stop_data_writer_process()
 
     # Instance Methods
     # Constructors/Destructors
@@ -241,6 +246,15 @@ class XLTEKCDFS(CDFS):
         n_days = 1 if absolute_start is None else (start.date() - absolute_start.date()).days + 1
         return f"{self.subject_id}_Day-{n_days}"
 
+    def get_data_start_end_timestamps(self):
+        start_ends = []
+        for day in self.contents_root_node.node_map.components["object_reference"].get_objects_iter():
+            starts = day.components["tree_node"].node_map.components["start_times"].get_timestamps()
+            ends = day.components["tree_node"].node_map.components["end_times"].get_timestamps()
+            start_ends.extend((se for se in zip(starts, ends)))
+
+        return start_ends
+
     def add_data_file(self, file: HDF5XLTEK):
         self.contents_root_node.insert_entry_start(
             path=file.path.name,
@@ -292,12 +306,53 @@ class XLTEKCDFS(CDFS):
 
         return f_obj
 
-    def insert_video_entry_start(self, name, start, end, length=0, sample_rate=np.nan, tzinfo=None):
+    def start_data_writer_process(self):
+        if self.writer_process is None or not self.writer_process.is_alive():
+            self.writer_process = HDF5XLTEKWriterProcess(file_type=self.data_file_type)
+            self.writer_process.alive_event.set()
+            self.writer_process.start()
+
+    def create_data_file_writer_process(self, data, sample_rate, nanostamps, tzinfo=None, open_=False):
+        if self.writer_process is None or not self.writer_process.is_alive():
+            self.start_data_writer_process()
+
+        start = Timestamp(nanostamps[0], tz=tzinfo)
+
+        day_name = self.generate_day_name(start)
+        day_path = self.path / day_name
+        day_path.mkdir(exist_ok=True)
+
+        file_name = f"{day_name}_{start.strftime(self.time_format)}.h5"
+        file_path = day_path / file_name
+        if file_path.is_file():
+            file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')}.h5"
+            file_path = day_path / file_name
+
+        file_kwargs = {
+            "file": file_path,
+            "s_id": self.subject_id,
+            "start": start,
+            "mode": "a",
+            "create": True,
+            "require": True,
+        }
+
+        self.writer_process.file_queue.put(WriteFileItem(file_kwargs, tzinfo, sample_rate))
+        self.writer_process.data_queue.put(WriteDataItem("append", None, data, nanostamps))
+        self.writer_process.data_queue.put(None)
+
+    def stop_data_writer_process(self):
+        if self.writer_process is not None and self.writer_process.is_alive():
+            self.writer_process.alive_event.clear()
+            self.writer_process.join()
+
+    def insert_video_entry_start(self, name, start, end, frames=0, sample_rate=np.nan, tzinfo=None):
         self.video_root_node.insert_recursive_entry(
             paths=[self.generate_day_name(start), name],
             start=start,
             end=end,
-            length=length,
+            min_shape=(frames,),
+            max_shape=(frames,),
             sample_rate=sample_rate,
         )
 

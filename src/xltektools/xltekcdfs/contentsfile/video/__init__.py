@@ -13,5 +13,4 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .xltekvideomaps import XLTEKVideoDatasetMap, BaseXLTEKVideoGroupMap, \
-    XLTEKVideoDayGroupMap, XLTEKVideoContentGroupMap
+from .xltekvideomaps import XLTEKVideoContentGroupMap, XLTEKVideoDayGroupMap
