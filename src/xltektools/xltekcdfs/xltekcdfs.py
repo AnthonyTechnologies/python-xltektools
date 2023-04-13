@@ -312,23 +312,17 @@ class XLTEKCDFS(CDFS):
             self.writer_process.alive_event.set()
             self.writer_process.start()
 
-    def create_data_file_writer_process(self, data, sample_rate, nanostamps, tzinfo=None, open_=False):
-        if self.writer_process is None or not self.writer_process.is_alive():
-            self.start_data_writer_process()
-
+    def format_file_kwargs(self, data, sample_rate, nanostamps, tzinfo=None):
         start = Timestamp(nanostamps[0], tz=tzinfo)
 
         day_name = self.generate_day_name(start)
         day_path = self.path / day_name
         day_path.mkdir(exist_ok=True)
 
-        file_name = f"{day_name}_{start.strftime(self.time_format)}.h5"
+        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.3f')}.h5"
         file_path = day_path / file_name
-        if file_path.is_file():
-            file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')}.h5"
-            file_path = day_path / file_name
 
-        file_kwargs = {
+        return {
             "file": file_path,
             "s_id": self.subject_id,
             "start": start,
@@ -336,6 +330,31 @@ class XLTEKCDFS(CDFS):
             "create": True,
             "require": True,
         }
+
+    def format_file_write_kwargs(self, data, sample_rate, nanostamps, tzinfo=None):
+        start = Timestamp(nanostamps[0], tz=tzinfo)
+
+        day_name = self.generate_day_name(start)
+        day_path = self.path / day_name
+        day_path.mkdir(exist_ok=True)
+
+        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.3f')}.h5"
+        file_path = day_path / file_name
+
+        return {"file_kwargs": {"file": file_path,
+                                "s_id": self.subject_id,
+                                "start": start,
+                                "mode": "a",
+                                "create": True,
+                                "require": True},
+                "contents_kwargs": {"path": []}
+        }
+
+    def create_data_file_writer_process(self, data, sample_rate, nanostamps, tzinfo=None):
+        if self.writer_process is None or not self.writer_process.is_alive():
+            self.start_data_writer_process()
+
+        file_kwargs = self.format_file_kwargs(data, sample_rate, nanostamps, tzinfo)
 
         self.writer_process.file_queue.put(WriteFileItem(file_kwargs, tzinfo, sample_rate))
         self.writer_process.data_queue.put(WriteDataItem("append", None, data, nanostamps))
