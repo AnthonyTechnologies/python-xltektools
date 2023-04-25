@@ -1,8 +1,8 @@
-""" studyreadertask.py
+""" xltekcdfscontenttask.py
 
 """
 # Package Header #
-from ..header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -19,13 +19,13 @@ from dspobjects.time import Timestamp
 from taskblocks import TaskBlock, AsyncEvent, SimpleAsyncQueue, AsyncQueueManager
 
 # Local Packages #
-from .hdf5xltek import HDF5XLTEK
+from ..xltekcdfs import XLTEKCDFS
 
 
 # Definitions #
 # Classes #
 
-class HDF5XLTEKWriterTask(TaskBlock):
+class XLTEKCDFSContentTask(TaskBlock):
     """
 
     Class Attributes:
@@ -35,13 +35,12 @@ class HDF5XLTEKWriterTask(TaskBlock):
     Args:
 
     """
-    default_type = HDF5XLTEK.get_latest_version_class()
 
     # Magic Methods #
     # Construction/Destruction
     def __init__(
         self,
-        file_type: type | None = None,
+        cdfs: type | None = None,
         name: str = "",
         sets_up: bool = True,
         tears_down: bool = True,
@@ -54,10 +53,7 @@ class HDF5XLTEKWriterTask(TaskBlock):
         **kwargs: Any,
     ) -> None:
         # New Attributes #
-        self.file_type: type = self.default_type
-
-        self.file = None
-        self.file_kwargs: dict[str, Any] = {"file": ""}
+        self.cdfs: XLTEKCDFS | None = None
 
         # Parent Attributes #
         super().__init__(*args, init=False, **kwargs)
@@ -65,7 +61,7 @@ class HDF5XLTEKWriterTask(TaskBlock):
         # Construct #
         if init:
             self.construct(
-                file_type=file_type,
+                cdfs=cdfs,
                 name=name,
                 sets_up=sets_up,
                 tears_down=tears_down,
@@ -76,20 +72,15 @@ class HDF5XLTEKWriterTask(TaskBlock):
             )
 
     @property
-    def write_queue(self) -> AsyncQueueManager:
-        """The queue manager to write data to."""
-        return self.inputs.queues["write_queue"]
-
-    @property
     def contents_info_queue(self) -> SimpleAsyncQueue:
         """The queue to get studies from."""
-        return self.outputs.queues["contents_info"]
+        return self.inputs.queues["contents_info"]
 
     # Instance Methods #
     # Constructors/Destructors
     def construct(
         self,
-        file_type: type | None = None,
+        cdfs: type | None = None,
         name: str | None = None,
         sets_up: bool | None = None,
         tears_down: bool | None = None,
@@ -103,7 +94,7 @@ class HDF5XLTEKWriterTask(TaskBlock):
         """Constructs this object.
 
         Args:
-            file_type: The type of file to save the data as.
+            file_type: The study manager to get the studies from.
             name: Name of this object.
             sets_up: Determines if setup will be run.
             tears_down: Determines if teardown will be run.
@@ -114,8 +105,8 @@ class HDF5XLTEKWriterTask(TaskBlock):
             *args: Arguments for inheritance.
             **kwargs: Keyword arguments for inheritance.
         """
-        if file_type is not None:
-            self.file_type = file_type
+        if cdfs is not None:
+            self.cdfs = cdfs
 
         # Construct Parent #
         super().construct(
@@ -133,9 +124,9 @@ class HDF5XLTEKWriterTask(TaskBlock):
     # IO
     def construct_io(self) -> None:
         """Abstract method that constructs the io for this object."""
-        self.inputs.queues["write_queue"] = SimpleAsyncQueue()
+        self.inputs.queues["studies"] = SimpleAsyncQueue()
 
-        self.outputs.queues["contents_info"] = SimpleAsyncQueue()
+        self.outputs.queues["contents_info"] = SimpleAsyncQueueManager()
 
     def link_inputs(self, *args: Any, **kwargs: Any) -> None:
         """Abstract method that gives a place to the inputs to other objects."""
@@ -152,40 +143,17 @@ class HDF5XLTEKWriterTask(TaskBlock):
     # Setup
     def setup(self, *args: Any, **kwargs: Any) -> None:
         """The method to run before executing task."""
-        self.converter.get_erd_conversion_list()
+        self.cdfs
 
     # TaskBlock
     async def task(self, *args: Any, **kwargs: Any) -> None:
         """The main method to execute."""
-        info = await self.write_queue.get_async()
-        file_kwargs = info.pop("file_kwargs")
+        try:
+            content_info = await self.contents_info_queue.get_async()
+        except InterruptedError:
+            return
 
-        if file_kwargs["file"] != self.file_kwargs["file"]:
-            if self.file is not None:
-                self.file.close()
-
-            self.file = self._file_type(**file_kwargs)
-            self.file.time_axis.components["axis"].set_time_zone(info["tzinfo"])
-            self.file.time_axis.components["axis"].sample_rate = info["sample_rate"]
-            self.file.swmr_mode = True
-
-        dataset = self.file.data
-        data = info["data"]
-        nanostamps = info["nanostamps"]
-        d_slicing = (slice(i, None) for i in dataset.shape)
-        n_slicing = slice(dataset.time_axis.shape[0], None)
-
-        dataset.append(data[d_slicing], component_kwargs={"timeseries": {"data": nanostamps[n_slicing]}})
-
-        content_kwargs = info["content_kwargs"]
-        content_kwargs.update(
-            start=Timestamp.fromnanostamp(nanostamps[0]),
-            end=Timestamp.fromnanostamp(nanostamps[-1]),
-            min_shape=data.shape,
-            max_shape=data.shape,
-            sample_rate=info["sample_rate"],
-        )
-        await self.contents_info_queue.put_async(content_kwargs)
+        index = self.cdfs.contents_root_node.get_recursive_entry_start(content_info["start"], approx=True, tails=True)
 
     # Teardown
     def teardown(self, *args: Any, **kwargs: Any) -> None:

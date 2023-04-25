@@ -17,3 +17,4 @@ from .hdf5xltek import HDF5XLTEK
 from .hdf5xltek_0 import HDF5XLTEK_0
 from .hdf5xltek_1 import HDF5XLTEK_1
 from .hdf5xltekwriterprocess import HDF5XLTEKWriterProcess, WriteDataItem, WriteFileItem
+from .hdf5xltekwritertask import HDF5XLTEKWriterTask
