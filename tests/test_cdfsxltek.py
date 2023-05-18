@@ -20,6 +20,7 @@ import cProfile
 import io
 import os
 import pstats
+import pickle
 import datetime
 import pathlib
 import timeit
@@ -32,8 +33,7 @@ import h5py
 import numpy as np
 
 # Local Packages #
-from src.xltektools.cdfs.xltekcontentsfile import XLTEKContentsFile
-from src.xltektools.cdfs.xltekcdfs import XLTEKCDFS
+from src.xltektools.xltekcdfs import XLTEKContentsFile, XLTEKCDFS
 
 
 # Definitions #
@@ -129,10 +129,12 @@ class TestHDF5XLTEK(ClassTest):
         f_obj.close()
         assert True
 
-    def test_create_file_build_empty(self, tmpdir):
+    def test_create_file_build_empty(self, tmp_dir):
         start = datetime.datetime.now()
-        f_obj = self.class_(s_id="EC_test", s_dir=tmpdir, start=start, create=True, mode="a", require=True)
+        f_obj = self.class_(file=tmp_dir / "EC_test.h5", create=True, mode="a")
         assert f_obj.is_open
+        pick = pickle.dumps(f_obj)
+        new_fobj = pickle.loads(pick)
         f_obj.close()
         assert True
 

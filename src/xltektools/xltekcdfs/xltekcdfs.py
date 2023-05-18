@@ -57,8 +57,8 @@ class XLTEKCDFS(CDFS):
         s_dir: pathlib.Path | None = None,
         mode: str = 'r',
         update: bool = False,
-        open_: bool = True,
-        load: bool = True,
+        open_: bool = False,
+        load: bool = False,
         init: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -222,7 +222,20 @@ class XLTEKCDFS(CDFS):
             self.path = self.subjects_dir / self.subject_id
 
         super().construct(path=path, mode=mode, update=update, open_=open_, load=load, **kwargs)
-    
+
+    def open_contents_file(
+        self,
+        mode: str | None = None,
+        load: bool | None = None,
+        create: bool = False,
+        require: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().open_contents_file(mode=mode, load=load, create=create, require=require, **kwargs)
+
+        if require and self.contents_file.attributes.get("subject_id", None) is None and self._subject_id is not None:
+            self.contents_file.attributes.set_attribute("subject_id", self._subject_id)
+
     def require(self, **kwargs):
         self.path.mkdir(exist_ok=True)
 
@@ -237,12 +250,14 @@ class XLTEKCDFS(CDFS):
 
     def build_swmr(self, end_delta: timedelta, start: datetime | None = None, **kwargs) -> None:
         start = self.get_start_datetime() if start is None else start
-        dates = (Timestamp((start + timedelta(days=d)).date(), tzinfo=start.tzinfo) for d in range(end_delta.days))
-        paths = ((f"{self.subject_id}_Day-{d}",) for d in range(1, end_delta.days + 1))
+        end = self.get_end_datetime()
+        days = range(0 if end is None else (end.date() - start.date()).days, end_delta.days)
+        dates = (Timestamp((start + timedelta(days=d)).date(), tzinfo=start.tzinfo) for d in days)
+        paths = ((f"{self.subject_id}_Day-{d + 1}",) for d in days)
         self.contents_file.build_swmr(paths=paths, starts=dates, **kwargs)
 
     def generate_day_name(self, start: datetime):
-        absolute_start = self.get_start_datetime()
+        absolute_start = self.start_datetime
         n_days = 1 if absolute_start is None else (start.date() - absolute_start.date()).days + 1
         return f"{self.subject_id}_Day-{n_days}"
 
@@ -274,7 +289,7 @@ class XLTEKCDFS(CDFS):
         day_path = self.path / day_name
         day_path.mkdir(exist_ok=True)
 
-        file_name = f"{day_name}_{start.strftime(self.time_format)}.h5"
+        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')[:-3]}.h5"
         file_path = day_path / file_name
         if file_path.is_file():
             file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')}.h5"
@@ -319,7 +334,7 @@ class XLTEKCDFS(CDFS):
         day_path = self.path / day_name
         day_path.mkdir(exist_ok=True)
 
-        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.3f')}.h5"
+        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')[:-3]}.h5"
         file_path = day_path / file_name
 
         return {
@@ -338,16 +353,17 @@ class XLTEKCDFS(CDFS):
         day_path = self.path / day_name
         day_path.mkdir(exist_ok=True)
 
-        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.3f')}.h5"
+        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')[:-3]}.h5"
         file_path = day_path / file_name
 
-        return {"file_kwargs": {"file": file_path,
-                                "s_id": self.subject_id,
-                                "start": start,
-                                "mode": "a",
-                                "create": True,
-                                "require": True},
-                "contents_kwargs": {"path": []}
+        return {
+            "file_kwargs": {"file": file_path,
+                            "s_id": self.subject_id,
+                            "start": start,
+                            "mode": "a",
+                            "create": True,
+                            "require": True},
+            "contents_kwargs": {"paths": (day_name, file_name)},
         }
 
     def create_data_file_writer_process(self, data, sample_rate, nanostamps, tzinfo=None):

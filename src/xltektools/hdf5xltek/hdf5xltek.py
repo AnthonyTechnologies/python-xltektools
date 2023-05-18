@@ -32,7 +32,7 @@ class HDF5XLTEKMap(HDF5EEGMap):
     default_maps = {
         "data": ElectricalSeriesMap(
             attributes={"units": "volts"},
-            object_kwargs={"shape": (0,0), "maxshape": (None, None)},
+            object_kwargs={"shape": (0, 0), "maxshape": (None, None)},
         ),
     }
 

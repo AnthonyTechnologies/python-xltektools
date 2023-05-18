@@ -72,5 +72,10 @@ class XLTEKContentsFile(TimeContentsFile):
         **kwargs,
     ) -> None:
         for entry_paths, start in zip(paths, starts):
-            self.contents_root_node.insert_recursive_entry(paths=entry_paths, start=start)
+            self.contents_root_node.insert_recursive_entry(
+                paths=entry_paths,
+                start=start,
+                min_shape=(0, 0),
+                max_shape=(0, 0),
+            )
             self.video_root_node.insert_recursive_entry(paths=entry_paths, start=start)

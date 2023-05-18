@@ -12,11 +12,13 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from asyncio import sleep
+from queue import Empty
 from typing import Any, NamedTuple, Optional
 
 # Third-Party Packages #
 from dspobjects.time import Timestamp
-from taskblocks import TaskBlock, AsyncEvent, SimpleAsyncQueue, AsyncQueueManager
+from taskblocks import TaskBlock, AsyncEvent, AsyncQueueInterface, AsyncQueue, AsyncQueueManager
 
 # Local Packages #
 from ..xltekcdfs import XLTEKCDFS
@@ -40,7 +42,7 @@ class XLTEKCDFSContentTask(TaskBlock):
     # Construction/Destruction
     def __init__(
         self,
-        cdfs: type | None = None,
+        cdfs: XLTEKCDFS | None = None,
         name: str = "",
         sets_up: bool = True,
         tears_down: bool = True,
@@ -72,9 +74,13 @@ class XLTEKCDFSContentTask(TaskBlock):
             )
 
     @property
-    def contents_info_queue(self) -> SimpleAsyncQueue:
+    def contents_info_queue(self) -> AsyncQueueInterface:
         """The queue to get studies from."""
         return self.inputs.queues["contents_info"]
+
+    @contents_info_queue.setter
+    def contents_info_queue(self, value: AsyncQueueInterface) -> None:
+        self.inputs.queues["contents_info"] = value
 
     # Instance Methods #
     # Constructors/Destructors
@@ -124,9 +130,8 @@ class XLTEKCDFSContentTask(TaskBlock):
     # IO
     def construct_io(self) -> None:
         """Abstract method that constructs the io for this object."""
-        self.inputs.queues["studies"] = SimpleAsyncQueue()
-
-        self.outputs.queues["contents_info"] = SimpleAsyncQueueManager()
+        self.inputs.queues["contents_info"] = AsyncQueue()
+        self.outputs.events["done"] = AsyncEvent()
 
     def link_inputs(self, *args: Any, **kwargs: Any) -> None:
         """Abstract method that gives a place to the inputs to other objects."""
@@ -140,22 +145,49 @@ class XLTEKCDFSContentTask(TaskBlock):
         """Abstract method that gives a place to the io to other objects."""
         pass
 
+    async def info_queue_get(self, interval: float = 0.0) -> Any:
+        while self.loop_event.is_set():
+            try:
+                return self.contents_info_queue.get(block=False)
+            except Empty:
+                if self.inputs.events["info_done"].is_set():
+                    self.loop_event.clear()
+                    self.outputs.events["done"].set()
+                    return None
+
+                await sleep(interval)
+
     # Setup
     def setup(self, *args: Any, **kwargs: Any) -> None:
         """The method to run before executing task."""
-        self.cdfs
+        if self.cdfs.mode == "r":
+            self.cdfs.close()
+
+        if not self.cdfs:
+            self.cdfs.open(mode="a", build=True, load=False)
+            self.cdfs.set_swmr(True)
 
     # TaskBlock
     async def task(self, *args: Any, **kwargs: Any) -> None:
         """The main method to execute."""
-        try:
-            content_info = await self.contents_info_queue.get_async()
-        except InterruptedError:
+        content_info = await self.info_queue_get()
+        if content_info is None:
             return
 
-        index = self.cdfs.contents_root_node.get_recursive_entry_start(content_info["start"], approx=True, tails=True)
+        entry = self.cdfs.contents_root_node.get_recursive_entry_start(
+            content_info["start"],
+            approx=False,
+            tails=False,
+            default=None,
+        )
+        if entry is None:
+            self.cdfs.contents_root_node.insert_recursive_entry(**content_info)
+        elif entry["End"] < content_info["end"]:
+            self.cdfs.contents_root_node.set_recursive_entry(**content_info)
+
+        self.cdfs.contents_file.flush()
 
     # Teardown
     def teardown(self, *args: Any, **kwargs: Any) -> None:
         """The method to run after executing task."""
-        self.file.close()
+        self.cdfs.close()
