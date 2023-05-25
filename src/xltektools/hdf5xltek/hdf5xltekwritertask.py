@@ -190,14 +190,21 @@ class HDF5XLTEKWriterTask(TaskBlock):
             if self.file is not None:
                 self.file.close()
 
-            self.file = self.file_type(**file_kwargs)
+            try:
+                self.file = self.file_type(**file_kwargs)
+            except OSError:
+                file_kwargs["file"].unlink(missing_ok=True)
+                self.file = self.file_type(**file_kwargs)
+
             self.file.time_axis.components["axis"].set_time_zone(info["tzinfo"])
             self.file.time_axis.components["axis"].sample_rate = info["sample_rate"]
             self.file.swmr_mode = True
 
         dataset = self.file.data
-        d_slicing = tuple(slice(i, None) for i in dataset.shape)
-        n_slicing = slice(self.file.time_axis.shape[0], None)
+        d_slicing = [slice(None, i) for i in data.shape]
+        d_slicing[0] = slice(dataset.shape[0], data.shape[0])
+        d_slicing = tuple(d_slicing)
+        n_slicing = slice(self.file.time_axis.shape[0], data.shape[0])
 
         dataset.append(data[d_slicing], component_kwargs={"timeseries": {"data": nanostamps[n_slicing]}})
         dataset.flush()
