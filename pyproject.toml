@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xltektools"
-version = "0.1.0"
+version = "0.2.0"
 description = "xltektools"
 authors = ["Anthony Fong <fonganthonym@gmail.com>"]
 license = "MIT"
@@ -21,8 +21,10 @@ Changelog = "https://github.com/fonganthonym/python-xltektools/releases"
 [tool.poetry.dependencies]
 python = "^3.10"
 click = ">=8.0.1"
+cdfs = "^0.1.0"
 framestructure = ">=0.4.0"
 hdf5objects = ">=0.3.0"
+taskblocks = { git = "https://github.com/FongAnthonyM/python-taskblocks.git"}
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"

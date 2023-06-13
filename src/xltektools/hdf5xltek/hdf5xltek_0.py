@@ -1,8 +1,9 @@
-""" hdf5xltek.py
+"""hdf5xltek.py
 A HDF5 file which contains data for XLTEK EEG data.
 """
 # Package Header #
 from ..header import *
+
 
 # Header #
 __author__ = __author__
@@ -15,73 +16,95 @@ __email__ = __email__
 # Standard Libraries #
 import datetime
 import pathlib
-from typing import Any, Union
+from decimal import Decimal
+from typing import Any
+from typing import Union
+
+# Third-Party Packages #
+from baseobjects import singlekwargdispatchmethod
+from classversioning import VersionType, Version, TriNumberVersion
+import h5py
+import numpy as np
 
 # Third-Party Packages #
 from baseobjects.functions import singlekwargdispatch
-from classversioning import VersionType, Version, TriNumberVersion
-import h5py
+from classversioning import TriNumberVersion
+from classversioning import Version
 from hdf5objects import HDF5Dataset
-from hdf5objects.hdf5bases import HDF5Map, HDF5File
-from hdf5objects.datasets import TimeSeriesDataset, TimeSeriesMap, Axis
-from hdf5objects.fileobjects import HDF5EEG, HDF5EEGMap
-import numpy as np
+from hdf5objects.dataset import AxisMap
+from hdf5objects.dataset import BaseTimeSeriesMap
+from hdf5objects.dataset import ChannelAxisMap
+from hdf5objects.dataset import SampleAxisMap
+from hdf5objects.dataset import TimeAxisMap
+from hdf5objects.dataset import TimeSeriesComponent
+from hdf5objects.fileobjects import HDF5EEGMap
+from hdf5objects.hdf5bases import HDF5File
+from hdf5objects.hdf5bases import HDF5Map
 
 # Local Packages #
+from .hdf5xltek import HDF5XLTEK
 
 
 # Definitions #
 # Classes #
-class XLTEKDataMap(TimeSeriesMap):
-    """A map for the data of an XLTEK file."""
-    default_attribute_names = {"sample_rate": "Sampling Rate",
-                               "n_samples": "total samples",
-                               "c_axis": "c_axis",
-                               "t_axis": "t_axis"}
-    default_map_names = {"channel_axis": "channel indices",
-                         "sample_axis": "samplestamp axis",
-                         "time_axis": "timestamp axis"}
-
-
-class XLTEKData(TimeSeriesDataset):
+class XLTEKTimeComponent(TimeSeriesComponent):
     """An HDF5 Dataset which is for holding XLTEK Data."""
-    default_map: HDF5Map = XLTEKDataMap()
-    # Todo: Fix writing sample rate to file.
 
     @property
-    def sample_rate(self) -> float | h5py.Empty:
+    def _sample_rate(self) -> Decimal | None:
         """The sample rate of this timeseries."""
-        return self.attributes["sample_rate"]
+        try:
+            return Decimal(self.composite.attributes["sample_rate"])
+        except TypeError:
+            return None
 
-    @sample_rate.setter
-    def sample_rate(self, value: int | float | None) -> None:
-        self._sample_rate = value
+    @_sample_rate.setter
+    def _sample_rate(self, value: Decimal | int | float | None) -> None:
+        if value is not None and not isinstance(value, Decimal):
+            value = Decimal(value)
+        self._sample_rate_ = value
         if self.time_axis is not None:
-            self._time_axis.sample_rate = value
-        self.attributes["sample_rate"] = value
+            self.time_axis.sample_rate = value
+        self.composite.attributes["sample_rate"] = value
 
 
-# Assign Cyclic Definitions
-XLTEKDataMap.default_type = XLTEKData
+class XLTEKDataMap_0(BaseTimeSeriesMap):
+    """A map for the data of an XLTEK file."""
+
+    default_attribute_names = {
+        "sample_rate": "Sampling Rate",
+        "n_samples": "total samples",
+        "c_axis": "c_axis",
+        "t_axis": "t_axis",
+    }
+    default_axis_maps = [
+        {"time axis": TimeAxisMap(), "sample axis": SampleAxisMap()},
+        {"channel indices": ChannelAxisMap()},
+    ]
+    default_component_types = {"timeseries": (XLTEKTimeComponent, {"scale_name": "time axis"})}
 
 
-class HDF5XLTEKMap(HDF5EEGMap):
+class HDF5XLTEKMap_0(HDF5EEGMap):
     """A map for HDF5XLTEK files."""
-    default_attribute_names = {"file_type": "type",
-                               "file_version": "version",
-                               "subject_id": "name",
-                               "start": "start time",
-                               "end": "end time",
-                               "start_entry": "start entry",
-                               "end_entry": "end entry",
-                               "total_samples": "total samples"}
-    default_map_names = {"data": "ECoG Array",
-                         "entry_axis": "entry vector"}
-    default_maps = {"data": XLTEKDataMap(),
-                    "entry_axis": HDF5Map(type_=Axis, shape=(0, 0), dtype='i', maxshape=(None, 4))}
+
+    default_attribute_names = {
+        "file_type": "type",
+        "file_version": "version",
+        "subject_id": "name",
+        "start": "start time",
+        "end": "end time",
+        "start_entry": "start entry",
+        "end_entry": "end entry",
+        "total_samples": "total samples",
+    }
+    default_map_names = {"data": "ECoG Array", "entry_axis": "entry vector"}
+    default_maps = {
+        "data": XLTEKDataMap_0(),
+        "entry_axis": AxisMap(object_kwargs={"shape": (0, 0), "dtype": "i", "maxshape": (None, 4)}),
+    }
 
 
-class HDF5XLTEK(HDF5EEG):
+class HDF5XLTEK_0(HDF5XLTEK):
     """A HDF5 file which contains data for XLTEK EEG data.
 
     Class Attributes:
@@ -103,11 +126,10 @@ class HDF5XLTEK(HDF5EEG):
         init: Determines if this object will construct.
         **kwargs: The keyword arguments for the open method.
     """
-    _registration: bool = True
-    _VERSION_TYPE: VersionType = VersionType(name="HDF5XLTEK", class_=TriNumberVersion)
-    VERSION: Version = TriNumberVersion(0, 0, 0)
+
+    VERSION: Version = TriNumberVersion(0, 1, 0)
     FILE_TYPE: str = "XLTEK_EEG"
-    default_map: HDF5Map = HDF5XLTEKMap()
+    default_map: HDF5Map = HDF5XLTEKMap_0()
 
     # File Validation
     @singlekwargdispatch("file")
@@ -125,7 +147,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @validate_file_type.register
     @classmethod
-    def _(cls, file: pathlib.Path) -> bool:
+    def _validate_file_type(cls, file: pathlib.Path) -> bool:
         """Checks if the given path is a valid type.
 
         Args:
@@ -148,7 +170,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @validate_file_type.register
     @classmethod
-    def _(cls, file: str) -> bool:
+    def _validate_file_type(cls, file: str) -> bool:
         """Checks if the given path is a valid type.
 
         Args:
@@ -173,7 +195,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @validate_file_type.register
     @classmethod
-    def _(cls, file: HDF5File) -> bool:
+    def _validate_file_type(cls, file: HDF5File) -> bool:
         """Checks if the given file is a valid type.
 
         Args:
@@ -189,7 +211,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @validate_file_type.register
     @classmethod
-    def _(cls, file: h5py.File) -> bool:
+    def _validate_file_type(cls, file: h5py.File) -> bool:
         """Checks if the given file is a valid type.
 
         Args:
@@ -217,7 +239,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @new_validated.register
     @classmethod
-    def _(cls, file: pathlib.Path, **kwargs: Any) -> Any:
+    def _new_validated(cls, file: pathlib.Path, **kwargs: Any) -> Any:
         """Checks if the given path is a valid type and returns the file if valid.
 
         Args:
@@ -240,7 +262,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @new_validated.register
     @classmethod
-    def _(cls, file: str, **kwargs: Any) -> Any:
+    def _new_validated(cls, file: str, **kwargs: Any) -> Any:
         """Checks if the given path is a valid type and returns the file if valid.
 
         Args:
@@ -264,7 +286,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @new_validated.register
     @classmethod
-    def _(cls, file: HDF5File, **kwargs: Any) -> Any:
+    def _new_validated(cls, file: HDF5File, **kwargs: Any) -> Any:
         """Checks if the given file is a valid type and returns the file if valid.
 
         Args:
@@ -282,7 +304,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @new_validated.register
     @classmethod
-    def _(cls, file: h5py.File, **kwargs: Any) -> Any:
+    def _new_validated(cls, file: h5py.File, **kwargs: Any) -> Any:
         """Checks if the given file is a valid type and returns the file if valid.
 
         Args:
@@ -313,7 +335,7 @@ class HDF5XLTEK(HDF5EEG):
         # New Attributes #
         self._entry_scale_name: str = "entry axis"
 
-        self.entry_axis: Axis | None = None
+        self.entry_axis: HDF5Dataset | None = None
 
         # Object Construction #
         if init:
@@ -345,7 +367,7 @@ class HDF5XLTEK(HDF5EEG):
     @total_samples.setter
     def total_samples(self, value: int) -> None:
         self.attributes.set_attribute("total_samples", value)
-    
+
     # Instance Methods #
     # Constructors/Destructors
     def construct_file_attributes(
@@ -375,7 +397,7 @@ class HDF5XLTEK(HDF5EEG):
             self.attributes["total_samples"] = self.data.n_samples
 
     # Entry Axis
-    def create_entry_axis(self, axis: int | None = None, **kwargs: Any) -> Axis:
+    def create_entry_axis(self, axis: int | None = None, **kwargs: Any) -> HDF5Dataset:
         """Creates the entry axis.
 
         Args:
@@ -385,7 +407,7 @@ class HDF5XLTEK(HDF5EEG):
         if axis is None:
             axis = self["data"].t_axis
 
-        entry_axis = self.map["entry_axis"].type(file=self, dtype='i', maxshape=(None, 4), **kwargs)
+        entry_axis = self.map["entry_axis"].type(file=self, dtype="i", maxshape=(None, 4), **kwargs)
         self.attach_entry_axis(entry_axis, axis)
         return self.entry_axis
 
@@ -423,36 +445,3 @@ class HDF5XLTEK(HDF5EEG):
                     s_name=self._entry_scale_name,
                     file=self,
                 )
-
-    # XLTEK Entry # Todo: Redesign this.
-    # def format_entry(self, entry):
-    #     data = entry["data"]
-    #     n_channels = data.shape[self.data.c_axis]
-    #     n_samples =data.shape[self._time_axis]
-    #
-    #     _channel_axis = np.arange(0, n_channels)
-    #     _sample_axis = np.arrange(entry["start_sample"], entry["end_sample"])
-    #
-    #     entry_info = np.zeros((n_samples, 4), dtype=np.int32)
-    #     entry_info[:, :] = entry["entry_info"]
-    #
-    #     _time_axis = np.zeros(n_samples, dtype=np.float64)
-    #     for sample, i in enumerate(_sample_axis):
-    #         delta_t = datetime.timedelta(seconds=((sample - entry["snc_sample"]) * 1.0 / entry['sample_rate']))
-    #         time = entry["snc_time"] + delta_t
-    #         _time_axis[i] = time.timestamp()
-    #
-    #     return data, _sample_axis, _time_axis, entry_info, _channel_axis, entry['sample_rate']
-    #
-    # def add_entry(self, entry):
-    #     data, samples, times, entry_info, channels, sample_rate = self.format_entry(entry)
-    #
-    #     self.end_entry = entry_info[0]
-    #     self.end = times[-1]
-    #
-    #     self.data.append_data(data)
-    #     self._sample_axis.append(samples)
-    #     self._time_axis.append(times)
-    #     self.entry_axis.append(entry_info)
-    #
-    #     self.total_samples = self.data.n_samples

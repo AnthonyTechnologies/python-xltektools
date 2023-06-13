@@ -1,8 +1,8 @@
 """__init__.py
-xltekools provides tools to work with Natus XLTEK files and data.
+
 """
 # Package Header #
-from .header import *
+from ....header import *
 
 
 # Header #
@@ -14,3 +14,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
+from .xltekdatamaps import XLTEKDataContentGroupMap
+from .xltekdatamaps import XLTEKDataDayGroupMap
