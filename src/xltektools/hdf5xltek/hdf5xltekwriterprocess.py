@@ -1,8 +1,9 @@
-""" hdf5xltekwriterprocess.py
+"""hdf5xltekwriterprocess.py
 
 """
 # Package Header #
 from ..header import *
+
 
 # Header #
 __author__ = __author__
@@ -11,18 +12,25 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 
+import datetime
+
 # Imports #
 # Standard Libraries #
 from collections.abc import Iterable
-import datetime
-from multiprocessing import Process, Event, Queue
+from multiprocessing import Event
+from multiprocessing import Process
+from multiprocessing import Queue
 from queue import Empty
-from typing import Any, NamedTuple, Optional
+from typing import Any
+from typing import NamedTuple
+from typing import Optional
 from warnings import warn
+
+import numpy as np
 
 # Third-Party Packages #
 from hdf5objects import HDF5Dataset
-import numpy as np
+
 
 # Local Packages #
 
@@ -72,6 +80,7 @@ class HDF5XLTEKWriterProcess(Process):
     Args:
 
     """
+
     _operation_register = {"set": set_data, "append": append_data, "insert": insert_data}
 
     # Magic Methods #

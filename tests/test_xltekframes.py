@@ -6,6 +6,7 @@ Description:
 # Package Header #
 from src.xltektools.header import *
 
+
 # Header #
 __author__ = __author__
 __credits__ = __credits__
@@ -15,16 +16,17 @@ __email__ = __email__
 
 # Standard Libraries #
 import cProfile
+import datetime
 import io
 import os
-import pstats
-import datetime
 import pathlib
+import pstats
 import timeit
+
+import numpy as np
 
 # Third-Party Packages #
 import pytest
-import numpy as np
 
 # Local Packages #
 from src.xltektools.hdf5framestructure import *
@@ -41,6 +43,7 @@ def tmp_dir(tmpdir):
 # Classes #
 class ClassTest:
     """Default class tests that all classes should pass."""
+
     class_ = None
     timeit_runs = 2
     speed_tolerance = 200
@@ -173,10 +176,10 @@ class TestXLTEKStudy(ClassTest):
 
     def test_data_range_time_mount(self):
         s_id = "EC154"
-        timestamps = [{"first": datetime.datetime(2017, 5, 23, 0, 00, 00),
-                       "second": datetime.datetime(2017, 5, 23, 0, 20, 00)},
-                      {"first": datetime.datetime(2017, 5, 24, 11, 00, 00),
-                       "second": datetime.datetime(2017, 5, 24, 11, 20, 00)}]
+        timestamps = [
+            {"first": datetime.datetime(2017, 5, 23, 0, 00, 00), "second": datetime.datetime(2017, 5, 23, 0, 20, 00)},
+            {"first": datetime.datetime(2017, 5, 24, 11, 00, 00), "second": datetime.datetime(2017, 5, 24, 11, 20, 00)},
+        ]
         pr = cProfile.Profile()
         pr.enable()
 
@@ -195,8 +198,12 @@ class TestXLTEKStudy(ClassTest):
 
     def test_date_range_time_one_second(self):
         s_id = "EC212"
-        timestamps = [{"first": datetime.datetime(2020, 1, 31, 20, 38, 43, 653012),
-                       "second": datetime.datetime(2020, 1, 31, 20, 38, 53, 653012)}]
+        timestamps = [
+            {
+                "first": datetime.datetime(2020, 1, 31, 20, 38, 43, 653012),
+                "second": datetime.datetime(2020, 1, 31, 20, 38, 53, 653012),
+            }
+        ]
         pr = cProfile.Profile()
         pr.enable()
 
@@ -278,6 +285,5 @@ class TestXLTEKStudy(ClassTest):
 
 
 # Main #
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main(["-v", "-s"])
-

@@ -6,6 +6,7 @@
 # Package Header #
 from src.xltektools.header import *
 
+
 # Header #
 __author__ = __author__
 __credits__ = __credits__
@@ -19,10 +20,13 @@ import datetime
 import pathlib
 import timeit
 
-# Third-Party Packages #
-from classversioning import VersionType, TriNumberVersion, Version
-import pytest
 import numpy as np
+import pytest
+
+# Third-Party Packages #
+from classversioning import TriNumberVersion
+from classversioning import Version
+from classversioning import VersionType
 
 # Local Packages #
 from src.xltektools.hdf5framestructure import *
@@ -39,6 +43,7 @@ def tmp_dir(tmpdir):
 # Classes #
 class ClassTest:
     """Default class tests that all classes should pass."""
+
     class_ = None
     timeit_runs = 2
     speed_tolerance = 200
@@ -64,13 +69,13 @@ class TestHDF5XLTEK(ClassTest):
     def test_validate_file(self):
         assert self.class_.validate_file_type(self.load_path)
 
-    @pytest.mark.parametrize("mode", ['r', 'r+', 'a'])
+    @pytest.mark.parametrize("mode", ["r", "r+", "a"])
     def test_new_object(self, mode):
         with self.class_(file=self.load_path, mode=mode) as f_obj:
             assert f_obj is not None
         assert True
 
-    @pytest.mark.parametrize("mode", ['r', 'r+', 'a'])
+    @pytest.mark.parametrize("mode", ["r", "r+", "a"])
     def test_load_whole_file(self, mode):
         with self.class_(file=self.load_path, mode=mode, load=True) as f_obj:
             assert f_obj is not None
@@ -160,6 +165,5 @@ class TestHDF5XLTEK(ClassTest):
 
 
 # Main #
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main(["-v", "-s"])
-

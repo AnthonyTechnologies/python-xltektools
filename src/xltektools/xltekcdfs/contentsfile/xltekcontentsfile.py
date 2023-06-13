@@ -1,10 +1,11 @@
-""" xltekcontentsfile.py
+"""xltekcontentsfile.py
 
 """
 import pathlib
 
 # Package Header #
 from ...header import *
+
 
 # Header #
 __author__ = __author__
@@ -13,15 +14,22 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 
+import datetime
+
 # Imports #
 # Standard Libraries #
-from collections.abc import Mapping, Iterable
-import datetime
+from collections.abc import Iterable
+from collections.abc import Mapping
 from pathlib import Path
 
+from cdfs.contentsfile import ContentsFileComponent
+from cdfs.contentsfile import TimeContentGroupComponent
+from cdfs.contentsfile import TimeContentsFile
+from cdfs.contentsfile import TimeContentsFileMap
+
 # Third-Party Packages #
-from hdf5objects import HDF5Map, HDF5Group
-from cdfs.contentsfile import TimeContentsFileMap, TimeContentsFile, ContentsFileComponent, TimeContentGroupComponent
+from hdf5objects import HDF5Group
+from hdf5objects import HDF5Map
 
 # Local Packages #
 from ...hdf5xltek import HDF5XLTEK
@@ -100,8 +108,10 @@ class XLTEKContentsFileComponent(ContentsFileComponent):
 
         self._correct_contents(path, self.get_root_node_component())
 
+
 class XLTEKContentsFileMap(TimeContentsFileMap):
     """A map for BaseHDF5 files."""
+
     default_attribute_names = TimeContentsFileMap.default_attribute_names | {
         "subject_id": "subject_id",
         "age": "age",
@@ -113,7 +123,7 @@ class XLTEKContentsFileMap(TimeContentsFileMap):
         "age": "",
         "sex": "U",
         "species": "Homo Sapien",
-        "units": "volts"
+        "units": "volts",
     }
     default_map_names = TimeContentsFileMap.default_map_names | {"video_contents": "video_contents"}
     default_maps = {

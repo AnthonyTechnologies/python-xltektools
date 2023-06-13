@@ -6,6 +6,7 @@
 # Package Header #
 from src.xltektools.header import *
 
+
 # Header #
 __author__ = __author__
 __credits__ = __credits__
@@ -13,27 +14,31 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 
+import cProfile
+
 # Imports #
 # Standard Libraries #
 import datetime
-import cProfile
 import io
 import os
-import pstats
-import pickle
-import datetime
 import pathlib
+import pickle
+import pstats
 import timeit
 
-# Third-Party Packages #
-from classversioning import VersionType, TriNumberVersion, Version
-from dspobjects.time import Timestamp
-import pytest
 import h5py
 import numpy as np
+import pytest
+
+# Third-Party Packages #
+from classversioning import TriNumberVersion
+from classversioning import Version
+from classversioning import VersionType
+from dspobjects.time import Timestamp
 
 # Local Packages #
-from src.xltektools.xltekcdfs import XLTEKContentsFile, XLTEKCDFS
+from src.xltektools.xltekcdfs import XLTEKCDFS
+from src.xltektools.xltekcdfs import XLTEKContentsFile
 
 
 # Definitions #
@@ -47,6 +52,7 @@ def tmp_dir(tmpdir):
 # Classes #
 class ClassTest:
     """Default class tests that all classes should pass."""
+
     class_ = None
     timeit_runs = 2
     speed_tolerance = 200
@@ -58,144 +64,75 @@ class ClassTest:
         return lines
 
 
-class TestHDF5XLTEK(ClassTest):
-    _VERSION_TYPE: VersionType = VersionType(name="HDF5EEG", class_=TriNumberVersion)
-    VERSION: Version = TriNumberVersion(0, 0, 0)
-    class_ = XLTEKContentsFile
+class TestCDFSXLTEK(ClassTest):
+    class_ = XLTEKCDFS
     studies_path = pathlib.Path("/common/xltek/subjects")
-    load_path = pathlib.Path.cwd().joinpath("tests/pytest_cache/EC228_2020-09-21_14~53~19.h5")
-    save_path = pathlib.Path.cwd().joinpath("tests/pytest_cache/")
+    server_path = pathlib.Path("/data_store0/human/converted_clinical")
+    mount_path = pathlib.Path("/mnt/changserver/data_store0/human/converted_clinical")
+    load_path = pathlib.Path("/common/xltek/subjects/")
+    save_path = pathlib.Path("~/Documents/Projects/Epilepsy Spike Detection")
 
-    @pytest.fixture
-    def load_file(self):
-        return self.class_(file=self.load_path)
-
-    def test_validate_file(self):
-        assert self.class_.validate_file_type(self.load_path)
-
-    @pytest.mark.parametrize("mode", ['r', 'r+', 'a'])
-    def test_new_object(self, mode):
-        with self.class_(file=self.load_path, mode=mode) as f_obj:
-            assert f_obj is not None
+    def test_load_study(self):
+        s_id = "EC283"
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
         assert True
 
-    @pytest.mark.parametrize("mode", ['r', 'r+', 'a'])
-    def test_load_whole_file(self, mode):
-        with self.class_(file=self.load_path, mode=mode, load=True) as f_obj:
-            assert f_obj is not None
-        assert True
-
-    def test_load_fragment(self):
-        f_obj = self.class_(file=self.load_path)
-        data = f_obj["data"]
-        f_obj.close()
-        assert data is not None
-
-    def test_load_from_property(self):
-        f_obj = self.class_(file=self.load_path)
-        data = f_obj.data
-        f_obj.close()
-        assert data is not None
-
-    def test_get_attribute(self):
-        f_obj = self.class_(file=self.load_path)
-        attribute = f_obj.attributes["start"]
-        f_obj.close()
-        assert attribute is not None
-
-    def test_get_attribute_property(self):
-        f_obj = self.class_(file=self.load_path)
-        attribute = f_obj.start
-        f_obj.close()
-        assert attribute is not None
-
-    def test_get_data(self):
-        f_obj = self.class_(file=self.load_path)
-        data = f_obj.data[0:1]
-        f_obj.close()
-        assert data.shape is not None
-
-    def test_get_times(self):
-        f_obj = self.class_(file=self.load_path)
-        start = f_obj.time_axis.start_datetime
-        f_obj.close()
-        assert start is not None
-
-    @pytest.mark.xfail
-    def test_activate_swmr_mode(self):
-        f_obj = self.class_(file=self.load_path)
-        f_obj.swmr_mode = True
-        assert f_obj.swmr_mode
-        f_obj.close()
-        assert True
-
-    def test_create_file_build_empty(self, tmp_dir):
-        start = datetime.datetime.now()
-        f_obj = self.class_(file=tmp_dir / "EC_test.h5", create=True, mode="a")
-        assert f_obj.is_open
-        pick = pickle.dumps(f_obj)
-        new_fobj = pickle.loads(pick)
-        f_obj.close()
-        assert True
-
-    def test_require_file(self, tmpdir):
-        sample_rate = 1024
-        n_channels = 128
-        n_samples = 2048
-        path = self.studies_path / "EC212" / "contents.h5"
-        f_obj = self.class_(path=path, mode="a", create=True, require=True)
-        f_obj.close()
-        assert True
-
-    def test_build_study(self):
-        subject_path = self.studies_path / "EC212"
-        path = subject_path / "contents.h5"
-
-        c_file = self.class_(path=path, mode="a", create=True, require=True)
-
-        content_group = c_file["data_content"]
-        for day_dir in subject_path.iterdir():
-            if day_dir.is_dir():
-                for file in day_dir.glob("*.h5"):
-                    with h5py.File(file.as_posix()) as data_file:
-                        start = Timestamp.fromtimestamp(data_file.attrs["start time"])
-                        end = Timestamp.fromtimestamp(data_file.attrs["end time"])
-                        length = data_file.attrs["total samples"]
-                        min_shape = data_file["ECoG Array"].shape
-                        max_shape = min_shape
-                        sample_rate = data_file["ECoG Array"].attrs["Sampling Rate"]
-
-                    content_group.components["xltek_data"].insert_entry(
-                        path=file.name,
-                        start=start,
-                        end=end,
-                        length=length,
-                        min_shape=min_shape,
-                        max_shape=max_shape,
-                        sample_rate=sample_rate,
-                        day_path=file.parts[-2],
-                    )
-
-        n_days = content_group["days"].shape[0]
-        c_file.close()
-
-        assert n_days == 6
-
-    def test_init_study(self):
-        subject_path = self.studies_path / "EC212"
-        study = XLTEKCDFS(path=subject_path)
-        lengths = study.data.lengths
-        length = len(study.data)
-        start = study.data.start_datetime
-        assert True
-
-    def test_init_study_per(self):
-        subject_path = self.studies_path / "EC212"
-
+    def test_load_study_profile(self):
+        s_id = "EC283"
         pr = cProfile.Profile()
         pr.enable()
 
-        study = XLTEKCDFS(path=subject_path)
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+
+        pr.disable()
+        s = io.StringIO()
+        sortby = pstats.SortKey.TIME
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+        study_frame.close()
+        assert 1
+
+    def test_load_study_server(self):
+        s_id = "EC283"
+        study_frame = self.class_(s_id=s_id, studies_path=self.server_path)
+        assert 1
+
+    def test_get_data(self):
+        s_id = "EC283"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        data = study_frame[slice(0, 1)]
+
+        assert data is not None
+
+    def test_get_study_time(self):
+        s_id = "EC283"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        dt = study_frame.get_time(-1)
+
+        assert dt == study_frame.end
+
+    def test_get_time_range(self):
+        s_id = "EC283"
+        first = datetime.datetime(2020, 9, 22, 0, 00, 00)
+        second = datetime.datetime(2020, 9, 22, 0, 10, 00)
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        data = study_frame.get_time_range(first, second, aprox=True)
+
+        assert data is not None
+
+    def test_get_timestamp_range_time_profile(self):
+        s_id = "EC283"
+        first = datetime.datetime(2020, 1, 31, 20, 38, 43, 653012)
+        second = datetime.datetime(2020, 1, 31, 20, 48, 43, 653012)
+        pr = cProfile.Profile()
+        pr.enable()
+
+        with self.class_(s_id=s_id, studies_path=self.studies_path) as study_frame:
+            data = study_frame.find_data_range(first, second, approx=True)
 
         pr.disable()
         s = io.StringIO()
@@ -204,18 +141,38 @@ class TestHDF5XLTEK(ClassTest):
         ps.print_stats()
         print(s.getvalue())
 
-        assert True
+        assert data is not None
+
+    def test_find_data_range_time(self):
+        s_id = "EC283"
+        first = datetime.datetime(2020, 1, 28, 0, 00, 00)
+        second = datetime.datetime(2020, 1, 28, 0, 00, 10)
+        with self.class_(s_id=s_id, studies_path=self.studies_path) as study_frame:
+            data_object1 = study_frame.find_data_range(first, second, approx=True)
+            pr = cProfile.Profile()
+            pr.enable()
+
+            data_object = study_frame.find_data_range(first, second, approx=True)
+
+            pr.disable()
+            s = io.StringIO()
+            sortby = pstats.SortKey.TIME
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            print(s.getvalue())
+
+        assert data_object.data is not None
 
     def test_find_data_range_time_full(self):
-        subject_path = self.studies_path / "EC212"
+        s_id = "EC283"
         first = datetime.datetime(2020, 1, 28, 0, 00, 00)
-        second = datetime.datetime(2020, 1, 28, 0, 10, 00)
-        study = XLTEKCDFS(path=subject_path)
+        second = datetime.datetime(2020, 1, 28, 0, 00, 10)
 
         pr = cProfile.Profile()
         pr.enable()
 
-        data_object = study.data.find_data_range(first, second, approx=True)
+        with self.class_(s_id=s_id, studies_path=self.studies_path) as study_frame:
+            data_object = study_frame.find_data_range(first, second, approx=True)
 
         pr.disable()
         s = io.StringIO()
@@ -226,8 +183,151 @@ class TestHDF5XLTEK(ClassTest):
 
         assert data_object.data is not None
 
+    def test_open_study_server_profile(self):
+        s_id = "EC283"
+        pr = cProfile.Profile()
+        pr.enable()
+
+        cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
+        cdfs.close()
+
+        pr.disable()
+        s = io.StringIO()
+        sortby = pstats.SortKey.TIME
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+
+    def test_data_range_time_server_profile_second(self):
+        s_id = "EC283"
+        first = datetime.datetime(1970, 1, 7, 0, 10, 0, 653012, tzinfo=datetime.timezone.utc)
+        second = datetime.datetime(1970, 1, 7, 0, 10, 1, 653012, tzinfo=datetime.timezone.utc)
+
+        cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
+
+        pr = cProfile.Profile()
+        pr.enable()
+
+        data = cdfs.data.find_data_range(first, second, approx=True)
+
+        pr.disable()
+        s = io.StringIO()
+        sortby = pstats.SortKey.TIME
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+
+        cdfs.close()
+
+    def test_data_range_time_server_profile_hour(self):
+        s_id = "EC283"
+        first = datetime.datetime(1970, 1, 7, 0, 10, 0, 653012, tzinfo=datetime.timezone.utc)
+        second = datetime.datetime(1970, 1, 7, 1, 10, 0, 653012, tzinfo=datetime.timezone.utc)
+
+        cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
+
+        pr = cProfile.Profile()
+        pr.enable()
+
+        data = cdfs.data.find_data_range(first, second, approx=True)
+
+        pr.disable()
+        s = io.StringIO()
+        sortby = pstats.SortKey.TIME
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+
+        cdfs.close()
+
+    def test_date_range_time_one_second(self):
+        s_id = "EC283"
+        timestamps = [
+            {
+                "first": datetime.datetime(2020, 1, 31, 20, 38, 43, 653012),
+                "second": datetime.datetime(2020, 1, 31, 20, 38, 53, 653012),
+            }
+        ]
+        pr = cProfile.Profile()
+        pr.enable()
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.server_path)
+        for timestamp in timestamps:
+            data = study_frame.find_data_range(timestamp["first"], timestamp["second"], approx=True)
+        study_frame.close()
+
+        pr.disable()
+        s = io.StringIO()
+        sortby = pstats.SortKey.TIME
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+
+    def test_validate_shape(self):
+        s_id = "EC228"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        valid = study_frame.validate_shape()
+
+        assert valid
+
+    def test_shapes(self):
+        s_id = "EC228"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        shapes = study_frame.shapes
+
+        assert shapes is not None
+
+    def test_shape(self):
+        s_id = "EC228"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        shape = study_frame.shape
+
+        assert shape is not None
+
+    def test_validate_sample_rate(self):
+        s_id = "EC228"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        valid = study_frame.validate_sample_rate()
+
+        assert valid
+
+    def test_sample_rates(self):
+        s_id = "EC228"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        sample_rates = study_frame.sample_rates
+
+        assert sample_rates
+
+    def test_sample_rate(self):
+        s_id = "EC228"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        sample_rate = study_frame.sample_rate
+
+        assert sample_rate
+
+    def test_where_discontinuous(self):
+        s_id = "EC228"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        discontinuities = study_frame.where_discontinuous()
+
+        assert discontinuities is not None
+
+    def test_validate_continuous(self):
+        s_id = "EC228"
+
+        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
+        valid = study_frame.validate_continuous()
+
+        assert isinstance(valid, bool)
+
 
 # Main #
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main(["-v", "-s"])
-

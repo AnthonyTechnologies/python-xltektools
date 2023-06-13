@@ -1,8 +1,9 @@
-""" hdf5xltek.py
+"""hdf5xltek.py
 A HDF5 file which contains data for XLTEK EEG data.
 """
 # Package Header #
 from ..header import *
+
 
 # Header #
 __author__ = __author__
@@ -14,20 +15,28 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 import datetime
-from decimal import Decimal
 import pathlib
-from typing import Any, Union
+from decimal import Decimal
+from typing import Any
+from typing import Union
+
+import h5py
+import numpy as np
 
 # Third-Party Packages #
 from baseobjects.functions import singlekwargdispatch
-from classversioning import Version, TriNumberVersion
-import h5py
+from classversioning import TriNumberVersion
+from classversioning import Version
 from hdf5objects import HDF5Dataset
-from hdf5objects.hdf5bases import HDF5Map, HDF5File
-from hdf5objects.dataset import BaseTimeSeriesMap, AxisMap, TimeAxisMap, SampleAxisMap, ChannelAxisMap
+from hdf5objects.dataset import AxisMap
+from hdf5objects.dataset import BaseTimeSeriesMap
+from hdf5objects.dataset import ChannelAxisMap
+from hdf5objects.dataset import SampleAxisMap
+from hdf5objects.dataset import TimeAxisMap
 from hdf5objects.dataset import TimeSeriesComponent
 from hdf5objects.fileobjects import HDF5EEGMap
-import numpy as np
+from hdf5objects.hdf5bases import HDF5File
+from hdf5objects.hdf5bases import HDF5Map
 
 # Local Packages #
 from .hdf5xltek import HDF5XLTEK
@@ -58,31 +67,38 @@ class XLTEKTimeComponent(TimeSeriesComponent):
 
 class XLTEKDataMap_0(BaseTimeSeriesMap):
     """A map for the data of an XLTEK file."""
-    default_attribute_names = {"sample_rate": "Sampling Rate",
-                               "n_samples": "total samples",
-                               "c_axis": "c_axis",
-                               "t_axis": "t_axis"}
+
+    default_attribute_names = {
+        "sample_rate": "Sampling Rate",
+        "n_samples": "total samples",
+        "c_axis": "c_axis",
+        "t_axis": "t_axis",
+    }
     default_axis_maps = [
         {"time axis": TimeAxisMap(), "sample axis": SampleAxisMap()},
-        {"channel indices": ChannelAxisMap()}
+        {"channel indices": ChannelAxisMap()},
     ]
     default_component_types = {"timeseries": (XLTEKTimeComponent, {"scale_name": "time axis"})}
 
 
 class HDF5XLTEKMap_0(HDF5EEGMap):
     """A map for HDF5XLTEK files."""
-    default_attribute_names = {"file_type": "type",
-                               "file_version": "version",
-                               "subject_id": "name",
-                               "start": "start time",
-                               "end": "end time",
-                               "start_entry": "start entry",
-                               "end_entry": "end entry",
-                               "total_samples": "total samples"}
-    default_map_names = {"data": "ECoG Array",
-                         "entry_axis": "entry vector"}
-    default_maps = {"data": XLTEKDataMap_0(),
-                    "entry_axis": AxisMap(object_kwargs={"shape": (0, 0), "dtype": 'i', "maxshape": (None, 4)})}
+
+    default_attribute_names = {
+        "file_type": "type",
+        "file_version": "version",
+        "subject_id": "name",
+        "start": "start time",
+        "end": "end time",
+        "start_entry": "start entry",
+        "end_entry": "end entry",
+        "total_samples": "total samples",
+    }
+    default_map_names = {"data": "ECoG Array", "entry_axis": "entry vector"}
+    default_maps = {
+        "data": XLTEKDataMap_0(),
+        "entry_axis": AxisMap(object_kwargs={"shape": (0, 0), "dtype": "i", "maxshape": (None, 4)}),
+    }
 
 
 class HDF5XLTEK_0(HDF5XLTEK):
@@ -107,6 +123,7 @@ class HDF5XLTEK_0(HDF5XLTEK):
         init: Determines if this object will construct.
         **kwargs: The keyword arguments for the open method.
     """
+
     VERSION: Version = TriNumberVersion(0, 1, 0)
     FILE_TYPE: str = "XLTEK_EEG"
     default_map: HDF5Map = HDF5XLTEKMap_0()
@@ -347,7 +364,7 @@ class HDF5XLTEK_0(HDF5XLTEK):
     @total_samples.setter
     def total_samples(self, value: int) -> None:
         self.attributes.set_attribute("total_samples", value)
-    
+
     # Instance Methods #
     # Constructors/Destructors
     def construct_file_attributes(
@@ -387,7 +404,7 @@ class HDF5XLTEK_0(HDF5XLTEK):
         if axis is None:
             axis = self["data"].t_axis
 
-        entry_axis = self.map["entry_axis"].type(file=self, dtype='i', maxshape=(None, 4), **kwargs)
+        entry_axis = self.map["entry_axis"].type(file=self, dtype="i", maxshape=(None, 4), **kwargs)
         self.attach_entry_axis(entry_axis, axis)
         return self.entry_axis
 

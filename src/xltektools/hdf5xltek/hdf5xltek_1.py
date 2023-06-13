@@ -1,8 +1,9 @@
-""" hdf5xltek.py
+"""hdf5xltek.py
 A HDF5 file which contains data for XLTEK EEG data.
 """
 # Package Header #
 from ..header import *
+
 
 # Header #
 __author__ = __author__
@@ -15,7 +16,8 @@ __email__ = __email__
 # Standard Libraries #
 
 # Third-Party Packages #
-from classversioning import Version, TriNumberVersion
+from classversioning import TriNumberVersion
+from classversioning import Version
 from dspobjects.time import Timestamp
 
 # Local Packages #
@@ -34,6 +36,7 @@ class HDF5XLTEK_1(HDF5XLTEK):
         VERSION: The version of this class.
         default_map: The HDF5 map of this object.
     """
+
     VERSION: Version = TriNumberVersion(1, 0, 0)
 
     @property

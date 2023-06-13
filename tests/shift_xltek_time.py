@@ -4,6 +4,7 @@
 # Package Header #
 from src.xltektools.header import *
 
+
 # Header #
 __author__ = __author__
 __credits__ = __credits__
@@ -17,13 +18,13 @@ import datetime
 import pathlib
 import timeit
 
+import numpy as np
+
 # Third-Party Packages #
 import pytest
-import numpy as np
 
 # Local Packages #
 from src.xltektools.hdf5framestructure import *
-
 
 
 # Definitions #
@@ -47,8 +48,8 @@ for f_path in FILE_PATHS:
 new_data = np.concatenate(data, axis=0)
 
 with HDF5XLTEK(file=FILE_OUT, mode="a", create=False, load=True) as f_obj:
-     time_axis = f_obj.time_axis
-     time_axis.from_datetimes(new_dt)
+    time_axis = f_obj.time_axis
+    time_axis.from_datetimes(new_dt)
 
-     f_obj.data.replace_data(new_data)
-     f_obj.standardize_attributes()
+    f_obj.data.replace_data(new_data)
+    f_obj.standardize_attributes()

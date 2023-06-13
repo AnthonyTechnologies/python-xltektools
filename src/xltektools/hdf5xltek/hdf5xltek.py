@@ -1,8 +1,9 @@
-""" hdf5xltek.py
+"""hdf5xltek.py
 A HDF5 file which contains data for XLTEK EEG data.
 """
 # Package Header #
 from ..header import *
+
 
 # Header #
 __author__ = __author__
@@ -14,15 +15,23 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 import pathlib
-from typing import Any, Union
+from typing import Any
+from typing import Union
+
+import h5py
+from baseobjects.functions import singlekwargdispatch
 
 # Third-Party Packages #
-from classversioning import VersionType, Version, TriNumberVersion
-from baseobjects.functions import singlekwargdispatch
-import h5py
-from hdf5objects.hdf5bases import HDF5Map, HDF5File, HDF5Dataset
+from classversioning import TriNumberVersion
+from classversioning import Version
+from classversioning import VersionType
 from hdf5objects.dataset import ElectricalSeriesMap
-from hdf5objects.fileobjects import HDF5EEG, HDF5EEGMap
+from hdf5objects.fileobjects import HDF5EEG
+from hdf5objects.fileobjects import HDF5EEGMap
+from hdf5objects.hdf5bases import HDF5Dataset
+from hdf5objects.hdf5bases import HDF5File
+from hdf5objects.hdf5bases import HDF5Map
+
 
 # Local Packages #
 
@@ -31,6 +40,7 @@ from hdf5objects.fileobjects import HDF5EEG, HDF5EEGMap
 # Classes #
 class HDF5XLTEKMap(HDF5EEGMap):
     """A map for HDF5XLTEK files."""
+
     default_attributes = HDF5EEGMap.default_attributes | {"age": "", "sex": "U", "species": "Homo Sapien"}
     default_map_names = {"data": "ECoG"}
     default_maps = {
@@ -51,6 +61,7 @@ class HDF5XLTEK(HDF5EEG):
         VERSION: The version of this class.
         default_map: The HDF5 map of this object.
     """
+
     _registration: bool = True
     _VERSION_TYPE: VersionType = VersionType(name="HDF5XLTEK", class_=TriNumberVersion)
     VERSION: Version = TriNumberVersion(0, 0, 0)
@@ -239,7 +250,6 @@ class HDF5XLTEK(HDF5EEG):
             return cls(file=file, **kwargs)
         else:
             return cls.get_version_class(TriNumberVersion(0, 1, 0)).new_validated(file)
-            
 
     @new_validated.register
     @classmethod
@@ -275,7 +285,7 @@ class HDF5XLTEK(HDF5EEG):
 
         if isinstance(file, str):
             file = h5py.File(file)
-        
+
         if v_name in file.attrs:
             return TriNumberVersion(file.attrs[v_name])
         elif cls.get_version_class(TriNumberVersion(0, 1, 0)).validate_file_type(file):

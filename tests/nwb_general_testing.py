@@ -122,15 +122,20 @@ More commonly, you will be creating instances of classes that extend this class.
 The following examples will reference variables that may not be defined within the block they are used in. For
 clarity, we define them here:
 """
+from datetime import datetime
+
 # sphinx_gallery_thumbnail_path = 'figures/gallery_thumbnails_file.png'
 import numpy as np
-from pynwb import NWBFile, TimeSeries, NWBHDF5IO
-from pynwb.epoch import TimeIntervals
-from pynwb.file import Subject
-from pynwb.behavior import SpatialSeries, Position
-from datetime import datetime
 from dateutil import tz
 from hdmf.backends.hdf5.h5_utils import H5DataIO
+from pynwb import NWBHDF5IO
+from pynwb import NWBFile
+from pynwb import TimeSeries
+from pynwb.behavior import Position
+from pynwb.behavior import SpatialSeries
+from pynwb.epoch import TimeIntervals
+from pynwb.file import Subject
+
 
 ####################
 # .. _basics_nwbfile:
@@ -240,18 +245,18 @@ time_series_with_rate = TimeSeries(
 data = H5DataIO(
     data=np.array([[1.0]]),
     maxshape=(None, 1),  # <-- Make the time dimension resizable
-    compression='gzip',   # <-- Enable GZip compression
-    compression_opts=4,   # <-- GZip aggression
-    shuffle=True,         # <-- Enable shuffle filter
-    fillvalue=np.nan,     # <-- Use NAN as fillvalue
+    compression="gzip",  # <-- Enable GZip compression
+    compression_opts=4,  # <-- GZip aggression
+    shuffle=True,  # <-- Enable shuffle filter
+    fillvalue=np.nan,  # <-- Use NAN as fillvalue
 )
 timestamps = H5DataIO(
     data=np.array([0], dtype=np.uint64),
-    maxshape=(None, ),  # <-- Make the time dimension resizable
-    compression='gzip',   # <-- Enable GZip compression
-    compression_opts=4,   # <-- GZip aggression
-    shuffle=True,         # <-- Enable shuffle filter
-    fillvalue=0,     # <-- Use NAN as fillvalue
+    maxshape=(None,),  # <-- Make the time dimension resizable
+    compression="gzip",  # <-- Enable GZip compression
+    compression_opts=4,  # <-- GZip aggression
+    shuffle=True,  # <-- Enable shuffle filter
+    fillvalue=0,  # <-- Use NAN as fillvalue
 )
 time_series_with_timestamps = TimeSeries(
     name="test_timeseries",
@@ -294,4 +299,3 @@ nwbfile.get_acquisition("test_timeseries")
 io = NWBHDF5IO("basics_tutorial.nwb", mode="w")
 io.write(nwbfile)
 io.close()
-

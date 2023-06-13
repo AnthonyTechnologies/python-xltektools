@@ -1,8 +1,9 @@
-""" __init__.py
+"""__init__.py
 
 """
 # Package Header #
 from ....header import *
+
 
 # Header #
 __author__ = __author__
@@ -13,4 +14,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .xltekdatamaps import XLTEKDataDayGroupMap, XLTEKDataContentGroupMap
+from .xltekdatamaps import XLTEKDataContentGroupMap
+from .xltekdatamaps import XLTEKDataDayGroupMap

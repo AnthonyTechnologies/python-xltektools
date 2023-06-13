@@ -1,8 +1,9 @@
-""" __init__.py
+"""__init__.py
 
 """
 # Package Header #
 from ...header import *
+
 
 # Header #
 __author__ = __author__
@@ -11,8 +12,9 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 
+from .data import *
+
 # Imports #
 # Local Packages #
 from .video import *
-from .data import *
 from .xltekcontentsfile import XLTEKContentsFile

@@ -1,8 +1,9 @@
-""" hdf5xltekframe.py
+"""hdf5xltekframe.py
 The frame for an HDF5 XLTEK File.
 """
 # Package Header #
 from ...header import *
+
 
 # Header #
 __author__ = __author__
@@ -33,6 +34,7 @@ class HDF5XLTEKFrame(HDF5EEGFrame):
         file_type: The type of file this object will be wrapping.
         default_data_container: The default data container to use when making new data container frames.
     """
+
     file_type: type = HDF5XLTEK
     default_data_container: type | None = None
 

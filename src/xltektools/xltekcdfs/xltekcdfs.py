@@ -1,8 +1,9 @@
-""" xltekcdfs.py
+"""xltekcdfs.py
 
 """
 # Package Header #
 from ..header import *
+
 
 # Header #
 __author__ = __author__
@@ -11,22 +12,32 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 
+import pathlib
+
 # Imports #
 # Standard Libraries #
-from datetime import datetime, date, timezone, timedelta
-from multiprocessing import Event, Queue
-import pathlib
+from datetime import date
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+from multiprocessing import Event
+from multiprocessing import Queue
 from typing import Any
+
+import numpy as np
 
 # Third-Party Packages #
 from cdfs import CDFS
 from cdfs.contentsfile import TimeContentGroupComponent
 from dspobjects.time import Timestamp
-from hdf5objects import HDF5Map, HDF5Group
-import numpy as np
+from hdf5objects import HDF5Group
+from hdf5objects import HDF5Map
 
 # Local Packages #
-from ..hdf5xltek import HDF5XLTEK, HDF5XLTEKWriterProcess, WriteDataItem, WriteFileItem
+from ..hdf5xltek import HDF5XLTEK
+from ..hdf5xltek import HDF5XLTEKWriterProcess
+from ..hdf5xltek import WriteDataItem
+from ..hdf5xltek import WriteFileItem
 from .contentsfile import XLTEKContentsFile
 from .frames import XLTEKDataContentFrame
 
@@ -43,6 +54,7 @@ class XLTEKCDFS(CDFS):
     Args:
 
     """
+
     default_component_types: dict[str, tuple[type, dict[str, Any]]] = {}
     default_frame_type = XLTEKDataContentFrame
     default_data_file_type: type = HDF5XLTEK.get_latest_version_class()
@@ -55,7 +67,7 @@ class XLTEKCDFS(CDFS):
         path: pathlib.Path | str | None = None,
         s_id: str | None = None,
         s_dir: pathlib.Path | None = None,
-        mode: str = 'r',
+        mode: str = "r",
         update: bool = False,
         open_: bool = False,
         load: bool = False,
@@ -193,7 +205,7 @@ class XLTEKCDFS(CDFS):
         path: pathlib.Path | str | None = None,
         s_id: str | None = None,
         s_dir: pathlib.Path | None = None,
-        mode: str = 'r',
+        mode: str = "r",
         update: bool = False,
         open_: bool = False,
         load: bool = False,
@@ -357,12 +369,14 @@ class XLTEKCDFS(CDFS):
         file_path = day_path / file_name
 
         return {
-            "file_kwargs": {"file": file_path,
-                            "s_id": self.subject_id,
-                            "start": start,
-                            "mode": "a",
-                            "create": True,
-                            "require": True},
+            "file_kwargs": {
+                "file": file_path,
+                "s_id": self.subject_id,
+                "start": start,
+                "mode": "a",
+                "create": True,
+                "require": True,
+            },
             "contents_kwargs": {"paths": (day_name, file_name)},
         }
 
@@ -390,6 +404,3 @@ class XLTEKCDFS(CDFS):
             max_shape=(frames,),
             sample_rate=sample_rate,
         )
-
-
-

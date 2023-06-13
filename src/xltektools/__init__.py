@@ -1,8 +1,9 @@
-""" __init__.py
+"""__init__.py
 xltekools provides tools to work with Natus XLTEK files and data.
 """
 # Package Header #
 from .header import *
+
 
 # Header #
 __author__ = __author__
@@ -13,4 +14,3 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-

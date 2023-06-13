@@ -23,12 +23,15 @@ clarity, we define them here:
 
 # sphinx_gallery_thumbnail_path = 'figures/gallery_thumbnails_ecephys.png'
 from datetime import datetime
-from dateutil.tz import tzlocal
 
 import numpy as np
-from pynwb import NWBFile, NWBHDF5IO
-from pynwb.ecephys import ElectricalSeries, LFP
+from dateutil.tz import tzlocal
 from ndx_ecog import ECoGSubject
+from pynwb import NWBHDF5IO
+from pynwb import NWBFile
+from pynwb.ecephys import LFP
+from pynwb.ecephys import ElectricalSeries
+
 
 #######################
 # Creating and Writing NWB files
@@ -44,8 +47,7 @@ nwbfile = NWBFile(
     experimenter="Dr. Bilbo Baggins",
     lab="Bag End Laboratory",
     institution="University of Middle Earth at the Shire",
-    experiment_description="I went on an adventure with thirteen dwarves "
-    "to reclaim vast treasures.",
+    experiment_description="I went on an adventure with thirteen dwarves " "to reclaim vast treasures.",
     session_id="LONELYMTN",
 )
 
@@ -76,9 +78,7 @@ nwbfile = NWBFile(
 # object using the instance method :py:meth:`~pynwb.file.NWBFile.create_device`.
 
 
-device = nwbfile.create_device(
-    name="array", description="the best array", manufacturer="Probe Company 9000"
-)
+device = nwbfile.create_device(name="array", description="the best array", manufacturer="Probe Company 9000")
 
 #######################
 # Once you have created the :py:class:`~pynwb.device.Device`, you can create an
@@ -113,8 +113,6 @@ for ishank in range(nshanks):
             location="brain area",
         )
         electrode_counter += 1
-
-
 
 
 #######################
