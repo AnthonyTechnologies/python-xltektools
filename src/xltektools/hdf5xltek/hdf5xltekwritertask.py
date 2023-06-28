@@ -208,7 +208,9 @@ class HDF5XLTEKWriterTask(TaskBlock):
 
             self.file.time_axis.components["axis"].set_time_zone(info["tzinfo"])
             self.file.time_axis.components["axis"].sample_rate = info["sample_rate"]
+            self.file.attributes["start_id"] = info["start_id"]
             self.file.swmr_mode = True
+            self.file_kwargs.update(file_kwargs)
 
         dataset = self.file.data
         d_slicing = [slice(None, i) for i in data.shape]
@@ -226,6 +228,8 @@ class HDF5XLTEKWriterTask(TaskBlock):
             min_shape=data.shape,
             max_shape=data.shape,
             sample_rate=info["sample_rate"],
+            start_id=info["start_id"],
+            end_id=info["end_id"],
         )
         del data, nanostamps
         await self.contents_info_queue.put_async(content_kwargs)

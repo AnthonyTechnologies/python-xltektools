@@ -41,6 +41,10 @@ from hdf5objects.hdf5bases import HDF5Map
 class HDF5XLTEKMap(HDF5EEGMap):
     """A map for HDF5XLTEK files."""
 
+    default_attribute_names = HDF5EEGMap.default_attribute_names | {
+        "start_id": "start_id",
+        "end_id": "end_id",
+    }
     default_attributes = HDF5EEGMap.default_attributes | {"age": "", "sex": "U", "species": "Homo Sapien"}
     default_map_names = {"data": "ECoG"}
     default_maps = {

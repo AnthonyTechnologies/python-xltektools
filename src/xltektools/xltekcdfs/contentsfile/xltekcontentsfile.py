@@ -55,6 +55,8 @@ class XLTEKContentsFileComponent(ContentsFileComponent):
                     sample_rate=file.start_datetime if file.sample_rate != entry["Sample Rate"] else None,
                     min_shape=file.start_datetime if file.data.shape != entry["Minimum Shape"] else None,
                     max_shape=file.start_datetime if file.data.shape != entry["Maximum Shape"] else None,
+                    start_id=file.start_id if file.start_id != entry["Start ID"] else None,
+                    end_id=file.end_id if file.end_id != entry["End ID"] else None,
                 )
 
     def _correct_contents(self, path: Path, node_group):
@@ -99,6 +101,8 @@ class XLTEKContentsFileComponent(ContentsFileComponent):
                     sample_rate=file.sample_rate,
                     min_shape=file.data.shape,
                     max_shape=file.data.shape,
+                    start_id=file.start_id,
+                    end_id=file.end_id,
                 )
                 file.close()
 

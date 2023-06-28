@@ -16,20 +16,38 @@ __email__ = __email__
 # Standard Libraries #
 
 # Third-Party Packages #
-from cdfs.contentsfile import TimeContentGroupComponent
-from cdfs.contentsfile import TimeContentGroupMap
-
+from cdfs.contentsfile import TimeContentGroupComponent, TimeContentDatasetMap, TimeContentGroupMap
+import numpy as np
 
 # Local Packages #
+from .xltekcontentdatasetcomponent import XLTEKContentDatasetComponent
 
 
 # Definitions #
 # Classes #
-class XLTEKDataDayGroupMap(TimeContentGroupMap):
+class XLTEKContentDatasetMap(TimeContentDatasetMap):
+    """A map for a dataset that outlines timed data across multiple files."""
+
+    default_dtype = TimeContentDatasetMap.default_dtype + (("Start ID", np.int64), ("End ID", np.int64))
+    default_component_types = TimeContentDatasetMap.default_component_types | {
+        "tree_node": (XLTEKContentDatasetComponent, {}),
+    }
+
+
+class XLTEKContentGroupMap(TimeContentGroupMap):
+    """A group map which outlines a group with basic node methods."""
+
+    default_attributes = {"tree_type": "Node"}
+    default_maps = TimeContentGroupMap.default_maps | {
+        "node_map": XLTEKContentDatasetMap(),
+    }
+
+
+class XLTEKDataDayGroupMap(XLTEKContentGroupMap):
     """A group map which outlines a group with basic node methods."""
 
     default_attributes = {"tree_type": "Leaf"}
-    default_component_types = {
+    default_component_types = XLTEKContentGroupMap.default_component_types | {
         "tree_node": (
             TimeContentGroupComponent,
             {
@@ -45,7 +63,7 @@ class XLTEKDataContentGroupMap(TimeContentGroupMap):
     """A group map which outlines a group with basic node methods."""
 
     default_attributes = {"tree_type": "Node"}
-    default_component_types = {
+    default_component_types = TimeContentGroupMap.default_component_types | {
         "tree_node": (
             TimeContentGroupComponent,
             {

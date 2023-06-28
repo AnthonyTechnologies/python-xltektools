@@ -282,6 +282,14 @@ class XLTEKCDFS(CDFS):
 
         return start_ends
 
+    def get_data_start_end_ids(self):
+        start_ends = []
+        for day in self.contents_root_node.node_map.components["object_reference"].get_objects_iter():
+            for i, entry in day.components["tree_node"].node_map.components["tree_node"].entry_iter():
+                start_ends.append((int(entry["Start ID"]), int(entry["End ID"])))
+
+        return start_ends
+
     def add_data_file(self, file: HDF5XLTEK):
         self.contents_root_node.insert_entry_start(
             path=file.path.name,
