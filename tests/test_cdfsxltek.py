@@ -199,9 +199,9 @@ class TestCDFSXLTEK(ClassTest):
         print(s.getvalue())
 
     def test_data_range_time_server_profile_second(self):
-        s_id = "EC283"
+        s_id = "EC288"
         first = datetime.datetime(1970, 1, 7, 0, 10, 0, 653012, tzinfo=datetime.timezone.utc)
-        second = datetime.datetime(1970, 1, 7, 0, 10, 1, 653012, tzinfo=datetime.timezone.utc)
+        second = datetime.datetime(1970, 1, 7, 1, 10, 0, 653012, tzinfo=datetime.timezone.utc)
 
         cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
 
