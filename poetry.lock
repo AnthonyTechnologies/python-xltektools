@@ -594,12 +594,13 @@ develop = ["build", "twine"]
 
 [[package]]
 name = "framestructure"
-version = "0.4.0"
+version = "0.4.1"
 description = "Objects for organizing data in frame structures."
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "framestructure-0.4.0-py3-none-any.whl", hash = "sha256:ccf0b33bac574c8b785e743bcf2067f98134fa9465251c5860a50c86a38d0a82"},
+    {file = "framestructure-0.4.1-py3-none-any.whl", hash = "sha256:84f745bf9991cce8b23ce90f4196fbee1b6ab0a544caad5dde2bd1fc6421d971"},
+    {file = "framestructure-0.4.1.tar.gz", hash = "sha256:70b6df255a04fef6b3a8ae75bb0e8f65b1f236aa4e49299bddc4443f607ff0a2"},
 ]
 
 [package.dependencies]
@@ -2023,4 +2024,4 @@ tests-strict = ["codecov (==2.0.15)", "pytest (==4.6.0)", "pytest (==4.6.0)", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "f13ff89d84931eb8f3b737dfd2a40a6527b4c90cc30414fd6e5e50e298f58d30"
+content-hash = "a24757e7ac9e8bd5dce93b34248bd6a925c3aaf5d6cc96dfae8f0da8a7527488"
