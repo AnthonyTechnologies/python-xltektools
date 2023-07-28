@@ -141,18 +141,6 @@ class XLTEKCDFSContentTask(TaskBlock):
         self.inputs.queues["contents_info"] = AsyncQueue()
         self.outputs.events["done"] = AsyncEvent()
 
-    def link_inputs(self, *args: Any, **kwargs: Any) -> None:
-        """Abstract method that gives a place to the inputs to other objects."""
-        pass
-
-    def link_outputs(self, *args: Any, **kwargs: Any) -> None:
-        """Abstract method that gives a place to the outputs to other objects."""
-        pass
-
-    def link_io(self, *args: Any, **kwargs: Any) -> None:
-        """Abstract method that gives a place to the io to other objects."""
-        pass
-
     async def info_queue_get(self, interval: float = 0.0) -> Any:
         while self.loop_event.is_set():
             try:
@@ -173,7 +161,6 @@ class XLTEKCDFSContentTask(TaskBlock):
 
         if not self.cdfs:
             self.cdfs.open(mode="a", build=True, load=False)
-            self.cdfs.set_swmr(True)
 
     # TaskBlock
     async def task(self, *args: Any, **kwargs: Any) -> None:

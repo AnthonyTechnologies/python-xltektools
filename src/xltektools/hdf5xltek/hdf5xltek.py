@@ -49,7 +49,7 @@ class HDF5XLTEKMap(HDF5EEGMap):
     default_map_names = {"data": "ECoG"}
     default_maps = {
         "data": ElectricalSeriesMap(
-            attributes={"units": "volts"},
+            attributes={"units": "microvolts"},
             object_kwargs={"shape": (0, 0), "maxshape": (None, None)},
         ),
     }
