@@ -4,7 +4,6 @@
 # Package Header #
 from ..header import *
 
-
 # Header #
 __author__ = __author__
 __credits__ = __credits__
@@ -12,29 +11,27 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 
-import pathlib
-
 # Imports #
 # Standard Libraries #
 from datetime import datetime
 from datetime import timedelta
+import pathlib
 from typing import Any
-
-import numpy as np
 
 # Third-Party Packages #
 from cdfs import CDFS
 from cdfs.contentsfile import TimeContentGroupComponent
 from dspobjects.time import Timestamp
 from hdf5objects import HDF5Group
+import numpy as np
 
 # Local Packages #
 from ..hdf5xltek import HDF5XLTEK
 from ..hdf5xltek import HDF5XLTEKWriterProcess
 from ..hdf5xltek import WriteDataItem
 from ..hdf5xltek import WriteFileItem
-from .contentsfile import XLTEKContentsFile
-from xltektools.xltekcdfs.frames import XLTEKDataContentFrame
+from .contentsfile import XLTEKContentsFile, XLTEKContentsUpdateTask
+from .frames import XLTEKContentsFrame
 
 
 # Definitions #
@@ -51,7 +48,7 @@ class XLTEKCDFS(CDFS):
     """
 
     default_component_types: dict[str, tuple[type, dict[str, Any]]] = {}
-    default_frame_type = XLTEKDataContentFrame
+    default_frame_type = XLTEKContentsFrame
     default_data_file_type: type = HDF5XLTEK.get_latest_version_class()
     contents_file_type: type = XLTEKContentsFile
 
@@ -407,3 +404,6 @@ class XLTEKCDFS(CDFS):
             max_shape=(frames,),
             sample_rate=sample_rate,
         )
+
+    def create_contents_updater(self, **kwargs) -> XLTEKContentsUpdateTask:
+        return XLTEKContentsUpdateTask(contents_file=self.contents_file, **kwargs)

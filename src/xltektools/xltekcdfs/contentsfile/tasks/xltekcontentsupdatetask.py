@@ -1,9 +1,8 @@
-"""xltekcdfscontenttask.py
+"""xltekcontentsupdatetask.py
 
 """
 # Package Header #
-from ...header import *
-
+from ....header import *
 
 # Header #
 __author__ = __author__
@@ -11,31 +10,28 @@ __credits__ = __credits__
 __maintainer__ = __maintainer__
 __email__ = __email__
 
+
 # Imports #
 # Standard Libraries #
 from asyncio import sleep
 from queue import Empty
-from typing import Any
-from typing import NamedTuple
-from typing import Optional
+from typing import Any, Iterable
 
 # Third-Party Packages #
-from dspobjects.time import Timestamp
 from taskblocks import AsyncEvent
 from taskblocks import AsyncQueue
 from taskblocks import AsyncQueueInterface
-from taskblocks import AsyncQueueManager
 from taskblocks import TaskBlock
 
 # Local Packages #
-from ..xltekcdfs import XLTEKCDFS
+from ..files import XLTEKContentsFile
 
 
 # Definitions #
 # Classes #
 
 
-class XLTEKCDFSContentTask(TaskBlock):
+class XLTEKContentsUpdateTask(TaskBlock):
     """
 
     Class Attributes:
@@ -45,12 +41,13 @@ class XLTEKCDFSContentTask(TaskBlock):
     Args:
 
     """
+    default_update_keys: Iterable[str] = ("start_id",)
 
     # Magic Methods #
     # Construction/Destruction
     def __init__(
         self,
-        cdfs: XLTEKCDFS | None = None,
+        contents_file: XLTEKContentsFile | None = None,
         name: str = "",
         sets_up: bool = True,
         tears_down: bool = True,
@@ -63,7 +60,9 @@ class XLTEKCDFSContentTask(TaskBlock):
         **kwargs: Any,
     ) -> None:
         # New Attributes #
-        self.cdfs: XLTEKCDFS | None = None
+        self.contents_file: XLTEKContentsFile | None = None
+        self.was_open: bool = False
+        self.update_keys: Iterable[str] = self.default_update_keys
 
         # Parent Attributes #
         super().__init__(*args, init=False, **kwargs)
@@ -71,7 +70,7 @@ class XLTEKCDFSContentTask(TaskBlock):
         # Construct #
         if init:
             self.construct(
-                cdfs=cdfs,
+                contents_file=contents_file,
                 name=name,
                 sets_up=sets_up,
                 tears_down=tears_down,
@@ -82,19 +81,19 @@ class XLTEKCDFSContentTask(TaskBlock):
             )
 
     @property
-    def contents_info_queue(self) -> AsyncQueueInterface:
+    def contents_entry_queue(self) -> AsyncQueueInterface:
         """The queue to get studies from."""
-        return self.inputs.queues["contents_info"]
+        return self.inputs.queues["contents_entry"]
 
-    @contents_info_queue.setter
-    def contents_info_queue(self, value: AsyncQueueInterface) -> None:
-        self.inputs.queues["contents_info"] = value
+    @contents_entry_queue.setter
+    def contents_entry_queue(self, value: AsyncQueueInterface) -> None:
+        self.inputs.queues["contents_entry"] = value
 
     # Instance Methods #
     # Constructors/Destructors
     def construct(
         self,
-        cdfs: type | None = None,
+        contents_file: type | None = None,
         name: str | None = None,
         sets_up: bool | None = None,
         tears_down: bool | None = None,
@@ -108,7 +107,7 @@ class XLTEKCDFSContentTask(TaskBlock):
         """Constructs this object.
 
         Args:
-            file_type: The study manager to get the studies from.
+            contents_file: The contents file to update.
             name: Name of this object.
             sets_up: Determines if setup will be run.
             tears_down: Determines if teardown will be run.
@@ -119,8 +118,8 @@ class XLTEKCDFSContentTask(TaskBlock):
             *args: Arguments for inheritance.
             **kwargs: Keyword arguments for inheritance.
         """
-        if cdfs is not None:
-            self.cdfs = cdfs
+        if contents_file is not None:
+            self.contents_file = contents_file
 
         # Construct Parent #
         super().construct(
@@ -138,51 +137,57 @@ class XLTEKCDFSContentTask(TaskBlock):
     # IO
     def construct_io(self) -> None:
         """Abstract method that constructs the io for this object."""
-        self.inputs.queues["contents_info"] = AsyncQueue()
+        self.inputs.queues["contents_entry"] = AsyncQueue()
+        self.inputs.events["entries_done"] = AsyncEvent()
         self.outputs.events["done"] = AsyncEvent()
 
-    async def info_queue_get(self, interval: float = 0.0) -> Any:
+    async def entry_queue_get(self, interval: float = 0.0) -> list[dict[str, Any]] | None:
+        items = []
         while self.loop_event.is_set():
             try:
-                return self.contents_info_queue.get(block=False)
+                items.append(self.contents_entry_queue.get(block=False))
             except Empty:
-                if self.inputs.events["info_done"].is_set():
+                if items:
+                    return items
+                elif self.inputs.events["entries_done"].is_set():
                     self.loop_event.clear()
                     self.outputs.events["done"].set()
                     return None
-
-                await sleep(interval)
+                else:
+                    await sleep(interval)
 
     # Setup
     def setup(self, *args: Any, **kwargs: Any) -> None:
         """The method to run before executing task."""
-        if self.cdfs.mode == "r":
-            self.cdfs.close()
+        self.was_open = False
 
-        if not self.cdfs:
-            self.cdfs.open(mode="a", build=True, load=False)
+        if not self.contents_file.is_async:
+            self.contents_file.close()
+        else:
+            self.was_open = True
+
+        if not self.contents_file.is_open:
+            self.contents_file.open(async_=True)
+        else:
+            self.was_open = True
 
     # TaskBlock
     async def task(self, *args: Any, **kwargs: Any) -> None:
         """The main method to execute."""
-        content_info = await self.info_queue_get()
-        if content_info is None:
+        entries = await self.entry_queue_get()
+        if entries is None:
             return
 
-        entry = self.cdfs.contents_root_node.get_recursive_entry_start(
-            content_info["start"],
-            approx=False,
-            tails=False,
-            default=None,
-        )
-        if entry is None:
-            self.cdfs.contents_root_node.insert_recursive_entry(**content_info)
-        elif entry["End"] < content_info["end"]:
-            self.cdfs.contents_root_node.set_recursive_entry(**content_info)
-
-        self.cdfs.contents_file.flush()
+        with self.contents_file.async_session_maker() as session:
+            await self.contents_file.contents.update_entries_async(
+                session=session,
+                entries=entries,
+                primary_keys=self.update_keys,
+                begin=True,
+            )
 
     # Teardown
     def teardown(self, *args: Any, **kwargs: Any) -> None:
         """The method to run after executing task."""
-        self.cdfs.close()
+        if not self.was_open:
+            self.contents_file.close()

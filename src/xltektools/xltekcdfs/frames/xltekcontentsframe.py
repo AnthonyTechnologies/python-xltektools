@@ -2,8 +2,7 @@
 
 """
 # Package Header #
-from xltektools.header import *
-
+from ...header import *
 
 # Header #
 __author__ = __author__

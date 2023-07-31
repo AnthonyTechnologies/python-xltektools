@@ -4,7 +4,6 @@
 # Package Header #
 from ....header import *
 
-
 # Header #
 __author__ = __author__
 __credits__ = __credits__
@@ -24,7 +23,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs, create_async_engine, AsyncEngine
 
 # Local Packages #
-from ..bases import BaseXLTEKMetaInformationTable, BaseXLTEKContentsTable
+from ..bases import BaseXLTEKMetaInformationTable, BaseXLTEKContentsTable, BaseXLTEKVideosTable
 
 
 # Definitions #
@@ -41,6 +40,10 @@ class XLTEKContentsTable(BaseXLTEKContentsTable, XLTEKContentsFileAsyncSchema):
     pass
 
 
+class XLTEKVideosTable(BaseXLTEKVideosTable, XLTEKContentsFileAsyncSchema):
+    pass
+
+
 class XLTEKContentsFile(TimeContentsFile):
     """
 
@@ -54,6 +57,7 @@ class XLTEKContentsFile(TimeContentsFile):
     schema: type[DeclarativeBase] = XLTEKContentsFileAsyncSchema
     meta_information_table = type[XLTEKMetaInformationTable] = XLTEKMetaInformationTable
     contents: type[XLTEKContentsTable] = XLTEKContentsTable
+    videos: type[XLTEKVideosTable] = XLTEKVideosTable
 
     # Magic Methods #
     # Construction/Destruction

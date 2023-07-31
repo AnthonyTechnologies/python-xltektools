@@ -4,7 +4,6 @@
 # Package Header #
 from ....header import *
 
-
 # Header #
 __author__ = __author__
 __credits__ = __credits__
