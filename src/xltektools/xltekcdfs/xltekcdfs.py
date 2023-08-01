@@ -27,7 +27,7 @@ from sqlalchemy.orm import Mapped, Session, mapped_column
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 # Local Packages #
-from ..xltekhdf5 import XLTEKHDF5, XLTEKHDF5KWriterTask
+from ..xltekhdf5 import XLTEKHDF5, XLTEKHDF5WriterTask
 from .contentsfile import XLTEKContentsFile, XLTEKContentsUpdateTask
 from .arrays import XLTEKContentsProxy
 
@@ -243,8 +243,8 @@ class XLTEKCDFS(CDFS):
 
         return f_obj
 
-    def create_data_writer(self, **kwargs) -> XLTEKHDF5KWriterTask:
-        return XLTEKHDF5KWriterTask(file_type=self.data_file_type, **kwargs)
+    def create_data_writer(self, **kwargs) -> XLTEKHDF5WriterTask:
+        return XLTEKHDF5WriterTask(file_type=self.data_file_type, **kwargs)
 
     def create_contents_updater(self, **kwargs) -> XLTEKContentsUpdateTask:
         return XLTEKContentsUpdateTask(contents_file=self.contents_file, **kwargs)

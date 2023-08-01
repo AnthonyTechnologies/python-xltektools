@@ -36,7 +36,7 @@ from xltektools.xltekhdf5.xltekhdf5 import XLTEKHDF5
 # Classes #
 
 
-class XLTEKHDF5KWriterTask(TaskBlock):
+class XLTEKHDF5WriterTask(TaskBlock):
     """
 
     Class Attributes:
@@ -66,7 +66,7 @@ class XLTEKHDF5KWriterTask(TaskBlock):
         **kwargs: Any,
     ) -> None:
         # New Attributes #
-        self.file_type: type = self.default_type
+        self.file_type: type[XLTEKHDF5] = self.default_type
 
         self.file = None
         self.file_kwargs: dict[str, Any] = {"file": ""}
@@ -158,18 +158,6 @@ class XLTEKHDF5KWriterTask(TaskBlock):
         self.outputs.queues["contents_info"] = AsyncQueue()
         self.outputs.events["done"] = AsyncEvent()
 
-    def link_inputs(self, *args: Any, **kwargs: Any) -> None:
-        """Abstract method that gives a place to the inputs to other objects."""
-        pass
-
-    def link_outputs(self, *args: Any, **kwargs: Any) -> None:
-        """Abstract method that gives a place to the outputs to other objects."""
-        pass
-
-    def link_io(self, *args: Any, **kwargs: Any) -> None:
-        """Abstract method that gives a place to the io to other objects."""
-        pass
-
     async def write_queue_get(self, interval: float = 0.0) -> Any:
         while self.loop_event.is_set():
             try:
@@ -206,9 +194,9 @@ class XLTEKHDF5KWriterTask(TaskBlock):
                 file_kwargs["file"].unlink(missing_ok=True)
                 self.file = self.file_type(mode="a", create=True, construct=True, **file_kwargs)
 
-            self.file.time_axis.components["axis"].set_time_zone(info["tzinfo"])
-            self.file.time_axis.components["axis"].sample_rate = info["sample_rate"]
-            self.file.attributes["start_id"] = info["start_id"]
+            self.file.time_axis.components["axis"].set_time_zone(info["contents_insert"]["tzinfo"])
+            self.file.time_axis.components["axis"].sample_rate = info["contents_insert"]["sample_rate"]
+            self.file.attributes["start_id"] = info["contents_insert"]["start_id"]
             self.file.swmr_mode = True
             self.file_kwargs.update(file_kwargs)
 
@@ -221,18 +209,8 @@ class XLTEKHDF5KWriterTask(TaskBlock):
         dataset.append(data[d_slicing], component_kwargs={"timeseries": {"data": nanostamps[n_slicing]}})
         dataset.flush()
 
-        content_kwargs = info["contents_kwargs"]
-        content_kwargs.update(
-            start=Timestamp.fromnanostamp(nanostamps[0], tz=info["tzinfo"]),
-            end=Timestamp.fromnanostamp(nanostamps[-1], tz=info["tzinfo"]),
-            min_shape=data.shape,
-            max_shape=data.shape,
-            sample_rate=info["sample_rate"],
-            start_id=info["start_id"],
-            end_id=info["end_id"],
-        )
         del data, nanostamps
-        await self.contents_info_queue.put_async(content_kwargs)
+        await self.contents_info_queue.put_async(info["contents_insert"])
 
     # Teardown
     def teardown(self, *args: Any, **kwargs: Any) -> None:

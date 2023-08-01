@@ -159,17 +159,8 @@ class XLTEKContentsUpdateTask(TaskBlock):
     # Setup
     def setup(self, *args: Any, **kwargs: Any) -> None:
         """The method to run before executing task."""
-        self.was_open = False
-
-        if not self.contents_file.is_async:
-            self.contents_file.close()
-        else:
-            self.was_open = True
-
         if not self.contents_file.is_open:
-            self.contents_file.open(async_=True)
-        else:
-            self.was_open = True
+            self.contents_file.open()
 
     # TaskBlock
     async def task(self, *args: Any, **kwargs: Any) -> None:
