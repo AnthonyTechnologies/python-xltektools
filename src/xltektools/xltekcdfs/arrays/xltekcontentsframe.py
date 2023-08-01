@@ -17,16 +17,16 @@ import pathlib
 from typing import Any
 
 # Third-Party Packages #
-from cdfs.contentsfile import TimeContentsLeafContainerInterface, TimeContentsNodeFrame, TimeContentsFrame
+from cdfs.arrays import BaseTimeContentsLeafContainer, TimeContentsNodeProxy, TimeContentsProxy
 
 # Local Packages #
-from ...hdf5xltek import HDF5XLTEK
+from ...xltekhdf5 import XLTEKHDF5
 
 
 # Definitions #
 # Classes #
-class XLTEKContentsLeafContainer(TimeContentsLeafContainerInterface):
-    file_type: type[HDF5XLTEK] | None = HDF5XLTEK
+class XLTEKContentsLeafContainer(BaseTimeContentsLeafContainer):
+    file_type: type[XLTEKHDF5] | None = XLTEKHDF5
 
     # Class Methods #
     @classmethod
@@ -95,15 +95,15 @@ class XLTEKContentsLeafContainer(TimeContentsLeafContainerInterface):
             raise IOError("not writable")
 
 
-class XLTEKContentsNodeFrame(TimeContentsNodeFrame):
+class XLTEKContentsNodeProxy(TimeContentsNodeProxy):
     default_node_type: type = None
     default_leaf_type: type = XLTEKContentsLeafContainer
 
 
-class XLTEKContentsFrame(XLTEKContentsNodeFrame, TimeContentsFrame):
-    default_node_type: type = XLTEKContentsNodeFrame
+class XLTEKContentsProxy(XLTEKContentsNodeProxy, TimeContentsProxy):
+    default_node_type: type = XLTEKContentsNodeProxy
 
 
 # Assign Cyclic Definition
-XLTEKContentsNodeFrame.default_node_type = XLTEKContentsNodeFrame
+XLTEKContentsNodeProxy.default_node_type = XLTEKContentsNodeProxy
 

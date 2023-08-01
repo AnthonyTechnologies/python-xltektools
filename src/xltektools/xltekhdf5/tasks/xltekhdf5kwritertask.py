@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ..header import *
+from xltektools.header import *
 
 
 # Header #
@@ -29,14 +29,14 @@ from taskblocks import AsyncQueueManager
 from taskblocks import TaskBlock
 
 # Local Packages #
-from .hdf5xltek import HDF5XLTEK
+from xltektools.xltekhdf5.xltekhdf5 import XLTEKHDF5
 
 
 # Definitions #
 # Classes #
 
 
-class HDF5XLTEKWriterTask(TaskBlock):
+class XLTEKHDF5KWriterTask(TaskBlock):
     """
 
     Class Attributes:
@@ -47,7 +47,7 @@ class HDF5XLTEKWriterTask(TaskBlock):
 
     """
 
-    default_type = HDF5XLTEK.get_latest_version_class()
+    default_type = XLTEKHDF5.get_latest_version_class()
 
     # Magic Methods #
     # Construction/Destruction
@@ -201,10 +201,10 @@ class HDF5XLTEKWriterTask(TaskBlock):
                 self.file.close()
 
             try:
-                self.file = self.file_type(**file_kwargs)
+                self.file = self.file_type(mode="a", create=True, construct=True, **file_kwargs)
             except OSError:
                 file_kwargs["file"].unlink(missing_ok=True)
-                self.file = self.file_type(**file_kwargs)
+                self.file = self.file_type(mode="a", create=True, construct=True, **file_kwargs)
 
             self.file.time_axis.components["axis"].set_time_zone(info["tzinfo"])
             self.file.time_axis.components["axis"].sample_rate = info["sample_rate"]

@@ -1,4 +1,4 @@
-"""hdf5xltek.py
+"""xltekhdf5.py
 A HDF5 file which contains data for XLTEK EEG data.
 """
 # Package Header #
@@ -21,12 +21,12 @@ from classversioning import Version
 from dspobjects.time import Timestamp, nanostamp
 
 # Local Packages #
-from .hdf5xltek import HDF5XLTEK
+from .xltekhdf5 import XLTEKHDF5
 
 
 # Definitions #
 # Classes #
-class HDF5XLTEK_1(HDF5XLTEK):
+class XLTEKHDF5_1(XLTEKHDF5):
     """A HDF5 file which contains data for XLTEK EEG data.
 
     Class Attributes:

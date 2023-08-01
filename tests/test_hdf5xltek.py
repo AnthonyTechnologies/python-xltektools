@@ -29,7 +29,7 @@ from classversioning import Version
 from classversioning import VersionType
 
 # Local Packages #
-from src.xltektools.hdf5framestructure import *
+from src.xltektools.xltekhdf5 import *
 
 
 # Definitions #
@@ -58,7 +58,7 @@ class ClassTest:
 class TestHDF5XLTEK(ClassTest):
     _VERSION_TYPE: VersionType = VersionType(name="HDF5EEG", class_=TriNumberVersion)
     VERSION: Version = TriNumberVersion(0, 0, 0)
-    class_ = HDF5XLTEK
+    class_ = XLTEKHDF5
     load_path = pathlib.Path.cwd().joinpath("pytest_cache/EC212_2020-01-28_00~25~11.h5")
     save_path = pathlib.Path.cwd().joinpath("pytest_cache/")
 
@@ -139,10 +139,11 @@ class TestHDF5XLTEK(ClassTest):
         data = np.random.rand(n_samples, n_channels)
         start = datetime.datetime.now()
 
-        f_obj = self.class_(s_id="EC_test", s_dir=tmpdir, start=start, create=True, mode="a", require=True)
+        f_obj = self.class_(file=tmpdir, create=True, mode="a", construct=True)
 
         dataset = f_obj.data
         dataset.require(data=data, sample_rate=sample_rate, start=start)
+        dataset.time_axis.require(data=nanostamps)
         dataset.sample_rate = 1024
 
         f_obj.close()
