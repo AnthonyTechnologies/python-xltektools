@@ -32,7 +32,7 @@ from ....xltekhdf5 import XLTEKHDF5
 # Classes #
 class BaseXLTEKContentsTable(BaseTimeContentsTable):
     __mapper_args__ = {"polymorphic_identity": "xltekcontents"}
-    start_id = mapped_column(BigInteger)
+    start_id = mapped_column(BigInteger, primary_key=True)
     end_id = mapped_column(BigInteger)
 
     file_type: type[XLTEKHDF5] | None = XLTEKHDF5
@@ -40,23 +40,36 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
     # Class Methods #
     @classmethod
     def _correct_contents(cls, session: Session, path: pathlib.Path) -> None:
+        last_update_id = cls.get_last_update_id(session=session)
+        update_id = 0 if last_update_id is None else last_update_id + 1
+
         # Correct registered entries
         registered = set()
-        for item in cls.get_all(session=session, as_entries=False):
+        for item, in cls.get_all(session=session, as_entries=False):
             entry = item.as_entry()
             full_path = path / entry["path"]
-            with cls.file_type.new_validated(full_path) as file:
-                if file is not None:
+            file = cls.file_type.new_validated(full_path)
+            if file is not None:
+                try:
+                    file.standardize_attributes()
+                except RuntimeError:
+                    pass
+                finally:
                     item.update({
-                        "path": file.path.name,
+                        "path": full_path.relative_to(path),
+                        "shape": file.data.shape,
+                        "axis": file.time_axis.components["axis"].axis,
                         "start": file.start_datetime,
                         "end": file.end_datetime,
                         "sample_rate": file.sample_rate,
-                        "shape": file.data.shape,
-                        "start_id": file.start_id,
-                        "end_id": file.end_id,
+                        "timezone": file.time_axis.components["axis"].tzinfo,
+                        "start_id": int(file.start_id),
+                        "end_id": int(file.end_id),
+                        "update_id": update_id,
                     })
                     file.close()
+            else:
+                cls.delete_item(session=session, item=item)
             registered.add(full_path)
 
         # Correct unregistered
@@ -64,17 +77,26 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
         for new_path in set(path.rglob("*.h5")) - registered:
             file = cls.file_type.new_validated(new_path)
             if file is not None:
-                entries.append({
-                    "path": file.path.name,
-                    "start": file.start_datetime,
-                    "end": file.end_datetime,
-                    "sample_rate": file.sample_rate,
-                    "shape": file.data.shape,
-                    "start_id": file.start_id,
-                    "end_id": file.end_id,
-                })
-                file.close()
-        cls.insert_all(session=session, items=entries, as_entries=True)
+                try:
+                    file.standardize_attributes()
+                except RuntimeError:
+                    pass
+                finally:
+                    entries.append({
+                        "path": new_path.relative_to(path),
+                        "shape": file.data.shape,
+                        "axis": file.time_axis.components["axis"].axis,
+                        "start": file.start_datetime,
+                        "end": file.end_datetime,
+                        "sample_rate": file.sample_rate,
+                        "timezone": file.time_axis.components["axis"].tzinfo,
+                        "start_id": int(file.start_id),
+                        "end_id": int(file.end_id),
+                        "update_id": update_id,
+                    })
+                    file.close()
+        if entries:
+            cls.insert_all(session=session, items=entries, as_entries=True)
 
     @classmethod
     def correct_contents(cls, session: Session, path: pathlib.Path, begin: bool = False) -> None:
@@ -86,23 +108,36 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
 
     @classmethod
     async def _correct_contents_async(cls, session: AsyncSession, path: pathlib.Path) -> None:
+        last_update_id = await cls.get_last_update_id_async(session=session)
+        update_id = 0 if last_update_id is None else last_update_id + 1
+
         # Correct registered entries
         registered = set()
-        for item in await cls.get_all_async(session=session, as_entries=False):
+        for item, in await cls.get_all_async(session=session, as_entries=False):
             entry = item.as_entry()
             full_path = path / entry["path"]
-            with cls.file_type.new_validated(full_path) as file:
-                if file is not None:
+            file = cls.file_type.new_validated(full_path)
+            if file is not None:
+                try:
+                    file.standardize_attributes()
+                except RuntimeError:
+                    pass
+                finally:
                     item.update({
-                        "path": file.path.name,
+                        "path": full_path.relative_to(path),
+                        "shape": file.data.shape,
+                        "axis": file.time_axis.components["axis"].axis,
                         "start": file.start_datetime,
                         "end": file.end_datetime,
                         "sample_rate": file.sample_rate,
-                        "shape": file.data.shape,
-                        "start_id": file.start_id,
-                        "end_id": file.end_id,
+                        "timezone": file.time_axis.components["axis"].tzinfo,
+                        "start_id": int(file.start_id),
+                        "end_id": int(file.end_id),
+                        "update_id": update_id,
                     })
                     file.close()
+            else:
+                await cls.delete_item_async(session=session, item=item)
             registered.add(full_path)
 
         # Correct unregistered
@@ -110,17 +145,26 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
         for new_path in set(path.rglob("*.h5")) - registered:
             file = cls.file_type.new_validated(new_path)
             if file is not None:
-                entries.append({
-                    "path": file.path.name,
-                    "start": file.start_datetime,
-                    "end": file.end_datetime,
-                    "sample_rate": file.sample_rate,
-                    "shape": file.data.shape,
-                    "start_id": file.start_id,
-                    "end_id": file.end_id,
-                })
-                file.close()
-        await cls.insert_all_async(session=session, items=entries, as_entries=True)
+                try:
+                    file.standardize_attributes()
+                except RuntimeError:
+                    pass
+                finally:
+                    entries.append({
+                        "path": new_path.relative_to(path),
+                        "shape": file.data.shape,
+                        "axis": file.time_axis.components["axis"].axis,
+                        "start": file.start_datetime,
+                        "end": file.end_datetime,
+                        "sample_rate": file.sample_rate,
+                        "timezone": file.time_axis.components["axis"].tzinfo,
+                        "start_id": int(file.start_id),
+                        "end_id": int(file.end_id),
+                        "update_id": update_id,
+                    })
+                    file.close()
+        if entries:
+            await cls.insert_all_async(session=session, items=entries, as_entries=True)
 
     @singlekwargdispatch(kwarg="session")
     @classmethod
@@ -185,8 +229,8 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
     # Instance Methods #
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
         dict_ = ({} if dict_ is None else dict_) | kwargs
-        if start_id := dict_.get("start_id", None) is not None:
+        if (start_id := dict_.get("start_id", None)) is not None:
             self.start_id = start_id
-        if end_id := dict_.get("end_id", None) is not None:
+        if (end_id := dict_.get("end_id", None)) is not None:
             self.end_id = end_id
         super().update(dict_)

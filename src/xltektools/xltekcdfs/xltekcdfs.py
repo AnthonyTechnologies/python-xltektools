@@ -19,6 +19,7 @@ import pathlib
 from typing import Any
 
 # Third-Party Packages #
+from baseobjects.cachingtools import timed_keyless_cache
 from cdfs import CDFS
 from dspobjects.time import Timestamp, nanostamp
 import numpy as np
@@ -108,12 +109,20 @@ class XLTEKCDFS(CDFS):
     @subject_id.setter
     def subject_id(self, value: str) -> None:
         if self.contents_file is not None and not self.contents_file.is_open:
-            self.contents_file.set_meta_information(subject_id=self.subject_id)
+            self.contents_file.set_meta_information(subject_id=value)
         self._subject_id = value
 
-    def __del__(self) -> None:
-        if self.writer_process is not None and self.writer_process.is_alive():
-            self.stop_data_writer_process()
+    @property
+    def start_datetime(self):
+        if self._start_datetime is None or self.get_start_datetime.clear_condition():
+            return self.get_start_datetime()
+        return self._start_datetime
+
+    @start_datetime.setter
+    def start_datetime(self, value: Timestamp) -> None:
+        if self.contents_file is not None and not self.contents_file.is_open:
+            self.contents_file.set_meta_information(start=value, timezone=value.tz)
+        self._start_datetime = value
 
     # Instance Methods
     # Constructors/Destructors
@@ -152,6 +161,49 @@ class XLTEKCDFS(CDFS):
 
         super().construct(path=path, mode=mode, update=update, open_=open_, load=load, **kwargs)
 
+    # Contents File
+    def open_contents_file(
+            self,
+            create: bool = False,
+            **kwargs: Any,
+    ) -> None:
+        if not self.contents_path.is_file() and not create:
+            raise ValueError("Contents file does not exist.")
+        elif self.contents_file is None:
+            self.contents_file = self.contents_file_type(
+                path=self.contents_path,
+                open_=True,
+                create=create,
+                **kwargs,
+            )
+            if create and self._mode in {"a", "w"}:
+                info = self.contents_file.get_meta_information()
+                new_info = {}
+                if info["subject_id"] is None:
+                    new_info["subject_id"] = self._subject_id
+                if self._start_datetime is not None:
+                    if info["start"] is None:
+                        new_info["start"] = self._start_datetime
+                    if info["tz_offset"] is None:
+                        new_info["timezone"] = self._start_datetime.tzinfo
+                if new_info:
+                    self.contents_file.set_meta_information(entry=new_info)
+        else:
+            self.contents_file.open(**kwargs)
+
+    @timed_keyless_cache(call_method="clearing_call", local=True)
+    def get_start_datetime(self, session: Session | None = None) -> Timestamp | None:
+        self._start_datetime = self.contents_file.get_meta_information(session=session)["start"]
+        return self._start_datetime
+
+    async def get_start_datetime_async(
+        self,
+        session: async_sessionmaker[AsyncSession] | AsyncSession | None = None,
+    ) -> Timestamp:
+        self._start_datetime = (await self.contents_file.get_meta_information_async(session=session))["start"]
+        self.get_start_datetime.refresh_expiration()
+        return self._start_datetime
+
     # Contents
     def get_start_end_ids(self, session: Session | None = None) -> tuple[tuple[int, int], ...]:
         return self.contents_file.get_start_end_ids(session=session)
@@ -168,7 +220,7 @@ class XLTEKCDFS(CDFS):
         return f"{self.subject_id}_Day-{n_days}"
 
     def generate_file_path(self, start, tzinfo=None):
-        if not isinstance(start, Timestamp):
+        if not isinstance(start, datetime):
             start = Timestamp(start, tz=tzinfo)
 
         day_name = self.generate_day_name(start)

@@ -57,7 +57,7 @@ class XLTEKContentsFile(TimeContentsFile):
 
     """
     schema: type[DeclarativeBase] = XLTEKContentsFileAsyncSchema
-    meta_information_table = type[XLTEKMetaInformationTable] = XLTEKMetaInformationTable
+    meta_information_table: type[XLTEKMetaInformationTable] = XLTEKMetaInformationTable
     contents: type[XLTEKContentsTable] = XLTEKContentsTable
     videos: type[XLTEKVideosTable] = XLTEKVideosTable
 

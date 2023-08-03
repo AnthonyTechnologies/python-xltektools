@@ -41,7 +41,7 @@ class XLTEKContentsUpdateTask(TaskBlock):
     Args:
 
     """
-    default_update_keys: Iterable[str] = ("start_id",)
+    default_update_key: str = "start_id"
 
     # Magic Methods #
     # Construction/Destruction
@@ -62,7 +62,8 @@ class XLTEKContentsUpdateTask(TaskBlock):
         # New Attributes #
         self.contents_file: XLTEKContentsFile | None = None
         self.was_open: bool = False
-        self.update_keys: Iterable[str] = self.default_update_keys
+        self.update_key: str = self.default_update_key
+        self.contents_update_id: int = 0
 
         # Parent Attributes #
         super().__init__(*args, init=False, **kwargs)
@@ -157,10 +158,13 @@ class XLTEKContentsUpdateTask(TaskBlock):
                     await sleep(interval)
 
     # Setup
-    def setup(self, *args: Any, **kwargs: Any) -> None:
+    async def setup(self, *args: Any, **kwargs: Any) -> None:
         """The method to run before executing task."""
         if not self.contents_file.is_open:
             self.contents_file.open()
+        async with self.contents_file.async_session_maker() as session:
+            update_id = await self.contents_file.contents.get_last_update_id_async(session=session)
+        self.contents_update_id = 0 if update_id is None else update_id
 
     # TaskBlock
     async def task(self, *args: Any, **kwargs: Any) -> None:
@@ -169,16 +173,21 @@ class XLTEKContentsUpdateTask(TaskBlock):
         if entries is None:
             return
 
-        with self.contents_file.async_session_maker() as session:
-            await self.contents_file.contents.update_entries_async(
+        update_id = self.contents_update_id
+        for entry in entries:
+            entry["update_id"] = update_id
+        self.contents_update_id += 1
+
+        with self.contents_file.create_session() as session:
+            self.contents_file.contents.update_entries(
                 session=session,
                 entries=entries,
-                primary_keys=self.update_keys,
+                key=self.update_key,
                 begin=True,
             )
 
     # Teardown
-    def teardown(self, *args: Any, **kwargs: Any) -> None:
+    async def teardown(self, *args: Any, **kwargs: Any) -> None:
         """The method to run after executing task."""
         if not self.was_open:
-            self.contents_file.close()
+            await self.contents_file.close_async()

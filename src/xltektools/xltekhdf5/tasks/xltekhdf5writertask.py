@@ -182,7 +182,7 @@ class XLTEKHDF5WriterTask(TaskBlock):
         if data is None:
             return
 
-        file_kwargs = info.pop("file_kwargs")
+        file_kwargs = info.pop("file")
 
         if file_kwargs["file"] != self.file_kwargs["file"]:
             if self.file is not None:
@@ -194,7 +194,7 @@ class XLTEKHDF5WriterTask(TaskBlock):
                 file_kwargs["file"].unlink(missing_ok=True)
                 self.file = self.file_type(mode="a", create=True, construct=True, **file_kwargs)
 
-            self.file.time_axis.components["axis"].set_time_zone(info["contents_insert"]["tzinfo"])
+            self.file.time_axis.components["axis"].set_time_zone(info["contents_insert"]["timezone"])
             self.file.time_axis.components["axis"].sample_rate = info["contents_insert"]["sample_rate"]
             self.file.attributes["start_id"] = info["contents_insert"]["start_id"]
             self.file.swmr_mode = True

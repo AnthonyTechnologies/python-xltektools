@@ -25,6 +25,7 @@ from sqlalchemy.types import BigInteger
 # Definitions #
 # Classes #
 class BaseXLTEKVideosTable(BaseTimeContentsTable):
+    __tablename__ = "xltekvideos"
     __mapper_args__ = {"polymorphic_identity": "xltekvideos"}
     start_id = mapped_column(BigInteger)
     end_id = mapped_column(BigInteger)
