@@ -26,6 +26,7 @@ from ...xltekhdf5 import XLTEKHDF5
 # Definitions #
 # Classes #
 class XLTEKContentsLeafContainer(BaseTimeContentsLeafContainer):
+    default_remain_open: bool = True
     file_type: type[XLTEKHDF5] | None = XLTEKHDF5
 
     # Class Methods #
@@ -48,6 +49,17 @@ class XLTEKContentsLeafContainer(BaseTimeContentsLeafContainer):
             return False
 
     # Instance Methods #
+    @property
+    def file(self) -> pathlib.Path:
+        """The file object."""
+        if self._file is None:
+            self._file = self.file_type(self._path, mode=self.mode, open_=self.remain_open, **self.file_kwargs)
+        return self._file
+
+    @file.setter
+    def file(self, value: str | pathlib.Path) -> None:
+        self.set_file(value)
+
     def _is_open(self) -> bool:
         if self._file is not None:
             return bool(self._file)
@@ -83,7 +95,7 @@ class XLTEKContentsLeafContainer(BaseTimeContentsLeafContainer):
         Returns:
             The time axis object.
         """
-        return self.file["data"].components["time_axis"]
+        return self.file["data"].components["timeseries"].time_axis
 
     def set_time_axis(self, value: Any) -> None:
         """Sets the time axis

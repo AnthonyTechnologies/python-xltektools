@@ -265,7 +265,7 @@ class XLTEKHDF5(HDF5EEG):
             return cls.get_version_class(TriNumberVersion(0, 1, 0)).new_validated(file)
 
     @classmethod
-    def get_version_from_file(cls, file: pathlib.Path | str | h5py.File) -> Version:
+    def get_version_from_file(cls, file: pathlib.Path | str | h5py.File) -> tuple[Version, h5py.File]:
         """Return a version from a file.
 
         Args:
@@ -283,6 +283,6 @@ class XLTEKHDF5(HDF5EEG):
             file = h5py.File(file)
 
         if v_name in file.attrs:
-            return TriNumberVersion(file.attrs[v_name])
+            return TriNumberVersion(file.attrs[v_name]), file
         elif cls.get_version_class(TriNumberVersion(0, 1, 0)).validate_file_type(file):
-            return TriNumberVersion(0, 1, 0)
+            return TriNumberVersion(0, 1, 0), file

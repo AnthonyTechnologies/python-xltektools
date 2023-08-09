@@ -56,7 +56,7 @@ class XLTEKCDFS(CDFS):
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        s_id: str | None = None,
+        name: str | None = None,
         s_dir: pathlib.Path | None = None,
         mode: str = "r",
         update: bool = False,
@@ -68,7 +68,7 @@ class XLTEKCDFS(CDFS):
         # New Attributes #
         self._subjects_dir: pathlib.Path | None = None
 
-        self._subject_id: str | None = None
+        self._name: str | None = None
 
         self.date_format: str = "%d"
         self.time_format: str = "%H~%M~%S"
@@ -80,7 +80,7 @@ class XLTEKCDFS(CDFS):
         if init:
             self.construct(
                 path=path,
-                s_id=s_id,
+                name=name,
                 s_dir=s_dir,
                 mode=mode,
                 update=update,
@@ -102,15 +102,15 @@ class XLTEKCDFS(CDFS):
             self._subjects_dir = pathlib.Path(value)
 
     @property
-    def subject_id(self) -> str | None:
+    def name(self) -> str | None:
         """The subject ID from the file attributes."""
-        return self.contents_file.meta_information["subject_id"]
+        return self.contents_file.meta_information["name"]
 
-    @subject_id.setter
-    def subject_id(self, value: str) -> None:
+    @name.setter
+    def name(self, value: str) -> None:
         if self.contents_file is not None and not self.contents_file.is_open:
-            self.contents_file.set_meta_information(subject_id=value)
-        self._subject_id = value
+            self.contents_file.set_meta_information(name=value)
+        self._name = value
 
     @property
     def start_datetime(self):
@@ -129,7 +129,7 @@ class XLTEKCDFS(CDFS):
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        s_id: str | None = None,
+        name: str | None = None,
         s_dir: pathlib.Path | None = None,
         mode: str = "r",
         update: bool = False,
@@ -141,7 +141,7 @@ class XLTEKCDFS(CDFS):
 
         Args:
             path: The path for this proxy to wrap.
-            s_id: The subject ID.
+            name: The subject ID.
             studies_path: The parent directory to this XLTEK study proxy.
             proxies: An iterable holding arrays/objects to store in this proxy.
             mode: Determines if the contents of this proxy are editable or not.
@@ -150,22 +150,22 @@ class XLTEKCDFS(CDFS):
             load: Determines if the arrays will be constructed.
             **kwargs: The keyword arguments to create contained arrays.
         """
-        if s_id is not None:
-            self._subject_id = s_id
+        if name is not None:
+            self._name = name
 
         if s_dir is not None:
             self.subjects_dir = s_dir
 
-        if path is None and self.path is None and self.subject_id is not None and self.subjects_dir is not None:
-            self.path = self.subjects_dir / self.subject_id
+        if path is None and self.path is None and self.name is not None and self.subjects_dir is not None:
+            self.path = self.subjects_dir / self.name
 
         super().construct(path=path, mode=mode, update=update, open_=open_, load=load, **kwargs)
 
     # Contents File
     def open_contents_file(
-            self,
-            create: bool = False,
-            **kwargs: Any,
+        self,
+        create: bool = False,
+        **kwargs: Any,
     ) -> None:
         if not self.contents_path.is_file() and not create:
             raise ValueError("Contents file does not exist.")
@@ -179,8 +179,8 @@ class XLTEKCDFS(CDFS):
             if create and self._mode in {"a", "w"}:
                 info = self.contents_file.get_meta_information()
                 new_info = {}
-                if info["subject_id"] is None:
-                    new_info["subject_id"] = self._subject_id
+                if info["name"] is None:
+                    new_info["name"] = self._name
                 if self._start_datetime is not None:
                     if info["start"] is None:
                         new_info["start"] = self._start_datetime
@@ -217,7 +217,7 @@ class XLTEKCDFS(CDFS):
     def generate_day_name(self, start: datetime):
         absolute_start = self.start_datetime
         n_days = 1 if absolute_start is None else (start.date() - absolute_start.date()).days + 1
-        return f"{self.subject_id}_Day-{n_days}"
+        return f"task-day{n_days:03d}"
 
     def generate_file_path(self, start, tzinfo=None):
         if not isinstance(start, datetime):
@@ -227,13 +227,13 @@ class XLTEKCDFS(CDFS):
         day_path = self.path / day_name
         day_path.mkdir(exist_ok=True)
 
-        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')[:-3]}.h5"
+        file_name = f"{self.name}_{day_name}_acq-{start.strftime(f'{self.time_format}.%f')[:-3]}_ieeg.h5"
 
         return day_path / file_name, pathlib.Path(f"{day_name}/{file_name}")
 
     def generate_file_kwargs(self, start, tzinfo=None):
         file_path, _ = self.generate_file_path(start=start, tzinfo=tzinfo)
-        return {"file": file_path, "s_id": self.subject_id}
+        return {"file": file_path, "name": self.name}
 
     def generate_file_entry_kwargs(
         self,
@@ -258,7 +258,7 @@ class XLTEKCDFS(CDFS):
         full_path, relative_path = self.generate_file_path(start=start, tzinfo=tzinfo)
 
         return {
-            "file": {"file": full_path, "s_id": self.subject_id},
+            "file": {"file": full_path, "name": self.name},
             "contents_insert": {
                 "update_id": update_id,
                 "path": relative_path,
@@ -279,7 +279,7 @@ class XLTEKCDFS(CDFS):
         full_path, relative_path = self.generate_file_path(start=start, tzinfo=tzinfo)
         f_obj = self.data_file_type(
             file=full_path,
-            s_id=self.subject_id,
+            name=self.name,
             mode="a",
             create=True,
             construct=True,
