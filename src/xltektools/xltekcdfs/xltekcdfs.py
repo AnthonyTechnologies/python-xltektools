@@ -59,9 +59,12 @@ class XLTEKCDFS(CDFS):
         name: str | None = None,
         s_dir: pathlib.Path | None = None,
         mode: str = "r",
-        update: bool = False,
         open_: bool = False,
         load: bool = False,
+        create: bool = False,
+        update: bool = False,
+        contents_name: str | None = None,
+        *,
         init: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -83,9 +86,11 @@ class XLTEKCDFS(CDFS):
                 name=name,
                 s_dir=s_dir,
                 mode=mode,
-                update=update,
-                load=load,
                 open_=open_,
+                load=load,
+                create=create,
+                update=update,
+                contents_name=contents_name,
                 **kwargs,
             )
 
@@ -132,9 +137,11 @@ class XLTEKCDFS(CDFS):
         name: str | None = None,
         s_dir: pathlib.Path | None = None,
         mode: str = "r",
-        update: bool = False,
         open_: bool = False,
         load: bool = False,
+        create: bool = False,
+        update: bool = False,
+        contents_name: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Constructs this object.
@@ -143,7 +150,6 @@ class XLTEKCDFS(CDFS):
             path: The path for this proxy to wrap.
             name: The subject ID.
             studies_path: The parent directory to this XLTEK study proxy.
-            proxies: An iterable holding arrays/objects to store in this proxy.
             mode: Determines if the contents of this proxy are editable or not.
             update: Determines if this proxy will start_timestamp updating or not.
             open_: Determines if the arrays will remain open after construction.
@@ -159,7 +165,16 @@ class XLTEKCDFS(CDFS):
         if path is None and self.path is None and self.name is not None and self.subjects_dir is not None:
             self.path = self.subjects_dir / self.name
 
-        super().construct(path=path, mode=mode, update=update, open_=open_, load=load, **kwargs)
+        super().construct(
+            path=path,
+            mode=mode,
+            open_=open_,
+            load=load,
+            create=create,
+            update=update,
+            contents_name=contents_name,
+            **kwargs,
+        )
 
     # Contents File
     def open_contents_file(
