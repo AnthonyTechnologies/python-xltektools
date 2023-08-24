@@ -15,6 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 from asyncio import sleep
 from queue import Empty
+import time
 from typing import Any
 from typing import NamedTuple
 from typing import Optional
@@ -207,7 +208,7 @@ class XLTEKHDF5WriterTask(TaskBlock):
         n_slicing = slice(self.file.time_axis.shape[0], data.shape[0])
 
         dataset.append(data[d_slicing], component_kwargs={"timeseries": {"data": nanostamps[n_slicing]}})
-        dataset.flush()
+        self.file.flush()
 
         del data, nanostamps
         await self.contents_info_queue.put_async(info["contents_insert"])

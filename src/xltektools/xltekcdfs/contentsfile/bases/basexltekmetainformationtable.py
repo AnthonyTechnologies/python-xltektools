@@ -32,7 +32,7 @@ from sqlalchemy.types import BigInteger
 # Classes #
 class BaseXLTEKMetaInformationTable(BaseMetaInformationTable):
     __mapper_args__ = {"polymorphic_identity": "xltekmetainfromation"}
-    subject_id: Mapped[str] = mapped_column(nullable=True)
+    name: Mapped[str] = mapped_column(nullable=True)
     start = mapped_column(BigInteger, nullable=True)
     tz_offset: Mapped[int] = mapped_column(nullable=True)
     age: Mapped[int] = mapped_column(nullable=True)
@@ -59,8 +59,8 @@ class BaseXLTEKMetaInformationTable(BaseMetaInformationTable):
         if (start := dict_.get("start", None)) is not None:
             self.start = int(nanostamp(start))
 
-        if (subject_id := dict_.get("subject_id", None)) is not None:
-            self.subject_id = subject_id
+        if (name := dict_.get("name", None)) is not None:
+            self.name = name
         if (age := dict_.get("age", None)) is not None:
             self.age = age
         if (sex := dict_.get("sex", None)) is not None:
@@ -75,7 +75,7 @@ class BaseXLTEKMetaInformationTable(BaseMetaInformationTable):
     def as_dict(self) -> dict[str, Any]:
         entry = super().as_dict()
         entry.update(
-            subject_id=self.subject_id,
+            name=self.name,
             start=self.start,
             tz_offset=self.tz_offset,
             age=self.age,
@@ -95,7 +95,7 @@ class BaseXLTEKMetaInformationTable(BaseMetaInformationTable):
         else:
             start = Timestamp.fromnanostamp(self.start, tzone)
         entry.update(
-            subject_id=self.subject_id,
+            name=self.name,
             tz_offset=tzone,
             start=start,
             age=self.age,

@@ -113,7 +113,7 @@ class XLTEKCDFS(CDFS):
 
     @name.setter
     def name(self, value: str) -> None:
-        if self.contents_file is not None and not self.contents_file.is_open:
+        if self.contents_file is not None and self.contents_file.is_open:
             self.contents_file.set_meta_information(name=value)
         self._name = value
 
@@ -125,8 +125,8 @@ class XLTEKCDFS(CDFS):
 
     @start_datetime.setter
     def start_datetime(self, value: Timestamp) -> None:
-        if self.contents_file is not None and not self.contents_file.is_open:
-            self.contents_file.set_meta_information(start=value, timezone=value.tz)
+        if self.contents_file is not None and self.contents_file.is_open:
+            self.contents_file.set_meta_information(start=value, timezone=value.tzinfo)
         self._start_datetime = value
 
     # Instance Methods
@@ -192,19 +192,22 @@ class XLTEKCDFS(CDFS):
                 **kwargs,
             )
             if create and self._mode in {"a", "w"}:
-                info = self.contents_file.get_meta_information()
-                new_info = {}
-                if info["name"] is None:
-                    new_info["name"] = self._name
-                if self._start_datetime is not None:
-                    if info["start"] is None:
-                        new_info["start"] = self._start_datetime
-                    if info["tz_offset"] is None:
-                        new_info["timezone"] = self._start_datetime.tzinfo
-                if new_info:
-                    self.contents_file.set_meta_information(entry=new_info)
+                self.save_cached_meta_information()
         else:
             self.contents_file.open(**kwargs)
+
+    def save_cached_meta_information(self):
+        info = self.contents_file.get_meta_information()
+        new_info = {}
+        if info["name"] is None:
+            new_info["name"] = self._name
+        if self._start_datetime is not None:
+            if info["start"] is None:
+                new_info["start"] = self._start_datetime
+            if info["tz_offset"] is None:
+                new_info["timezone"] = self._start_datetime.tzinfo
+        if new_info:
+            self.contents_file.set_meta_information(entry=new_info)
 
     @timed_keyless_cache(call_method="clearing_call", local=True)
     def get_start_datetime(self, session: Session | None = None) -> Timestamp | None:
@@ -273,7 +276,7 @@ class XLTEKCDFS(CDFS):
         full_path, relative_path = self.generate_file_path(start=start, tzinfo=tzinfo)
 
         return {
-            "file": {"file": full_path, "name": self.name},
+            "file": {"file": full_path, "s_id": self.name},
             "contents_insert": {
                 "update_id": update_id,
                 "path": relative_path,
