@@ -33,7 +33,7 @@ import numpy as np
 import pytest
 
 # Third-Party Packages #
-from ucsfbids import BaseSubject
+from ucsfbids import BaseSubject, BaseSession
 
 # Local Packages #
 from src.xltektools.xltekucsfbids import XLTEKUCSFBIDSSession
@@ -70,6 +70,17 @@ class TestXLTEKUCSFBIDS(ClassTest):
         new_session = subject.create_new_session(XLTEKUCSFBIDSSession, mode="w")
         new_session.create()
         assert True
+
+    def test_session_loading(self, tmp_path):
+        subject = BaseSubject(name="EC000", parent_path=tmp_path)
+        subject.create()
+        new_session = subject.create_new_session(XLTEKUCSFBIDSSession, mode="w")
+        new_session.create()
+
+        for session_path in subject.path.iterdir():
+            session = BaseSession(path=session_path)
+
+        assert isinstance(session, XLTEKUCSFBIDSSession)
 
 
 # Main #
