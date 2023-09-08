@@ -276,10 +276,10 @@ class TestCDFSXLTEK(ClassTest):
 
     def test_data_range_time_server_profile_hour(self):
         s_id = "EC283"
-        first = datetime.datetime(1970, 1, 7, 0, 10, 0, 653012, tzinfo=datetime.timezone.utc)
-        second = datetime.datetime(1970, 1, 7, 1, 10, 0, 653012, tzinfo=datetime.timezone.utc)
+        first = datetime.datetime(1970, 1, 7, 0, 10, 0, tzinfo=datetime.timezone.utc)
+        second = datetime.datetime(1970, 1, 7, 1, 10, 0, tzinfo=datetime.timezone.utc)
 
-        cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
+        cdfs = XLTEKCDFS(path=self.server_path / s_id, open_=True, load=True)
 
         pr = cProfile.Profile()
         pr.enable()
