@@ -1,8 +1,8 @@
-"""xltekucsfbidssession.py
+"""IEEGXLTEK.py
 A UCSF BIDS Session which contains a XLTEKCDFS as part of its structure.
 """
 # Package Header #
-from ..header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -15,15 +15,15 @@ __email__ = __email__
 # Standard Libraries #
 
 # Third-Party Packages #
-from ucsfbids.sessions import CDFSSession
+from ucsfbids.modalities import IEEGCDFS
 
 # Local Packages #
-from ..xltekcdfs import XLTEKCDFS
+from ...xltekcdfs import XLTEKCDFS
 
 
 # Definitions #
 # Classes #
-class XLTEKUCSFBIDSSession(CDFSSession):
+class IEEGXLTEK(IEEGCDFS):
     """A UCSF BIDS Session which contains a XLTEKCDFS as part of its structure.
 
     Class Attributes:
@@ -52,5 +52,5 @@ class XLTEKUCSFBIDSSession(CDFSSession):
         init: Determines if this object will construct.
         kwargs: The keyword arguments for inheritance.
     """
-
+    default_exporters: dict[str, type] = IEEGCDFS.default_exporters.copy()
     cdfs_type: type[XLTEKCDFS] = XLTEKCDFS

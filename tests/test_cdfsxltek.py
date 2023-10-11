@@ -295,7 +295,7 @@ class TestCDFSXLTEK(ClassTest):
 
         cdfs.close()
 
-    def test_date_range_time_one_second(self):
+    def test_data_range_time_one_second(self):
         s_id = "EC283"
         timestamps = [
             {
@@ -317,6 +317,22 @@ class TestCDFSXLTEK(ClassTest):
         ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         ps.print_stats()
         print(s.getvalue())
+
+    def test_where_misshapen(self):
+        s_id = "EC283"
+
+        cdfs = XLTEKCDFS(path=self.server_path / s_id, open_=True, load=True)
+        indices = cdfs.data.where_misshapen(shape=(0, 148))
+
+        assert not indices
+
+    def test_where_shape_changes(self):
+        s_id = "EC283"
+
+        cdfs = XLTEKCDFS(path=self.server_path / s_id, open_=True, load=True)
+        indices = cdfs.data.where_shape_changes()
+
+        assert not indices
 
     def test_validate_shape(self):
         s_id = "EC228"
@@ -365,6 +381,19 @@ class TestCDFSXLTEK(ClassTest):
         sample_rate = study_frame.sample_rate
 
         assert sample_rate
+
+    def test_insert_missing(self):
+        s_id = "EC283"
+
+        cdfs = XLTEKCDFS(path=self.server_path / s_id, open_=True, load=True)
+
+        flat_data = cdfs.data.as_flattened()
+        flat_data.time_tolerance = flat_data.sample_period
+        flat_data.insert_missing()
+        remaining = flat_data.where_missing()
+
+        cdfs.close()
+        assert not remaining
 
     def test_where_discontinuous(self):
         s_id = "EC228"

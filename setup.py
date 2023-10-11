@@ -37,7 +37,7 @@ def get_pyproject_as_setup():
     setup_info["requires"] = []
     for package, version in dependencies.items():
         if isinstance(version, dict):
-            version = version["version"]
+            version = version.get("version", "")
 
         if "^" in version:
             version = version.lstrip("^")
@@ -51,7 +51,7 @@ def get_pyproject_as_setup():
     setup_info["extras"] = []
     for package, version in dev.items():
         if isinstance(version, dict):
-            version = version["version"]
+            version = version.get("version", "")
 
         if "^" in version:
             version = version.lstrip("^")

@@ -24,7 +24,7 @@ click = ">=8.0.1"
 cdfs = "^0.1.0"
 framestructure = ">=0.4.0"
 hdf5objects = ">=0.3.0"
-taskblocks = { git = "https://github.com/FongAnthonyM/python-taskblocks.git"}
+#taskblocks = { git = "https://github.com/FongAnthonyM/python-taskblocks.git"}
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
