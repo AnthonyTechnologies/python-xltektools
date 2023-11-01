@@ -52,7 +52,7 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
             if file is not None:
                 try:
                     file.standardize_attributes()
-                except RuntimeError:
+                except (KeyError, RuntimeError):
                     pass
                 finally:
                     item.update({
@@ -79,7 +79,7 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
             if file is not None:
                 try:
                     file.standardize_attributes()
-                except RuntimeError:
+                except (KeyError, RuntimeError):
                     pass
                 finally:
                     entries.append({
@@ -120,7 +120,7 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
             if file is not None:
                 try:
                     file.standardize_attributes()
-                except RuntimeError:
+                except (KeyError, RuntimeError):
                     pass
                 finally:
                     item.update({
@@ -147,7 +147,7 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
             if file is not None:
                 try:
                     file.standardize_attributes()
-                except RuntimeError:
+                except (KeyError, RuntimeError):
                     pass
                 finally:
                     entries.append({
