@@ -91,7 +91,7 @@ class IEEGXLTEKBIDSExporter(IEEGBIDSExporter, CallableMultiplexObject):
         self.cdfs_exporter.channel_names.extend(self.load_channels())
         self.cdfs_exporter.export_as_days(path=path, name=name)
 
-    def export(self, path: Path, name: str) -> None:
+    def execute_export(self, path: Path, name: str) -> None:
         new_path = path / f"{self.modality.name}"
         new_path.mkdir(exist_ok=True)
         self.export_select_files(path=new_path, name=name)

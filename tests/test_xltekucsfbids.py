@@ -35,8 +35,10 @@ import pytest
 # Third-Party Packages #
 from ucsfbids import Subject, Session
 from pyedflib.highlevel import make_signal_headers, make_header, write_edf, read_edf
+import matplotlib.pyplot as plt
 
 # Local Packages #
+from src.xltektools.xltekhdf5.xltekhdf5_0 import HDF5XLTEK_0
 from src.xltektools.xltekcdfs import XLTEKCDFSEDFExporter
 from src.xltektools.xltekucsfbids import XLTEKUCSFBIDSSession
 
@@ -105,12 +107,80 @@ class TestXLTEKUCSFBIDS(ClassTest):
         subject = Subject(name="EC0212", parent_path=self.server_path_kleen, mode="r")
 
         exporter = subject.create_exporter("BIDS")
-        exporter.export(self.server_out_path_kleen, name="UPenn0000")
+        exporter.execute_export(self.server_out_path_kleen, name="UPenn0000")
 
     def test_annotation_read(self):
         path = self.server_out_path_kleen / f"UPenn0000_task-day1.edf"
         sigs, sig_headers, header = read_edf(path.as_posix())
         assert header["annotations"]
+
+    def test_old_data_first(self):
+        secs = 30
+        first = pathlib.Path("/userdata/afong/EpilepsySpikeDetection/EC212/EC212 2020-01-28 0-1.h5")
+        old_file = HDF5XLTEK_0(first, mode="r")
+        old_channel = old_file.data[512:512*(secs+1), 0] * -1
+
+        start = datetime.datetime(1970, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        stop = datetime.datetime(1970, 1, 6, 0, 1, tzinfo=datetime.timezone.utc)
+
+        bids_subject = Subject(name="EC0212", parent_path=self.server_path)
+        session = bids_subject.sessions["clinicalintracranial"]
+        cdfs = session.modalities["ieeg"].require_cdfs(load=True)
+
+        data = cdfs.data.find_data_slice(start, stop, approx=True)
+        new_channel = data[0].data[1024:1024*(secs+1), 0]
+
+        t_512 = np.arange(0, secs, 1 / 512)
+        t_1024 = np.arange(0, secs, 1 / 1024)
+
+        fig, ax = plt.subplots()
+        ax.set(xlabel='time (s)', ylabel='voltage (uV)', title='Old Data Blue, New Data Orange')
+        ax.plot(t_512, old_channel)
+        ax.plot(t_1024, new_channel)
+
+        fig, ax = plt.subplots()
+        ax.set(xlabel='time (s)', ylabel='voltage (uV)', title='Old Data')
+        ax.plot(t_512, old_channel)
+
+        fig, ax = plt.subplots()
+        ax.set(xlabel='time (s)', ylabel='voltage (uV)', title='New Data')
+        ax.plot(t_1024, new_channel)
+
+    def test_old_data_more(self):
+        secs = 30
+        s_sec = 3570
+        first = pathlib.Path("/userdata/afong/EpilepsySpikeDetection/EC212/EC212 2020-01-28 0-1.h5")
+        old_file = HDF5XLTEK_0(first, mode="r")
+        old_channel = old_file.data[512 * s_sec:512 * (secs + s_sec), 0] * -1
+
+        start = datetime.datetime(1970, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        stop = datetime.datetime(1970, 1, 6, 1, 0, tzinfo=datetime.timezone.utc)
+
+        bids_subject = Subject(name="EC0212", parent_path=self.server_path)
+        session = bids_subject.sessions["clinicalintracranial"]
+        cdfs = session.modalities["ieeg"].require_cdfs(load=True)
+
+        data = cdfs.data.find_data_slice(start, stop, approx=True)
+        new_channel = data[0].data[1024 * s_sec:1024*(secs+s_sec), 0]
+
+        t_512 = np.arange(0, secs, 1/512)
+        t_1024 = np.arange(0, secs, 1 / 1024)
+
+        fig, ax = plt.subplots()
+        ax.set(xlabel='time (s)', ylabel='voltage (uV)', title='Old Data Blue, New Data Orange')
+        ax.plot(t_512, old_channel)
+        ax.plot(t_1024, new_channel)
+
+        fig, ax = plt.subplots()
+        ax.set(xlabel='time (s)', ylabel='voltage (uV)', title='Old Data')
+        ax.plot(t_512, old_channel)
+
+        fig, ax = plt.subplots()
+        ax.set(xlabel='time (s)', ylabel='voltage (uV)', title='New Data')
+        ax.plot(t_1024, new_channel)
+
+        plt.show()
+
 
 
 # Main #

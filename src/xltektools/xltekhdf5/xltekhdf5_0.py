@@ -4,7 +4,6 @@ A HDF5 file which contains data for XLTEK EEG data.
 # Package Header #
 from ..header import *
 
-
 # Header #
 __author__ = __author__
 __credits__ = __credits__
@@ -23,8 +22,6 @@ from typing import Union
 # Third-Party Packages #
 import h5py
 import numpy as np
-
-# Third-Party Packages #
 from baseobjects.functions import singlekwargdispatch
 from classversioning import TriNumberVersion
 from classversioning import Version
@@ -368,6 +365,28 @@ class HDF5XLTEK_0(XLTEKHDF5):
 
     # Instance Methods #
     # Constructors/Destructors
+    def construct(
+        self,
+        file: str | pathlib.Path | h5py.File | None = None,
+        s_id: str | None = None,
+        s_dir: str | pathlib.Path | None = None,
+        start: datetime.datetime | float | None = None,
+        **kwargs: Any,
+    ) -> "HDF5EEG":
+        """Constructs this object.
+
+        Args:
+            file: Either the file object or the path to the file.
+            s_id: The subject id.
+            s_dir: The directory where subjects data are stored.
+            start: The start time of the data, if creating.
+            **kwargs: The keyword arguments for the open method.
+
+        Returns:
+            This object.
+        """
+        super().construct(file=file, s_id=s_id, **kwargs)
+
     def construct_file_attributes(
         self,
         start: datetime.datetime | float | None = None,
