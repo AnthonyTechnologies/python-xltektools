@@ -73,7 +73,7 @@ class IEEGXLTEKBIDSExporter(IEEGBIDSExporter, CallableMultiplexObject):
             self.cdfs_exporter = XLTEKCDFSEDFExporter(cdfs=self.modality.require_cdfs(load=True))
 
     def load_channels(self) -> list[str, ...]:
-        channel_names = list(self.modality.load_electrodes().iloc[:, 1])
+        channel_names = list(self.modality.load_electrodes()["name"])
         n_channels = len(channel_names)
         if n_channels != 148 and n_channels != 276:
             if n_channels > 148:
