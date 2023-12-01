@@ -23,7 +23,7 @@ python = ">=3.10, <4.0"
 click = ">=8.0.1"
 cdfs = ">=0.2.0"
 hdf5objects = ">=0.4.3"
-taskblocks = {git = "https://github.com/FongAnthonyM/python-taskblocks.git",  rev = "v0.2.0"}
+taskblocks = {git = "https://github.com/FongAnthonyM/python-taskblocks.git"}
 pyEDFlib = ">=0.1.36"
 ucsfbids = {git = "https://github.com/FongAnthonyM/python-ucsfbids.git"}
 
