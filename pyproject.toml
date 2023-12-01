@@ -19,12 +19,13 @@ classifiers = [
 Changelog = "https://github.com/fonganthonym/python-xltektools/releases"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10, <4.0"
 click = ">=8.0.1"
-cdfs = ">=0.1.0"
-#framestructure = ">=0.4.0"
-hdf5objects = ">=0.3.0"
-#taskblocks = { git = "https://github.com/FongAnthonyM/python-taskblocks.git"}
+cdfs = ">=0.2.0"
+hdf5objects = ">=0.4.3"
+taskblocks = {git = "https://github.com/FongAnthonyM/python-taskblocks.git",  rev = "v0.2.0"}
+pyEDFlib = ">=0.1.36"
+ucsfbids = {git = "https://github.com/FongAnthonyM/python-ucsfbids.git"}
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"
