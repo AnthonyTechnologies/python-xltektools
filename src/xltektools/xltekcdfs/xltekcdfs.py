@@ -4,7 +4,6 @@
 # Package Header #
 from ..header import *
 
-
 # Header #
 __author__ = __author__
 __credits__ = __credits__
@@ -12,34 +11,26 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 
-import pathlib
-
 # Imports #
 # Standard Libraries #
-from datetime import date
 from datetime import datetime
 from datetime import timedelta
-from datetime import timezone
-from multiprocessing import Event
-from multiprocessing import Queue
+import pathlib
 from typing import Any
 
-import numpy as np
-
 # Third-Party Packages #
+from baseobjects.cachingtools import timed_keyless_cache
 from cdfs import CDFS
-from cdfs.contentsfile import TimeContentGroupComponent
-from dspobjects.time import Timestamp
-from hdf5objects import HDF5Group
-from hdf5objects import HDF5Map
+from dspobjects.time import Timestamp, nanostamp
+import numpy as np
+from sqlalchemy import select, func, lambda_stmt
+from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 # Local Packages #
-from ..hdf5xltek import HDF5XLTEK
-from ..hdf5xltek import HDF5XLTEKWriterProcess
-from ..hdf5xltek import WriteDataItem
-from ..hdf5xltek import WriteFileItem
-from .contentsfile import XLTEKContentsFile
-from .frames import XLTEKDataContentFrame
+from ..xltekhdf5 import XLTEKHDF5, XLTEKHDF5WriterTask
+from .contentsfile import XLTEKContentsFile, XLTEKContentsUpdateTask
+from .arrays import XLTEKContentsProxy
 
 
 # Definitions #
@@ -56,8 +47,8 @@ class XLTEKCDFS(CDFS):
     """
 
     default_component_types: dict[str, tuple[type, dict[str, Any]]] = {}
-    default_frame_type = XLTEKDataContentFrame
-    default_data_file_type: type = HDF5XLTEK.get_latest_version_class()
+    default_proxy_type: type = XLTEKContentsProxy
+    default_data_file_type: type[XLTEKHDF5] = XLTEKHDF5.get_latest_version_class()
     contents_file_type: type = XLTEKContentsFile
 
     # Magic Methods #
@@ -65,28 +56,25 @@ class XLTEKCDFS(CDFS):
     def __init__(
         self,
         path: pathlib.Path | str | None = None,
-        s_id: str | None = None,
+        name: str | None = None,
         s_dir: pathlib.Path | None = None,
         mode: str = "r",
-        update: bool = False,
         open_: bool = False,
         load: bool = False,
+        create: bool = False,
+        update: bool = False,
+        contents_name: str | None = None,
+        *,
         init: bool = True,
         **kwargs: Any,
     ) -> None:
         # New Attributes #
         self._subjects_dir: pathlib.Path | None = None
 
-        self._subject_id: str | None = None
-        self._age: str | None = None
-        self._sex: str | None = None
-        self._species: str | None = None
-        self._units: str | None = None
+        self._name: str | None = None
 
         self.date_format: str = "%d"
         self.time_format: str = "%H~%M~%S"
-
-        self.writer_process: HDF5XLTEKWriterProcess | None = None
 
         # Parent Attributes #
         super().__init__(init=False)
@@ -95,12 +83,14 @@ class XLTEKCDFS(CDFS):
         if init:
             self.construct(
                 path=path,
-                s_id=s_id,
+                name=name,
                 s_dir=s_dir,
                 mode=mode,
-                update=update,
-                load=load,
                 open_=open_,
+                load=load,
+                create=create,
+                update=update,
+                contents_name=contents_name,
                 **kwargs,
             )
 
@@ -117,290 +107,218 @@ class XLTEKCDFS(CDFS):
             self._subjects_dir = pathlib.Path(value)
 
     @property
-    def subject_id(self) -> str | None:
+    def name(self) -> str | None:
         """The subject ID from the file attributes."""
-        if self.contents_file is None or not self.contents_file.is_open:
-            return self._subject_id
-        else:
-            return self.contents_file.attributes.get("subject_id", None)
+        return self.contents_file.meta_information["name"]
 
-    @subject_id.setter
-    def subject_id(self, value: str) -> None:
-        if self.contents_file is not None and not self.contents_file.is_open:
-            self.contents_file.attributes.set_attribute("subject_id", value)
-        self._subject_id = value
+    @name.setter
+    def name(self, value: str) -> None:
+        if self.contents_file is not None and self.contents_file.is_open:
+            self.contents_file.set_meta_information(name=value)
+        self._name = value
 
     @property
-    def age(self) -> str | None:
-        """The subject age from the file attributes."""
-        if self.contents_file is None or not self.contents_file.is_open:
-            return self._age
-        else:
-            return self.contents_file.attributes.get("age", None)
+    def start_datetime(self):
+        if self._start_datetime is None or self.get_start_datetime.clear_condition():
+            return self.get_start_datetime()
+        return self._start_datetime
 
-    @age.setter
-    def age(self, value: str) -> None:
-        if self.contents_file is not None and not self.contents_file.is_open:
-            self.contents_file.attributes.set_attribute("age", value)
-        self._age = value
-
-    @property
-    def sex(self) -> str | None:
-        """The subject sex from the file attributes."""
-        if self.contents_file is None or not self.contents_file.is_open:
-            return self._sex
-        else:
-            return self.contents_file.attributes.get("sex", None)
-
-    @sex.setter
-    def sex(self, value: str) -> None:
-        if self.contents_file is not None and not self.contents_file.is_open:
-            self.contents_file.attributes.set_attribute("sex", value)
-        self._sex = value
-
-    @property
-    def species(self) -> str | None:
-        """The subject species from the file attributes."""
-        if self.contents_file is None or not self.contents_file.is_open:
-            return self._species
-        else:
-            return self.contents_file.attributes.get("species", None)
-
-    @species.setter
-    def species(self, value: str) -> None:
-        if self.contents_file is not None and not self.contents_file.is_open:
-            self.contents_file.attributes.set_attribute("species", value)
-        self._species = value
-
-    @property
-    def units(self) -> str | None:
-        """The subject's data units from the file attributes."""
-        if self.contents_file is None or not self.contents_file.is_open:
-            return self._units
-        else:
-            return self.contents_file.attributes.get("units", None)
-
-    @units.setter
-    def units(self, value: str) -> None:
-        if self.contents_file is not None and not self.contents_file.is_open:
-            self.contents_file.attributes.set_attribute("units", value)
-        self._units = value
-
-    @property
-    def video_root(self) -> HDF5Group:
-        return self.contents_file.video_root
-
-    @property
-    def video_root_node(self) -> TimeContentGroupComponent:
-        return self.contents_file.video_root_node
-
-    def __del__(self) -> None:
-        if self.writer_process is not None and self.writer_process.is_alive():
-            self.stop_data_writer_process()
+    @start_datetime.setter
+    def start_datetime(self, value: Timestamp) -> None:
+        if self.contents_file is not None and self.contents_file.is_open:
+            self.contents_file.set_meta_information(start=value, timezone=value.tzinfo)
+        self._start_datetime = value
 
     # Instance Methods
     # Constructors/Destructors
     def construct(
         self,
         path: pathlib.Path | str | None = None,
-        s_id: str | None = None,
+        name: str | None = None,
         s_dir: pathlib.Path | None = None,
         mode: str = "r",
-        update: bool = False,
         open_: bool = False,
         load: bool = False,
+        create: bool = False,
+        update: bool = False,
+        contents_name: str | None = None,
         **kwargs: Any,
     ) -> None:
         """Constructs this object.
 
         Args:
-            path: The path for this frame to wrap.
-            s_id: The subject ID.
-            studies_path: The parent directory to this XLTEK study frame.
-            frames: An iterable holding frames/objects to store in this frame.
-            mode: Determines if the contents of this frame are editable or not.
-            update: Determines if this frame will start_timestamp updating or not.
-            open_: Determines if the frames will remain open after construction.
-            load: Determines if the frames will be constructed.
-            **kwargs: The keyword arguments to create contained frames.
+            path: The path for this proxy to wrap.
+            name: The subject ID.
+            studies_path: The parent directory to this XLTEK study proxy.
+            mode: Determines if the contents of this proxy are editable or not.
+            update: Determines if this proxy will start_timestamp updating or not.
+            open_: Determines if the arrays will remain open after construction.
+            load: Determines if the arrays will be constructed.
+            **kwargs: The keyword arguments to create contained arrays.
         """
-        if s_id is not None:
-            self._subject_id = s_id
+        if name is not None:
+            self._name = name
 
         if s_dir is not None:
             self.subjects_dir = s_dir
 
-        if path is None and self.path is None and self.subject_id is not None and self.subjects_dir is not None:
-            self.path = self.subjects_dir / self.subject_id
+        if path is None and self.path is None and self.name is not None and self.subjects_dir is not None:
+            self.path = self.subjects_dir / self.name
 
-        super().construct(path=path, mode=mode, update=update, open_=open_, load=load, **kwargs)
+        super().construct(
+            path=path,
+            mode=mode,
+            open_=open_,
+            load=load,
+            create=create,
+            update=update,
+            contents_name=contents_name,
+            **kwargs,
+        )
 
+    # Contents File
     def open_contents_file(
         self,
-        mode: str | None = None,
-        load: bool | None = None,
         create: bool = False,
-        require: bool = False,
         **kwargs: Any,
     ) -> None:
-        super().open_contents_file(mode=mode, load=load, create=create, require=require, **kwargs)
-
-        if require and self.contents_file.attributes.get("subject_id", None) is None and self._subject_id is not None:
-            self.contents_file.attributes.set_attribute("subject_id", self._subject_id)
-
-    def require(self, **kwargs):
-        self.path.mkdir(exist_ok=True)
-
-        if self.contents_file is None:
-            self.construct_contents_file(create=True, require=True, **kwargs)
-            self.construct_data()
+        if not self.contents_path.is_file() and not create:
+            raise ValueError("Contents file does not exist.")
+        elif self.contents_file is None:
+            self.contents_file = self.contents_file_type(
+                path=self.contents_path,
+                open_=True,
+                create=create,
+                **kwargs,
+            )
+            if create and self._mode in {"a", "w"}:
+                self.save_cached_meta_information()
         else:
-            self.contents_file.require(**kwargs)
+            self.contents_file.open(**kwargs)
 
-        if self.contents_file.attributes.get("subject_id", None) is None and self._subject_id is not None:
-            self.contents_file.attributes.set_attribute("subject_id", self._subject_id)
+    def save_cached_meta_information(self):
+        info = self.contents_file.get_meta_information()
+        new_info = {}
+        if info["name"] is None:
+            new_info["name"] = self._name
+        if self._start_datetime is not None:
+            if info["start"] is None:
+                new_info["start"] = self._start_datetime
+            if info["tz_offset"] is None:
+                new_info["timezone"] = self._start_datetime.tzinfo
+        if new_info:
+            self.contents_file.set_meta_information(entry=new_info)
 
-    def build_swmr(self, end_delta: timedelta, start: datetime | None = None, **kwargs) -> None:
-        start = self.get_start_datetime() if start is None else start
-        end = self.get_end_datetime()
-        days = range(0 if end is None else (end.date() - start.date()).days, end_delta.days)
-        dates = (Timestamp((start + timedelta(days=d)).date(), tzinfo=start.tzinfo) for d in days)
-        paths = ((f"{self.subject_id}_Day-{d + 1}",) for d in days)
-        self.contents_file.build_swmr(paths=paths, starts=dates, **kwargs)
+    @timed_keyless_cache(call_method="clearing_call", local=True)
+    def get_start_datetime(self, session: Session | None = None) -> Timestamp | None:
+        self._start_datetime = self.contents_file.get_meta_information(session=session)["start"]
+        return self._start_datetime
+
+    async def get_start_datetime_async(
+        self,
+        session: async_sessionmaker[AsyncSession] | AsyncSession | None = None,
+    ) -> Timestamp:
+        self._start_datetime = (await self.contents_file.get_meta_information_async(session=session))["start"]
+        self.get_start_datetime.refresh_expiration()
+        return self._start_datetime
+
+    # Contents
+    def get_start_end_ids(self, session: Session | None = None) -> tuple[tuple[int, int], ...]:
+        return self.contents_file.get_start_end_ids(session=session)
+
+    async def get_start_end_ids_async(
+        self,
+        session: async_sessionmaker[AsyncSession] | AsyncSession | None = None,
+    ) -> tuple[tuple[int, int], ...]:
+        return await self.contents_file.get_start_end_ids_async(session=session)
 
     def generate_day_name(self, start: datetime):
         absolute_start = self.start_datetime
         n_days = 1 if absolute_start is None else (start.date() - absolute_start.date()).days + 1
-        return f"{self.subject_id}_Day-{n_days}"
+        return f"task-day{n_days:03d}"
 
-    def get_data_start_end_timestamps(self):
-        start_ends = []
-        for day in self.contents_root_node.node_map.components["object_reference"].get_objects_iter():
-            starts = day.components["tree_node"].node_map.components["start_times"].get_timestamps()
-            ends = day.components["tree_node"].node_map.components["end_times"].get_timestamps()
-            start_ends.extend((se for se in zip(starts, ends)))
-
-        return start_ends
-
-    def add_data_file(self, file: HDF5XLTEK):
-        self.contents_root_node.insert_entry_start(
-            path=file.path.name,
-            start=file.start_datetime,
-            end=file.end_datetime,
-            length=len(file.time_axis),
-            min_shape=file.data.shape,
-            max_shape=file.data.shape,
-            sample_rate=file.sample_rate,
-            day_path=file.path.parts[-2],
-        )
-
-    def create_data_file(self, data, sample_rate, nanostamps, tzinfo=None, open_=False):
-        start = Timestamp(nanostamps[0], tz=tzinfo)
+    def generate_file_path(self, start, tzinfo=None):
+        if not isinstance(start, datetime):
+            start = Timestamp(start, tz=tzinfo)
 
         day_name = self.generate_day_name(start)
         day_path = self.path / day_name
         day_path.mkdir(exist_ok=True)
 
-        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')[:-3]}.h5"
-        file_path = day_path / file_name
-        if file_path.is_file():
-            file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')}.h5"
-            file_path = day_path / file_name
+        file_name = f"{self.name}_{day_name}_acq-{start.strftime(f'{self.time_format}.%f')[:-3]}_ieeg.h5"
 
+        return day_path / file_name, pathlib.Path(f"{day_name}/{file_name}")
+
+    def generate_file_kwargs(self, start, tzinfo=None):
+        file_path, _ = self.generate_file_path(start=start, tzinfo=tzinfo)
+        return {"file": file_path, "name": self.name}
+
+    def generate_file_entry_kwargs(
+        self,
+        shape: tuple[int, ...],
+        sample_rate: int,
+        start: datetime | float | int | np.dtype | np.ndarray, 
+        end: datetime | float | int | np.dtype | np.ndarray | None = None,
+        tzinfo=None,
+        start_id: int | None = None,
+        end_id: int | None = None,
+        axis: int = 0,
+        update_id: int = 0,
+    ) -> dict:
+        if not isinstance(start, Timestamp):
+            start = Timestamp(start, tz=tzinfo)
+            
+        if end is None:
+            end = start
+        elif not isinstance(end, Timestamp):
+            end = Timestamp(end, tz=tzinfo)
+
+        full_path, relative_path = self.generate_file_path(start=start, tzinfo=tzinfo)
+
+        return {
+            "file": {"file": full_path, "s_id": self.name},
+            "contents_insert": {
+                "update_id": update_id,
+                "path": relative_path,
+                "shape": shape,
+                "axis": axis,
+                "timezone": tzinfo,
+                "start": start,
+                "end": end,
+                "sample_rate": sample_rate,
+                "start_id": int(nanostamp(start)) if start_id is None else start_id,
+                "end_id": int(nanostamp(end)) if end_id is None else end_id,
+            },
+        }
+
+    def create_data_file(self, data, nanostamps, sample_rate, tzinfo=None, update_id: int = 0, open_: bool = False):
+        start = Timestamp(nanostamps[0], tz=tzinfo)
+
+        full_path, relative_path = self.generate_file_path(start=start, tzinfo=tzinfo)
         f_obj = self.data_file_type(
-            file=file_path,
-            s_id=self.subject_id,
-            start=start,
+            file=full_path,
+            name=self.name,
             mode="a",
             create=True,
-            require=True,
+            construct=True,
         )
         f_obj.time_axis.components["axis"].set_time_zone(tzinfo)
         f_obj.time_axis.components["axis"].sample_rate = sample_rate
         f_obj.data.set_data(data, component_kwargs={"timeseries": {"data": nanostamps}})
 
+        self.contents_file.insert_file_contents(path=relative_path, file=f_obj, update_id=update_id, begin=True)
+
         if not open_:
             f_obj.close()
 
-        self.contents_root_node.insert_recursive_entry(
-            paths=[day_name, file_name],
-            start=start,
-            end=Timestamp.fromnanostamp(nanostamps[-1]),
-            min_shape=data.shape,
-            max_shape=data.shape,
-            sample_rate=sample_rate,
-        )
-
         return f_obj
 
-    def start_data_writer_process(self):
-        if self.writer_process is None or not self.writer_process.is_alive():
-            self.writer_process = HDF5XLTEKWriterProcess(file_type=self.data_file_type)
-            self.writer_process.alive_event.set()
-            self.writer_process.start()
+    def create_data_writer(self, **kwargs) -> XLTEKHDF5WriterTask:
+        return XLTEKHDF5WriterTask(file_type=self.data_file_type, **kwargs)
 
-    def format_file_kwargs(self, data, sample_rate, nanostamps, tzinfo=None):
-        start = Timestamp(nanostamps[0], tz=tzinfo)
+    def create_contents_updater(self, **kwargs) -> XLTEKContentsUpdateTask:
+        return XLTEKContentsUpdateTask(contents_file=self.contents_file, **kwargs)
 
-        day_name = self.generate_day_name(start)
-        day_path = self.path / day_name
-        day_path.mkdir(exist_ok=True)
-
-        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')[:-3]}.h5"
-        file_path = day_path / file_name
-
-        return {
-            "file": file_path,
-            "s_id": self.subject_id,
-            "start": start,
-            "mode": "a",
-            "create": True,
-            "require": True,
-        }
-
-    def format_file_write_kwargs(self, data, sample_rate, nanostamps, tzinfo=None):
-        start = Timestamp(nanostamps[0], tz=tzinfo)
-
-        day_name = self.generate_day_name(start)
-        day_path = self.path / day_name
-        day_path.mkdir(exist_ok=True)
-
-        file_name = f"{day_name}_{start.strftime(f'{self.time_format}.%f')[:-3]}.h5"
-        file_path = day_path / file_name
-
-        return {
-            "file_kwargs": {
-                "file": file_path,
-                "s_id": self.subject_id,
-                "start": start,
-                "mode": "a",
-                "create": True,
-                "require": True,
-            },
-            "contents_kwargs": {"paths": (day_name, file_name)},
-        }
-
-    def create_data_file_writer_process(self, data, sample_rate, nanostamps, tzinfo=None):
-        if self.writer_process is None or not self.writer_process.is_alive():
-            self.start_data_writer_process()
-
-        file_kwargs = self.format_file_kwargs(data, sample_rate, nanostamps, tzinfo)
-
-        self.writer_process.file_queue.put(WriteFileItem(file_kwargs, tzinfo, sample_rate))
-        self.writer_process.data_queue.put(WriteDataItem("append", None, data, nanostamps))
-        self.writer_process.data_queue.put(None)
-
-    def stop_data_writer_process(self):
-        if self.writer_process is not None and self.writer_process.is_alive():
-            self.writer_process.alive_event.clear()
-            self.writer_process.join()
-
-    def insert_video_entry_start(self, name, start, end, frames=0, sample_rate=np.nan, tzinfo=None):
-        self.video_root_node.insert_recursive_entry(
-            paths=[self.generate_day_name(start), name],
-            start=start,
-            end=end,
-            min_shape=(frames,),
-            max_shape=(frames,),
-            sample_rate=sample_rate,
-        )
+    # Video
+    def insert_video_entry_start(self, name, start, end, proxies=0, sample_rate=np.nan, tzinfo=None):
+        raise NotImplementedError

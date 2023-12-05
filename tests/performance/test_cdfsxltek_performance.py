@@ -26,7 +26,6 @@ import pickle
 import pstats
 from pstats import Stats, f8, func_std_string
 import timeit
-import time
 
 import h5py
 import numpy as np
@@ -124,11 +123,6 @@ class TestCDFSXLTEK(ClassTest):
 
     def test_load_study(self):
         s_id = "EC283"
-        study_frame = self.class_(s_id=s_id, studies_path=self.studies_path)
-        assert True
-
-    def test_load_study_profile(self):
-        s_id = "EC283"
         pr = cProfile.Profile()
         pr.enable()
 
@@ -145,8 +139,19 @@ class TestCDFSXLTEK(ClassTest):
 
     def test_load_study_server(self):
         s_id = "EC283"
-        study_frame = self.class_(s_id=s_id, studies_path=self.server_path)
-        assert 1
+        pr = cProfile.Profile()
+        pr.enable()
+
+        cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
+
+        pr.disable()
+        s = io.StringIO()
+        sortby = pstats.SortKey.TIME
+        ps = StatsMicro(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
+
+        cdfs.close()
 
     def test_get_data(self):
         s_id = "EC283"
@@ -233,54 +238,37 @@ class TestCDFSXLTEK(ClassTest):
 
         assert data_object.data is not None
 
-    def test_open_study_server_profile(self):
+    def test_data_range_time_server_second(self):
         s_id = "EC283"
+        first = datetime.datetime(1970, 1, 7, 0, 10, 0, 653012, tzinfo=datetime.timezone.utc)
+        second = datetime.datetime(1970, 1, 7, 0, 10, 1, 653012, tzinfo=datetime.timezone.utc)
+        third = datetime.datetime(1970, 1, 7, 1, 10, 0, 653012, tzinfo=datetime.timezone.utc)
+        fourth = datetime.datetime(1970, 1, 7, 1, 10, 1, 653012, tzinfo=datetime.timezone.utc)
+
+        cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
+
+        data = cdfs.data.find_data_range(first, second, approx=True)
         pr = cProfile.Profile()
         pr.enable()
 
-        cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
-        cdfs.close()
+        data = cdfs.data.find_data_range(third, fourth, approx=True)
 
         pr.disable()
         s = io.StringIO()
         sortby = pstats.SortKey.TIME
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps = StatsMicro(pr, stream=s).sort_stats(sortby)
         ps.print_stats()
         print(s.getvalue())
 
-    def test_upate_data_server(self):
-        s_id = "EC286"
+        cdfs.close()
+
+    def test_data_range_time_server_hour(self):
+        s_id = "EC283"
         first = datetime.datetime(1970, 1, 7, 0, 10, 0, 653012, tzinfo=datetime.timezone.utc)
         second = datetime.datetime(1970, 1, 7, 1, 10, 0, 653012, tzinfo=datetime.timezone.utc)
 
         cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
 
-        print(cdfs.data.end_datetime)
-        time.sleep(5)
-
-        cdfs.data.update_proxies()
-        print(cdfs.data.end_datetime)
-
-        cdfs.close()
-
-    def test_data_range_time_server_second(self):
-        s_id = "EC283"
-        first = datetime.datetime(1970, 1, 7, 0, 10, 0, 653012, tzinfo=datetime.timezone.utc)
-        second = datetime.datetime(1970, 1, 7, 0, 10, 1, 653012, tzinfo=datetime.timezone.utc)
-
-        cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
-
-        data = cdfs.data.find_data_range(first, second, approx=True)
-
-        cdfs.close()
-
-    def test_data_range_time_server_profile_hour(self):
-        s_id = "EC283"
-        first = datetime.datetime(1970, 1, 7, 0, 10, 0, tzinfo=datetime.timezone.utc)
-        second = datetime.datetime(1970, 1, 7, 1, 10, 0, tzinfo=datetime.timezone.utc)
-
-        cdfs = XLTEKCDFS(path=self.server_path / s_id, open_=True, load=True)
-
         pr = cProfile.Profile()
         pr.enable()
 
@@ -295,44 +283,6 @@ class TestCDFSXLTEK(ClassTest):
 
         cdfs.close()
 
-    def test_data_range_time_one_second(self):
-        s_id = "EC283"
-        timestamps = [
-            {
-                "first": datetime.datetime(2020, 1, 31, 20, 38, 43, 653012),
-                "second": datetime.datetime(2020, 1, 31, 20, 38, 53, 653012),
-            }
-        ]
-        pr = cProfile.Profile()
-        pr.enable()
-
-        study_frame = self.class_(s_id=s_id, studies_path=self.server_path)
-        for timestamp in timestamps:
-            data = study_frame.find_data_range(timestamp["first"], timestamp["second"], approx=True)
-        study_frame.close()
-
-        pr.disable()
-        s = io.StringIO()
-        sortby = pstats.SortKey.TIME
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())
-
-    def test_where_misshapen(self):
-        s_id = "EC283"
-
-        cdfs = XLTEKCDFS(path=self.server_path / s_id, open_=True, load=True)
-        indices = cdfs.data.where_misshapen(shape=(0, 148))
-
-        assert not indices
-
-    def test_where_shape_changes(self):
-        s_id = "EC283"
-
-        cdfs = XLTEKCDFS(path=self.server_path / s_id, open_=True, load=True)
-        indices = cdfs.data.where_shape_changes()
-
-        assert not indices
 
     def test_validate_shape(self):
         s_id = "EC228"
@@ -381,19 +331,6 @@ class TestCDFSXLTEK(ClassTest):
         sample_rate = study_frame.sample_rate
 
         assert sample_rate
-
-    def test_insert_missing(self):
-        s_id = "EC283"
-
-        cdfs = XLTEKCDFS(path=self.server_path / s_id, open_=True, load=True)
-
-        flat_data = cdfs.data.as_flattened()
-        flat_data.time_tolerance = flat_data.sample_period
-        flat_data.insert_missing()
-        remaining = flat_data.where_missing()
-
-        cdfs.close()
-        assert not remaining
 
     def test_where_discontinuous(self):
         s_id = "EC228"

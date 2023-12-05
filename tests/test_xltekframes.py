@@ -29,7 +29,7 @@ import numpy as np
 import pytest
 
 # Local Packages #
-from src.xltektools.hdf5framestructure import *
+from src.xltektools.xltekhdf5 import *
 
 
 # Definitions #

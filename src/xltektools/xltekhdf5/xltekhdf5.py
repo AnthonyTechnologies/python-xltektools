@@ -1,9 +1,8 @@
-"""hdf5xltek.py
+"""xltekhdf5.py
 A HDF5 file which contains data for XLTEK EEG data.
 """
 # Package Header #
 from ..header import *
-
 
 # Header #
 __author__ = __author__
@@ -18,40 +17,37 @@ import pathlib
 from typing import Any
 from typing import Union
 
-import h5py
-from baseobjects.functions import singlekwargdispatch
-
 # Third-Party Packages #
-from classversioning import TriNumberVersion
-from classversioning import Version
-from classversioning import VersionType
+from baseobjects.functions import singlekwargdispatch
+from classversioning import VersionType, Version, TriNumberVersion
+import h5py
 from hdf5objects.dataset import ElectricalSeriesMap
-from hdf5objects.fileobjects import HDF5EEG
-from hdf5objects.fileobjects import HDF5EEGMap
-from hdf5objects.hdf5bases import HDF5Dataset
-from hdf5objects.hdf5bases import HDF5File
-from hdf5objects.hdf5bases import HDF5Map
-
+from hdf5objects.fileobjects import HDF5EEGMap, HDF5EEG
+from hdf5objects.hdf5bases import HDF5File, HDF5Map
 
 # Local Packages #
 
 
 # Definitions #
 # Classes #
-class HDF5XLTEKMap(HDF5EEGMap):
-    """A map for HDF5XLTEK files."""
+class XLTEKHDF5Map(HDF5EEGMap):
+    """A map for XLTEKHDF5 files."""
 
+    default_attribute_names = HDF5EEGMap.default_attribute_names | {
+        "start_id": "start_id",
+        "end_id": "end_id",
+    }
     default_attributes = HDF5EEGMap.default_attributes | {"age": "", "sex": "U", "species": "Homo Sapien"}
     default_map_names = {"data": "ECoG"}
     default_maps = {
         "data": ElectricalSeriesMap(
-            attributes={"units": "volts"},
+            attributes={"units": "microvolts"},
             object_kwargs={"shape": (0, 0), "maxshape": (None, None)},
         ),
     }
 
 
-class HDF5XLTEK(HDF5EEG):
+class XLTEKHDF5(HDF5EEG):
     """A HDF5 file which contains data for XLTEK EEG data.
 
     Class Attributes:
@@ -63,10 +59,10 @@ class HDF5XLTEK(HDF5EEG):
     """
 
     _registration: bool = True
-    _VERSION_TYPE: VersionType = VersionType(name="HDF5XLTEK", class_=TriNumberVersion)
+    _VERSION_TYPE: VersionType = VersionType(name="XLTEKHDF5", class_=TriNumberVersion)
     VERSION: Version = TriNumberVersion(0, 0, 0)
     FILE_TYPE: str = "XLTEK_EEG"
-    default_map: HDF5Map = HDF5XLTEKMap()
+    default_map: HDF5Map = XLTEKHDF5Map()
 
     # File Validation
     @singlekwargdispatch("file")
@@ -171,7 +167,7 @@ class HDF5XLTEK(HDF5EEG):
 
     @singlekwargdispatch("file")
     @classmethod
-    def new_validated(cls, file: pathlib.Path | str | HDF5File | h5py.File, **kwargs: Any) -> Union["HDF5XLTEK", None]:
+    def new_validated(cls, file: pathlib.Path | str | HDF5File | h5py.File, **kwargs: Any) -> Union["XLTEKHDF5", None]:
         """Checks if the given file or path is a valid type and returns the file if valid.
 
         Args:
@@ -269,7 +265,7 @@ class HDF5XLTEK(HDF5EEG):
             return cls.get_version_class(TriNumberVersion(0, 1, 0)).new_validated(file)
 
     @classmethod
-    def get_version_from_file(cls, file: pathlib.Path | str | h5py.File) -> Version:
+    def get_version_from_file(cls, file: pathlib.Path | str | h5py.File) -> tuple[Version, h5py.File]:
         """Return a version from a file.
 
         Args:
@@ -287,6 +283,6 @@ class HDF5XLTEK(HDF5EEG):
             file = h5py.File(file)
 
         if v_name in file.attrs:
-            return TriNumberVersion(file.attrs[v_name])
+            return TriNumberVersion(file.attrs[v_name]), file
         elif cls.get_version_class(TriNumberVersion(0, 1, 0)).validate_file_type(file):
-            return TriNumberVersion(0, 1, 0)
+            return TriNumberVersion(0, 1, 0), file

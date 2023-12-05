@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from ..header import *
+from xltektools.header import *
 
 
 # Header #
@@ -15,6 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 from asyncio import sleep
 from queue import Empty
+import time
 from typing import Any
 from typing import NamedTuple
 from typing import Optional
@@ -29,14 +30,14 @@ from taskblocks import AsyncQueueManager
 from taskblocks import TaskBlock
 
 # Local Packages #
-from .hdf5xltek import HDF5XLTEK
+from xltektools.xltekhdf5.xltekhdf5 import XLTEKHDF5
 
 
 # Definitions #
 # Classes #
 
 
-class HDF5XLTEKWriterTask(TaskBlock):
+class XLTEKHDF5WriterTask(TaskBlock):
     """
 
     Class Attributes:
@@ -47,7 +48,7 @@ class HDF5XLTEKWriterTask(TaskBlock):
 
     """
 
-    default_type = HDF5XLTEK.get_latest_version_class()
+    default_type = XLTEKHDF5.get_latest_version_class()
 
     # Magic Methods #
     # Construction/Destruction
@@ -66,7 +67,7 @@ class HDF5XLTEKWriterTask(TaskBlock):
         **kwargs: Any,
     ) -> None:
         # New Attributes #
-        self.file_type: type = self.default_type
+        self.file_type: type[XLTEKHDF5] = self.default_type
 
         self.file = None
         self.file_kwargs: dict[str, Any] = {"file": ""}
@@ -158,18 +159,6 @@ class HDF5XLTEKWriterTask(TaskBlock):
         self.outputs.queues["contents_info"] = AsyncQueue()
         self.outputs.events["done"] = AsyncEvent()
 
-    def link_inputs(self, *args: Any, **kwargs: Any) -> None:
-        """Abstract method that gives a place to the inputs to other objects."""
-        pass
-
-    def link_outputs(self, *args: Any, **kwargs: Any) -> None:
-        """Abstract method that gives a place to the outputs to other objects."""
-        pass
-
-    def link_io(self, *args: Any, **kwargs: Any) -> None:
-        """Abstract method that gives a place to the io to other objects."""
-        pass
-
     async def write_queue_get(self, interval: float = 0.0) -> Any:
         while self.loop_event.is_set():
             try:
@@ -194,21 +183,23 @@ class HDF5XLTEKWriterTask(TaskBlock):
         if data is None:
             return
 
-        file_kwargs = info.pop("file_kwargs")
+        file_kwargs = info.pop("file")
 
         if file_kwargs["file"] != self.file_kwargs["file"]:
             if self.file is not None:
                 self.file.close()
 
             try:
-                self.file = self.file_type(**file_kwargs)
+                self.file = self.file_type(mode="a", create=True, construct=True, **file_kwargs)
             except OSError:
                 file_kwargs["file"].unlink(missing_ok=True)
-                self.file = self.file_type(**file_kwargs)
+                self.file = self.file_type(mode="a", create=True, construct=True, **file_kwargs)
 
-            self.file.time_axis.components["axis"].set_time_zone(info["tzinfo"])
-            self.file.time_axis.components["axis"].sample_rate = info["sample_rate"]
+            self.file.time_axis.components["axis"].set_time_zone(info["contents_insert"]["timezone"])
+            self.file.time_axis.components["axis"].sample_rate = info["contents_insert"]["sample_rate"]
+            self.file.attributes["start_id"] = info["contents_insert"]["start_id"]
             self.file.swmr_mode = True
+            self.file_kwargs.update(file_kwargs)
 
         dataset = self.file.data
         d_slicing = [slice(None, i) for i in data.shape]
@@ -217,18 +208,10 @@ class HDF5XLTEKWriterTask(TaskBlock):
         n_slicing = slice(self.file.time_axis.shape[0], data.shape[0])
 
         dataset.append(data[d_slicing], component_kwargs={"timeseries": {"data": nanostamps[n_slicing]}})
-        dataset.flush()
+        self.file.flush()
 
-        content_kwargs = info["contents_kwargs"]
-        content_kwargs.update(
-            start=Timestamp.fromnanostamp(nanostamps[0], tz=info["tzinfo"]),
-            end=Timestamp.fromnanostamp(nanostamps[-1], tz=info["tzinfo"]),
-            min_shape=data.shape,
-            max_shape=data.shape,
-            sample_rate=info["sample_rate"],
-        )
         del data, nanostamps
-        await self.contents_info_queue.put_async(content_kwargs)
+        await self.contents_info_queue.put_async(info["contents_insert"])
 
     # Teardown
     def teardown(self, *args: Any, **kwargs: Any) -> None:

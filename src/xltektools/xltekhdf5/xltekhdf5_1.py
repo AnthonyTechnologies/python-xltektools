@@ -1,4 +1,4 @@
-"""hdf5xltek.py
+"""xltekhdf5.py
 A HDF5 file which contains data for XLTEK EEG data.
 """
 # Package Header #
@@ -18,15 +18,15 @@ __email__ = __email__
 # Third-Party Packages #
 from classversioning import TriNumberVersion
 from classversioning import Version
-from dspobjects.time import Timestamp
+from dspobjects.time import Timestamp, nanostamp
 
 # Local Packages #
-from .hdf5xltek import HDF5XLTEK
+from .xltekhdf5 import XLTEKHDF5
 
 
 # Definitions #
 # Classes #
-class HDF5XLTEK_1(HDF5XLTEK):
+class XLTEKHDF5_1(XLTEKHDF5):
     """A HDF5 file which contains data for XLTEK EEG data.
 
     Class Attributes:
@@ -45,7 +45,7 @@ class HDF5XLTEK_1(HDF5XLTEK):
         return self["data"].components["timeseries"].get_datetime(-1)
 
     @property
-    def end_nanostamp(self) -> float | None:
+    def end_nanostamp(self) -> int | None:
         """The end timestamp of this file."""
         return self["data"].components["timeseries"].get_nanostamp(-1)
 
@@ -53,3 +53,22 @@ class HDF5XLTEK_1(HDF5XLTEK):
     def end_timestamp(self) -> float | None:
         """The end timestamp of this file."""
         return self["data"].components["timeseries"].get_timestamp(-1)
+
+    @property
+    def start_id(self) -> int:
+        """The start ID of this file."""
+        return int(self.attributes.get("start_id", None))
+
+    @property
+    def end_id(self) -> int:
+        """The end ID of this file."""
+        data = self["data"]
+        if data.components["timeseries"].sample_rate is None:
+            end_id = self.attributes.get("end_id", None)
+        else:
+            start_id = self.start_id
+            if start_id is None:
+                return None
+            end_id = start_id + nanostamp((data.shape[0] - 1) / data.components["timeseries"].sample_rate)
+        return int(end_id)
+

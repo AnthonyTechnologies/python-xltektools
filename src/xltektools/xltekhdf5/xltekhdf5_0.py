@@ -1,9 +1,8 @@
-"""hdf5xltek.py
+"""xltekhdf5.py
 A HDF5 file which contains data for XLTEK EEG data.
 """
 # Package Header #
 from ..header import *
-
 
 # Header #
 __author__ = __author__
@@ -23,8 +22,6 @@ from typing import Union
 # Third-Party Packages #
 import h5py
 import numpy as np
-
-# Third-Party Packages #
 from baseobjects.functions import singlekwargdispatch
 from classversioning import TriNumberVersion
 from classversioning import Version
@@ -40,7 +37,7 @@ from hdf5objects.hdf5bases import HDF5File
 from hdf5objects.hdf5bases import HDF5Map
 
 # Local Packages #
-from .hdf5xltek import HDF5XLTEK
+from .xltekhdf5 import XLTEKHDF5
 
 
 # Definitions #
@@ -82,8 +79,8 @@ class XLTEKDataMap_0(BaseTimeSeriesMap):
     default_component_types = {"timeseries": (XLTEKTimeComponent, {"scale_name": "time axis"})}
 
 
-class HDF5XLTEKMap_0(HDF5EEGMap):
-    """A map for HDF5XLTEK files."""
+class XLTEKHDF5Map_0(HDF5EEGMap):
+    """A map for XLTEKHDF5 files."""
 
     default_attribute_names = {
         "file_type": "type",
@@ -102,7 +99,7 @@ class HDF5XLTEKMap_0(HDF5EEGMap):
     }
 
 
-class HDF5XLTEK_0(HDF5XLTEK):
+class HDF5XLTEK_0(XLTEKHDF5):
     """A HDF5 file which contains data for XLTEK EEG data.
 
     Class Attributes:
@@ -127,7 +124,7 @@ class HDF5XLTEK_0(HDF5XLTEK):
 
     VERSION: Version = TriNumberVersion(0, 1, 0)
     FILE_TYPE: str = "XLTEK_EEG"
-    default_map: HDF5Map = HDF5XLTEKMap_0()
+    default_map: HDF5Map = XLTEKHDF5Map_0()
 
     # File Validation
     @singlekwargdispatch("file")
@@ -224,7 +221,7 @@ class HDF5XLTEK_0(HDF5XLTEK):
 
     @singlekwargdispatch("file")
     @classmethod
-    def new_validated(cls, file: pathlib.Path | str | HDF5File | h5py.File, **kwargs: Any) -> Union["HDF5XLTEK", None]:
+    def new_validated(cls, file: pathlib.Path | str | HDF5File | h5py.File, **kwargs: Any) -> Union["XLTEKHDF5", None]:
         """Checks if the given file or path is a valid type and returns the file if valid.
 
         Args:
@@ -368,6 +365,28 @@ class HDF5XLTEK_0(HDF5XLTEK):
 
     # Instance Methods #
     # Constructors/Destructors
+    def construct(
+        self,
+        file: str | pathlib.Path | h5py.File | None = None,
+        s_id: str | None = None,
+        s_dir: str | pathlib.Path | None = None,
+        start: datetime.datetime | float | None = None,
+        **kwargs: Any,
+    ) -> "HDF5EEG":
+        """Constructs this object.
+
+        Args:
+            file: Either the file object or the path to the file.
+            s_id: The subject id.
+            s_dir: The directory where subjects data are stored.
+            start: The start time of the data, if creating.
+            **kwargs: The keyword arguments for the open method.
+
+        Returns:
+            This object.
+        """
+        super().construct(file=file, s_id=s_id, **kwargs)
+
     def construct_file_attributes(
         self,
         start: datetime.datetime | float | None = None,
