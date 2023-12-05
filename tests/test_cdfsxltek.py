@@ -251,7 +251,7 @@ class TestCDFSXLTEK(ClassTest):
     def test_upate_data_server(self):
         s_id = "EC286"
         first = datetime.datetime(1970, 1, 7, 0, 10, 0, 653012, tzinfo=datetime.timezone.utc)
-        second = datetime.datetime(1970, 1, 7, 0, 10, 1, 653012, tzinfo=datetime.timezone.utc)
+        second = datetime.datetime(1970, 1, 7, 1, 10, 0, 653012, tzinfo=datetime.timezone.utc)
 
         cdfs = self.class_(path=self.server_path / s_id, open_=True, load=True)
 
