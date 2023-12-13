@@ -19,6 +19,7 @@ import gc
 import datetime
 from pathlib import Path
 from typing import Any
+import traceback
 
 # Third-Party Packages #
 from baseobjects import BaseObject
@@ -237,6 +238,18 @@ class XLTEKCDFSEDFExporter(BaseObject):
 
         # Flatten Data
         flat_data = self.cdfs.data.as_flattened()
+        if not self.cdfs:
+            print(f"self.cdfs is not defined when it should be. export cannot be performed. self.cdsf value: {self.cdfs}")
+            return
+        try:
+            sample_frequency = 1 / flat_data.sample_period
+            print(f"sample frequency: {sample_frequency}")
+        except IndexError as e:
+            print("The following index error was raised:")
+            traceback.print_exc()
+            print(f"Unable to access sample period, export cannot be performed. flat_data value: {flat_data}")
+            return
+
 
         # Fill Missing Data
         if fill:
@@ -256,6 +269,12 @@ class XLTEKCDFSEDFExporter(BaseObject):
                 proxy_segment = flat_data.create_return_proxy()
                 proxy_segment.proxies.extend(proxies)
 
+                if proxy_segment.shape[1] != len(self.channel_names):
+                    print(f"The shape of the proxy does not match the length of the channels. export impossible")
+                    print(f"proxy: {proxy_segment}")
+                    print(f"proxy length: {proxy_shape[1]}")
+                    print(f"channel length: {len(self.channel_names)}")
+                    return
                 # Only Export Proxy Ranges that Match the Channels
                 if proxy_segment.shape[1] == len(self.channel_names):
                     # Create Signal Headers
@@ -274,6 +293,7 @@ class XLTEKCDFSEDFExporter(BaseObject):
                     n_days = (proxy_segment.end_date - proxy_segment.start_date).days + 1
                     first_date = proxy_segment.start_datetime.date()
                     for d in range(n_days):
+                        print(f"Exporting day {d + 1}...")
                         # Generate Date and File path
                         date = first_date + datetime.timedelta(days=d)
                         if date in days:
