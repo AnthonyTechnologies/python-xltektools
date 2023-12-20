@@ -75,12 +75,13 @@ class IEEGXLTEKBIDSExporter(IEEGBIDSExporter, CallableMultiplexObject):
     def load_channels(self) -> list[str, ...]:
         channel_names = list(self.modality.load_electrodes()["name"])
         n_channels = len(channel_names)
-        if n_channels > 128:
-            channel_names.extend((f"BLANK{i + 1}" for i in range(n_channels, 256)))
-        else:
-            channel_names.extend((f"BLANK{i + 1}" for i in range(n_channels, 128)))
-        channel_names.extend((f"DC{i + 1}" for i in range(16)))
-        channel_names.extend(("TRIG", "OSAT", "PR", "Pleth"))
+        if n_channels < 4 or tuple(channel_names[-4:]) != ("TRIG", "OSAT", "PR", "Pleth"):
+            if n_channels > 128:
+                channel_names.extend((f"BLANK{i + 1}" for i in range(n_channels, 256)))
+            else:
+                channel_names.extend((f"BLANK{i + 1}" for i in range(n_channels, 128)))
+            channel_names.extend((f"DC{i + 1}" for i in range(16)))
+            channel_names.extend(("TRIG", "OSAT", "PR", "Pleth"))
 
         return channel_names
 
