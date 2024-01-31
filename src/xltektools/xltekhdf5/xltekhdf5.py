@@ -21,7 +21,7 @@ from typing import Union
 from baseobjects.functions import singlekwargdispatch
 from classversioning import VersionType, Version, TriNumberVersion
 import h5py
-from hdf5objects.dataset import ElectricalSeriesMap
+from hdf5objects.dataset import ElectricalSeriesMap, TimeAxisMap
 from hdf5objects.fileobjects import HDF5EEGMap, HDF5EEG
 from hdf5objects.hdf5bases import HDF5File, HDF5Map
 
@@ -32,7 +32,7 @@ from hdf5objects.hdf5bases import HDF5File, HDF5Map
 # Classes #
 class XLTEKHDF5Map(HDF5EEGMap):
     """A map for XLTEKHDF5 files."""
-
+    _compression_kwargs = {"compression": "gzip", "compression_opts": 9}
     default_attribute_names = HDF5EEGMap.default_attribute_names | {
         "start_id": "start_id",
         "end_id": "end_id",
@@ -42,7 +42,13 @@ class XLTEKHDF5Map(HDF5EEGMap):
     default_maps = {
         "data": ElectricalSeriesMap(
             attributes={"units": "microvolts"},
-            object_kwargs={"shape": (0, 0), "maxshape": (None, None)},
+            axis_maps=[
+                {"time_axis": TimeAxisMap(object_kwargs=_compression_kwargs.copy())},
+                {"channellabel_axis": LabelAxisMap(object_kwargs=_compression_kwargs.copy()),
+                 "channelcoord_axis": CoordinateAxisMap(object_kwargs=_compression_kwargs.copy()),
+                 },
+            ],
+            object_kwargs={"shape": (0, 0), "maxshape": (None, None)} | _compression_kwargs,
         ),
     }
 
