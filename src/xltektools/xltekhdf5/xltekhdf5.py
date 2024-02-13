@@ -21,7 +21,7 @@ from typing import Union
 from baseobjects.functions import singlekwargdispatch
 from classversioning import VersionType, Version, TriNumberVersion
 import h5py
-from hdf5objects.dataset import ElectricalSeriesMap, TimeAxisMap
+from hdf5objects.dataset import ElectricalSeriesMap, TimeAxisMap, LabelAxisMap, CoordinateAxisMap
 from hdf5objects.fileobjects import HDF5EEGMap, HDF5EEG
 from hdf5objects.hdf5bases import HDF5File, HDF5Map
 
