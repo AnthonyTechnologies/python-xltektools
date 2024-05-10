@@ -21,6 +21,7 @@ import cProfile
 import datetime
 import io
 import os
+from pathlib import Path
 import pathlib
 import pickle
 import pstats
@@ -34,6 +35,8 @@ import pytest
 
 # Third-Party Packages #
 from ucsfbids import Subject, Session
+from ucsfbids.datasets import Dataset
+from ucsfbids.datasets.importers.pia import DatasetPiaImporter
 from pyedflib.highlevel import make_signal_headers, make_header, write_edf, read_edf
 import matplotlib.pyplot as plt
 
@@ -69,8 +72,14 @@ class ClassTest:
 class TestXLTEKUCSFBIDS(ClassTest):
     server_path = pathlib.Path("/data_store0/human/converted_clinical")
     server_out_path = pathlib.Path("/scratch/afong/bidstest")
-    server_path_kleen = pathlib.Path("/scratch/anthonyfong/ucsfbids")
-    server_out_path_kleen = pathlib.Path("/scratch/anthonyfong/bidstest")
+    subject_root = pathlib.Path("/data_store2/imaging/subjects")
+    path_kleen = pathlib.Path("/scratch/anthonyfong/ucsfbids")
+    out_path_kleen = pathlib.Path("/scratch/anthonyfong/bidstest")
+
+    convert_subjects = (
+        "EC300",
+        "EC303",
+    )
 
     def test_session_creation(self, tmp_path):
         subject = Subject(name="EC0212", parent_path=tmp_path, create=True)
@@ -104,13 +113,13 @@ class TestXLTEKUCSFBIDS(ClassTest):
         exporter.export_as_days(self.server_out_path, name=session.full_name)
 
     def test_subject_exporter(self):
-        subject = Subject(name="EC0212", parent_path=self.server_path_kleen, mode="r")
+        subject = Subject(name="EC0212", parent_path=self.path_kleen, mode="r")
 
         exporter = subject.create_exporter("BIDS")
-        exporter.execute_export(self.server_out_path_kleen, name="UPenn0000")
+        exporter.execute_export(self.out_path_kleen, name="UPenn0000")
 
     def test_annotation_read(self):
-        path = self.server_out_path_kleen / f"UPenn0000_task-day1.edf"
+        path = self.out_path_kleen / f"UPenn0000_task-day1.edf"
         sigs, sig_headers, header = read_edf(path.as_posix())
         assert header["annotations"]
 
@@ -162,6 +171,7 @@ class TestXLTEKUCSFBIDS(ClassTest):
 
         data = cdfs.data.find_data_slice(start, stop, approx=True)
         new_channel = data[0].data[1024 * s_sec:1024*(secs+s_sec), 0]
+        data[0].time_axis.sample_rate
 
         t_512 = np.arange(0, secs, 1/512)
         t_1024 = np.arange(0, secs, 1 / 1024)
@@ -181,6 +191,47 @@ class TestXLTEKUCSFBIDS(ClassTest):
 
         plt.show()
 
+    def test_import_imaging(self):
+        subjects = (f"EC{int(n[2:]):04d}" for n in self.convert_subjects)
+        Dataset.default_importers["Pia"] = DatasetPiaImporter
+        dataset = Dataset(
+            path=self.server_path,
+            mode="w",
+            create=False,
+            load=False,
+        )
+        dataset.create_importer("Pia", Path("/"), subjects=subjects).execute_import(
+            source_patients=self.convert_subjects
+        )
+
+    def test_data_loading(self):
+        # Import Package
+        from xltektools.xltekucsfbids import IEEGXLTEK
+
+        # Select Subject
+        bids_subject = Subject(name="EC0212", parent_path=self.server_path)
+        session = bids_subject.sessions["clinicalintracranial"]
+        ieeg = session.modalities["ieeg"]
+        cdfs = ieeg.require_cdfs()
+        cdfs.open(mode="r", load=True)
+
+        # Get Channels
+        montage = ieeg.load_electrodes()
+
+        # Data
+        data = cdfs.data
+        data_start = data.start_datetime
+        data_end = data.end_datetime
+        data_shapes = data.shapes
+        data_sample_rates = data.sample_rates
+
+        # Times
+        start = datetime.datetime(1970, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        stop = datetime.datetime(1970, 1, 6, 0, 1, tzinfo=datetime.timezone.utc)
+
+        #
+        data, axis, start, end, start_index, send_index = data.find_data_slice(start, stop, approx=True)
+        one_second_slice = data[0:1024, :]
 
 
 # Main #

@@ -69,7 +69,7 @@ class XLTEKContentsLeafContainer(BaseTimeContentsLeafContainer):
     def load(self) -> None:
         """Loads the file's information into memory."""
         self._data = self.file["data"]
-        self._time_axis = self._data.components["time_axis"]
+        self._time_axis = self._data.components["timeseries"].time_axis
 
     # Getters and Setters
     def get_data(self) -> Any:
