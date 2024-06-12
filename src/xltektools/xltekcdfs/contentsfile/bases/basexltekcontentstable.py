@@ -166,8 +166,8 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
         if entries:
             await cls.insert_all_async(session=session, items=entries, as_entries=True)
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def correct_contents_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
@@ -176,8 +176,8 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
     ) -> None:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @correct_contents_async.register(async_sessionmaker)
     @classmethod
+    @correct_contents_async.__wrapped__.register(async_sessionmaker)
     async def __correct_contents_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -188,8 +188,8 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
             async with async_session.begin():
                 await cls._correct_contents_async(session=async_session, path=path)
 
-    @correct_contents_async.register(AsyncSession)
     @classmethod
+    @correct_contents_async.__wrapped__.register(AsyncSession)
     async def __correct_contents_async(cls, session: AsyncSession, path: pathlib.Path, begin: bool = False,) -> None:
         if begin:
             async with session.begin():
@@ -202,16 +202,16 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
         statement = lambda_stmt(lambda: select(cls.start_id, cls.end_id).order_by(cls.start_id))
         return tuple(session.execute(statement))
 
-    @singlekwargdispatch(kwarg="session")
     @classmethod
+    @singlekwargdispatch(kwarg="session")
     async def get_start_end_ids_async(
         cls,
         session: async_sessionmaker[AsyncSession] | AsyncSession,
     ) -> tuple[tuple[int, int], ...]:
         raise TypeError(f"{type(session)} is not a valid type.")
 
-    @get_start_end_ids_async.register(async_sessionmaker)
     @classmethod
+    @get_start_end_ids_async.__wrapped__.register(async_sessionmaker)
     async def _get_start_end_ids_async(
         cls,
         session: async_sessionmaker[AsyncSession],
@@ -220,8 +220,8 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
         async with session() as async_session:
             return tuple(await async_session.execute(statement))
 
-    @get_start_end_ids_async.register(AsyncSession)
     @classmethod
+    @get_start_end_ids_async.__wrapped__.register(AsyncSession)
     async def _get_start_end_ids_async(cls, session: AsyncSession) -> tuple[tuple[int, int], ...]:
         statement = lambda_stmt(lambda: select(cls.start_id, cls.end_id).order_by(cls.start_id))
         return tuple(await session.execute(statement))
