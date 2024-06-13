@@ -42,7 +42,7 @@ class XLTEKHDF5Map(HDF5EEGMap):
     default_maps = {
         "data": ElectricalSeriesMap(
             attributes={"units": "microvolts"},
-            object_kwargs={"shape": (0, 0), "maxshape": (None, None)},
+            object_kwargs={"shape": (0, 0), "maxshape": (None, None), "compression": "gzip", "compression_opts": 9},
         ),
     }
 
