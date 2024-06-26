@@ -154,7 +154,7 @@ class XLTEKHDF5WriterTask(TaskBlock):
     # IO
     def construct_io(self) -> None:
         """Abstract method that constructs the io for this object."""
-        self.inputs.queues["write_queue"] = ArrayQueue(bytes_wait=True, maxbytes=int(2e9))
+        self.inputs.queues["write_queue"] = ArrayQueue(bytes_wait=True, maxbytes=int(6e9))
 
         self.outputs.queues["contents_info"] = AsyncQueue()
         self.outputs.events["done"] = AsyncEvent()
