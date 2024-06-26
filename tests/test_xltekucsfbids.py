@@ -215,15 +215,8 @@ class TestXLTEKUCSFBIDS(ClassTest):
         cdfs = ieeg.require_cdfs()
         cdfs.open(mode="r", load=True)
 
-        # Get Channels
-        montage = ieeg.load_electrodes()
-
         # Data
         data = cdfs.data
-        data_start = data.start_datetime
-        data_end = data.end_datetime
-        data_shapes = data.shapes
-        data_sample_rates = data.sample_rates
 
         # Times
         start = datetime.datetime(1970, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
