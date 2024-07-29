@@ -2,7 +2,7 @@
 A node component which implements time content information in its dataset.
 """
 # Package Header #
-from ....header import *
+from xltektools.header import *
 
 # Header #
 __author__ = __author__

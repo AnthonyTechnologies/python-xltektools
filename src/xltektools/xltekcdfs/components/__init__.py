@@ -1,4 +1,4 @@
-"""__init__.py
+""" __init__.py
 
 """
 # Package Header #
@@ -10,8 +10,5 @@ __credits__ = __credits__
 __maintainer__ = __maintainer__
 __email__ = __email__
 
-
 # Imports #
 # Local Packages #
-from .files import *
-from .tasks import *

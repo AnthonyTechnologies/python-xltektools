@@ -2,7 +2,7 @@
 A node component which implements time content information in its dataset.
 """
 # Package Header #
-from ....header import *
+from xltektools.header import *
 
 # Header #
 __author__ = __author__
@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.types import BigInteger
 
 # Local Packages #
-from ....xltekhdf5 import XLTEKHDF5
+from xltektools.xltekhdf5 import XLTEKHDF5
 
 
 # Definitions #
@@ -167,30 +167,7 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
             await cls.insert_all_async(session=session, items=entries, as_entries=True)
 
     @classmethod
-    @singlekwargdispatch(kwarg="session")
-    async def correct_contents_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-        path: pathlib.Path,
-        begin: bool = False,
-    ) -> None:
-        raise TypeError(f"{type(session)} is not a valid type.")
-
-    @classmethod
-    @correct_contents_async.__wrapped__.register(async_sessionmaker)
-    async def __correct_contents_async(
-        cls,
-        session: async_sessionmaker[AsyncSession],
-        path: pathlib.Path,
-        begin: bool = False,
-    ) -> None:
-        async with session() as async_session:
-            async with async_session.begin():
-                await cls._correct_contents_async(session=async_session, path=path)
-
-    @classmethod
-    @correct_contents_async.__wrapped__.register(AsyncSession)
-    async def __correct_contents_async(cls, session: AsyncSession, path: pathlib.Path, begin: bool = False,) -> None:
+    async def correct_contents_async(cls, session: AsyncSession, path: pathlib.Path, begin: bool = False,) -> None:
         if begin:
             async with session.begin():
                 await cls._correct_contents_async(session=session, path=path)
@@ -203,26 +180,7 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
         return tuple(session.execute(statement))
 
     @classmethod
-    @singlekwargdispatch(kwarg="session")
-    async def get_start_end_ids_async(
-        cls,
-        session: async_sessionmaker[AsyncSession] | AsyncSession,
-    ) -> tuple[tuple[int, int], ...]:
-        raise TypeError(f"{type(session)} is not a valid type.")
-
-    @classmethod
-    @get_start_end_ids_async.__wrapped__.register(async_sessionmaker)
-    async def _get_start_end_ids_async(
-        cls,
-        session: async_sessionmaker[AsyncSession],
-    ) -> tuple[tuple[int, int], ...]:
-        statement = lambda_stmt(lambda: select(cls.start_id, cls.end_id).order_by(cls.start_id))
-        async with session() as async_session:
-            return tuple(await async_session.execute(statement))
-
-    @classmethod
-    @get_start_end_ids_async.__wrapped__.register(AsyncSession)
-    async def _get_start_end_ids_async(cls, session: AsyncSession) -> tuple[tuple[int, int], ...]:
+    async def get_start_end_ids_async(cls, session: AsyncSession) -> tuple[tuple[int, int], ...]:
         statement = lambda_stmt(lambda: select(cls.start_id, cls.end_id).order_by(cls.start_id))
         return tuple(await session.execute(statement))
     

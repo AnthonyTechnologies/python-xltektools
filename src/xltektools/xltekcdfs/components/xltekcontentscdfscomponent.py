@@ -1,8 +1,8 @@
-"""xltekcontentsfile.py
+""" xltekcontentscdfscomponent.py.py
 
 """
 # Package Header #
-from ....header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -14,52 +14,55 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 import pathlib
+from typing import Any
+from weakref import ref
 
 # Third-Party Packages #
-from cdfs.contentsfile import TimeContentsFile
-from sqlalchemy.orm import DeclarativeBase, Session
-from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession, async_sessionmaker
+from cdfs.components import TimeContentsCDFSComponent
+from dspobjects.time import Timestamp
+from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 # Local Packages #
-from xltektools.xltekcdfs.tables import BaseXLTEKMetaInformationTable, BaseXLTEKContentsTable, BaseXLTEKVideosTable
-from ....xltekhdf5 import XLTEKHDF5
+from ...xltekhdf5 import XLTEKHDF5
+from ..arrays import XLTEKContentsProxy
+from ..tables import BaseXLTEKContentsTable
 
 
 # Definitions #
 # Classes #
-class XLTEKContentsFileAsyncSchema(AsyncAttrs, DeclarativeBase):
-    pass
+class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
+    # Attributes #
+    _table: type[BaseXLTEKContentsTable] | None = None
 
+    proxy_type: type[XLTEKContentsProxy] = XLTEKContentsProxy
 
-class XLTEKMetaInformationTable(BaseXLTEKMetaInformationTable, XLTEKContentsFileAsyncSchema):
-    pass
+    # Instance Methods #
+    # Contents
+    def correct_contents(
+        self,
+        path: pathlib.Path,
+        session: Session | None = None,
+        begin: bool = False,
+    ) -> None:
+        if session is not None:
+            self.table.correct_contents(session=session, path=path, begin=begin)
+        else:
+            with self.create_session() as session:
+                self.table.correct_contents(session=session, path=path, begin=True)
 
+    async def correct_contents_async(
+        self,
+        path: pathlib.Path,
+        session: AsyncSession | None = None,
+        begin: bool = False,
+    ) -> None:
+        if session is not None:
+            await self.table.correct_contents_async(session=session, path=path, begin=begin)
+        else:
+            async with self.create_async_session() as session:
+                await self.table.correct_contents_async(session=session, path=path, begin=True)
 
-class XLTEKContentsTable(BaseXLTEKContentsTable, XLTEKContentsFileAsyncSchema):
-    pass
-
-
-class XLTEKVideosTable(BaseXLTEKVideosTable, XLTEKContentsFileAsyncSchema):
-    pass
-
-
-class XLTEKContentsFile(TimeContentsFile):
-    """
-
-    Class Attributes:
-
-    Attributes:
-
-    Args:
-
-    """
-    schema: type[DeclarativeBase] = XLTEKContentsFileAsyncSchema
-    meta_information_table: type[XLTEKMetaInformationTable] = XLTEKMetaInformationTable
-    contents: type[XLTEKContentsTable] = XLTEKContentsTable
-    videos: type[XLTEKVideosTable] = XLTEKVideosTable
-
-    # Magic Methods #
-    # Construction/Destruction
     def get_start_end_ids(self, session: Session | None = None) -> tuple[tuple[int, int], ...]:
         if session is not None:
             return self.contents.get_start_end_ids(session=session)
@@ -79,7 +82,7 @@ class XLTEKContentsFile(TimeContentsFile):
             return await self.contents.get_start_end_ids_async(session=self.async_session_maker)
         else:
             raise IOError("File not open")
-    
+
     def insert_file_contents(
         self,
         path: pathlib.Path | str,
@@ -89,7 +92,7 @@ class XLTEKContentsFile(TimeContentsFile):
         begin: bool = False,
     ) -> None:
         if session is not None:
-            self.contents.insert(
+            self._table.insert(
                 session=session,
                 begin=begin,
                 as_entry=True,
@@ -104,9 +107,9 @@ class XLTEKContentsFile(TimeContentsFile):
                 start_id=file.attributes["start_id"],
                 end_id=file.attributes["end_id"],
             )
-        elif self.is_open:
+        else:
             with self.create_session() as session:
-                self.contents.insert(
+                self._table.insert(
                     session=session,
                     begin=True,
                     as_entry=True,
@@ -121,19 +124,17 @@ class XLTEKContentsFile(TimeContentsFile):
                     start_id=file.attributes["start_id"],
                     end_id=file.attributes["end_id"],
                 )
-        else:
-            raise IOError("File not open")
 
     async def insert_file_contents_async(
         self,
         path: pathlib.Path | str,
         file: XLTEKHDF5,
         update_id: int = 0,
-        session: async_sessionmaker[AsyncSession] | AsyncSession | None = None,
+        session: AsyncSession | None = None,
         begin: bool = False,
     ) -> None:
         if session is not None:
-            await self.contents.insert_async(
+            await self._table.insert_async(
                 session=session,
                 begin=begin,
                 as_entry=True,
@@ -148,8 +149,8 @@ class XLTEKContentsFile(TimeContentsFile):
                 start_id=file.attributes["start_id"],
                 end_id=file.attributes["end_id"],
             )
-        elif self.is_open:
-            await self.contents.insert_async(
+        else:
+            await self._table.insert_async(
                 session=self.async_session_maker,
                 begin=begin,
                 as_entry=True,
@@ -164,5 +165,3 @@ class XLTEKContentsFile(TimeContentsFile):
                 start_id=file.attributes["start_id"],
                 end_id=file.attributes["end_id"],
             )
-        else:
-            raise IOError("File not open")

@@ -108,14 +108,14 @@ class XLTEKContentsLeafContainer(BaseTimeContentsLeafContainer):
 
 
 class XLTEKContentsNodeProxy(TimeContentsNodeProxy):
-    default_node_type: type = None
-    default_leaf_type: type = XLTEKContentsLeafContainer
+    node_type: type = None
+    leaf_type: type = XLTEKContentsLeafContainer
 
 
 class XLTEKContentsProxy(XLTEKContentsNodeProxy, TimeContentsProxy):
-    default_node_type: type = XLTEKContentsNodeProxy
+    node_type: type = XLTEKContentsNodeProxy
 
 
 # Assign Cyclic Definition
-XLTEKContentsNodeProxy.default_node_type = XLTEKContentsNodeProxy
+XLTEKContentsNodeProxy.node_type = XLTEKContentsNodeProxy
 
