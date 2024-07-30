@@ -2,7 +2,7 @@
 A node component which implements time content information in its dataset.
 """
 # Package Header #
-from xltektools.header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -15,7 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 
 # Third-Party Packages #
-from cdfs.contentsfile import BaseTimeContentsTable
+from cdfs.tables import BaseTimeContentsTable
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.types import BigInteger
 

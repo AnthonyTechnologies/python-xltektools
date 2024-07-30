@@ -118,4 +118,3 @@ class XLTEKContentsProxy(XLTEKContentsNodeProxy, TimeContentsProxy):
 
 # Assign Cyclic Definition
 XLTEKContentsNodeProxy.node_type = XLTEKContentsNodeProxy
-

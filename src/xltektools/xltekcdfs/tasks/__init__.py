@@ -13,5 +13,4 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .files import *
-from .tasks import *
+from .xltekcontentsupdatetask import XLTEKContentsUpdateTask

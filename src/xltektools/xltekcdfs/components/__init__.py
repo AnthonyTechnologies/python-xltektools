@@ -12,3 +12,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
+from .xltekmetainformationcdfscomponent import XLTEKMetaInformationCDFSComponent
+from .xltekcontentscdfscomponent import XLTEKContentsCDFSComponent
