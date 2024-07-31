@@ -80,10 +80,10 @@ class XLTEKCDFS(BaseCDFS):
         path: pathlib.Path | str | None = None,
         name: str | None = None,
         mode: str = "r",
-        open_: bool = False,
-        load: bool = False,
+        open_: bool = True,
+        load: bool = True,
         create: bool = False,
-        update: bool = False,
+        build: bool = True,
         contents_name: str | None = None,
         component_kwargs: dict[str, dict[str, Any]] | None = None,
         *,
@@ -102,7 +102,7 @@ class XLTEKCDFS(BaseCDFS):
                 open_=open_,
                 load=load,
                 create=create,
-                update=update,
+                build=build,
                 contents_name=contents_name,
                 component_kwargs=component_kwargs,
                 **kwargs,
@@ -115,10 +115,10 @@ class XLTEKCDFS(BaseCDFS):
         path: pathlib.Path | str | None = None,
         name: str | None = None,
         mode: str = "r",
-        open_: bool = False,
-        load: bool = False,
+        open_: bool = True,
+        load: bool = True,
         create: bool = False,
-        update: bool = False,
+        build: bool = True,
         contents_name: str | None = None,
         component_kwargs: dict[str, dict[str, Any]] | None = None,
         **kwargs: Any,
@@ -137,7 +137,7 @@ class XLTEKCDFS(BaseCDFS):
         meta_information = {"name": name}
         meta_kwargs = {"init_info": meta_information}
         new_component_kwargs = {"meta_information": meta_kwargs}
-        update_recursive(new_component_kwargs, component_kwargs)
+        update_recursive(new_component_kwargs, component_kwargs or {})
 
         super().construct(
             path=path,
@@ -145,7 +145,7 @@ class XLTEKCDFS(BaseCDFS):
             open_=open_,
             load=load,
             create=create,
-            update=update,
+            build=build,
             contents_name=contents_name,
             component_kwargs=new_component_kwargs,
             **kwargs,

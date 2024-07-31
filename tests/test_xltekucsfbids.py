@@ -70,6 +70,7 @@ class ClassTest:
 
 
 class TestXLTEKUCSFBIDS(ClassTest):
+    jasper_path = pathlib.Path("//JasperNAS/root_store/subjects")
     server_path = pathlib.Path("/data_store0/human/converted_clinical")
     server_out_path = pathlib.Path("/scratch/afong/bidstest")
     subject_root = pathlib.Path("/data_store2/imaging/subjects")
@@ -209,21 +210,21 @@ class TestXLTEKUCSFBIDS(ClassTest):
         from xltektools.xltekucsfbids import IEEGXLTEK
 
         # Select Subject
-        bids_subject = Subject(name="EC0212", parent_path=self.server_path)
+        bids_subject = Subject(name="EC0296", parent_path=self.jasper_path)
         session = bids_subject.sessions["clinicalintracranial"]
         ieeg = session.modalities["ieeg"]
         cdfs = ieeg.require_cdfs()
         cdfs.open(mode="r", load=True)
 
         # Data
-        data = cdfs.data
+        data_proxy = cdfs.components["contents"].create_contents_proxy()
 
         # Times
-        start = datetime.datetime(1970, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
-        stop = datetime.datetime(1970, 1, 6, 0, 1, tzinfo=datetime.timezone.utc)
+        start = datetime.datetime(1970, 1, 7, 0, 0, tzinfo=datetime.timezone.utc)
+        stop = datetime.datetime(1970, 1, 7, 0, 1, tzinfo=datetime.timezone.utc)
 
         #
-        data, axis, start, end, start_index, send_index = data.find_data_slice(start, stop, approx=True)
+        data, axis, start, end, start_index, send_index = data_proxy.find_data_slice(start, stop, approx=True)
         one_second_slice = data[0:1024, :]
 
 

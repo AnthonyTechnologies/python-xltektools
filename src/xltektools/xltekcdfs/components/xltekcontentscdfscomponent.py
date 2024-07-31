@@ -47,10 +47,13 @@ class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
     # Contents
     def correct_contents(
         self,
-        path: pathlib.Path,
+        path: pathlib.Path | None = None,
         session: Session | None = None,
         begin: bool = False,
     ) -> None:
+        if path is None:
+            path = self._composite().path
+
         if session is not None:
             self.table.correct_contents(session=session, path=path, begin=begin)
         else:
@@ -59,10 +62,13 @@ class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
 
     async def correct_contents_async(
         self,
-        path: pathlib.Path,
+        path: pathlib.Path | None = None,
         session: AsyncSession | None = None,
         begin: bool = False,
     ) -> None:
+        if path is None:
+            path = self._composite().path
+
         if session is not None:
             await self.table.correct_contents_async(session=session, path=path, begin=begin)
         else:
@@ -71,17 +77,17 @@ class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
 
     def get_start_end_ids(self, session: Session | None = None) -> tuple[tuple[int, int], ...]:
         if session is not None:
-            return self.contents.get_start_end_ids(session=session)
+            return self.table.get_start_end_ids(session=session)
         else:
             with self.create_session() as session:
-                return self.contents.get_start_end_ids(session=session)
+                return self.table.get_start_end_ids(session=session)
 
     async def get_start_end_ids_async(self, session: AsyncSession | None = None) -> tuple[tuple[int, int], ...]:
         if session is not None:
-            return await self.contents.get_start_end_ids_async(session=session)
+            return await self.table.get_start_end_ids_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.contents.get_start_end_ids_async(session=session)
+                return await self.table.get_start_end_ids_async(session=session)
 
     def insert_file_contents(
         self,
@@ -167,18 +173,19 @@ class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
                     end_id=file.attributes["end_id"],
                 )
 
-    def generate_day_name(self, start: datetime):
-        absolute_start = self.start_datetime
+    def generate_day_name(self, start: datetime, absolute_start=None):
+        if absolute_start is None:
+            absolute_start = self.start_datetime
         n_days = 1 if absolute_start is None else (start.date() - absolute_start.date()).days + 1
         return f"task-day{n_days:03d}"
 
-    def generate_file_path(self, start, tzinfo=None):
+    def generate_file_path(self, start, tzinfo=None, absolute_start=None):
         composite = self._composite()
 
         if not isinstance(start, datetime):
             start = Timestamp(start, tz=tzinfo)
 
-        day_name = self.generate_day_name(start)
+        day_name = self.generate_day_name(start, absolute_start)
         day_path = composite.path / day_name
         day_path.mkdir(exist_ok=True)
 
@@ -197,6 +204,7 @@ class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
         start: datetime | float | int | np.dtype | np.ndarray,
         end: datetime | float | int | np.dtype | np.ndarray | None = None,
         tzinfo=None,
+        absolute_start: datetime | float | int | np.dtype | np.ndarray | None = None,
         start_id: int | None = None,
         end_id: int | None = None,
         axis: int = 0,
@@ -210,7 +218,7 @@ class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
         elif not isinstance(end, Timestamp):
             end = Timestamp(end, tz=tzinfo)
 
-        full_path, relative_path = self.generate_file_path(start=start, tzinfo=tzinfo)
+        full_path, relative_path = self.generate_file_path(start=start, tzinfo=tzinfo, absolute_start=absolute_start)
 
         return {
             "file": {"file": full_path, "s_id": self._composite().name},
