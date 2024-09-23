@@ -11,22 +11,34 @@ import datetime
 import pathlib
 
 # Third-Party Packages
-from ucsfbids import Subject, Session
-import xltektools  # Ensures that the IEEGXLTEK class is added to the modularbids registry
+from ucsfbids import Subject
 
-# Setup #
-server_path = pathlib.Path("/data_store0/human/converted_clinical")
-
-start_time = datetime.datetime(1970, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)  # Start Date is shifted to 1970
-stop_time = datetime.datetime(1970, 1, 6, 0, 1, tzinfo=datetime.timezone.utc)
-
-channels = slice(50, 100)  # Selects channels 50-99
 
 # Load Session
-bids_subject = Subject(name="EC0212", parent_path=server_path)
-session = bids_subject.sessions["clinicalintracranial"]  # The recording name
-cdfs = session.modalities["ieeg"].require_cdfs(load=True)  # Get the data loading object
+print("Opening Subject")
+root_path = pathlib.Path("/data_store0/human/converted_clinical")
+subject = Subject(name="EC0212", parent_path=root_path)
+session = subject.sessions["clinicalintracranial"]  # The recording name
+ieeg = session.modalities["ieeg"]  # The modality name
+
+# Get Montage
+print("Loading Montage")
+montage = ieeg.load_electrodes()
+labels = montage["name"]
 
 # Get data
-found_data = cdfs.data.find_data_slice(start_time, stop_time, approx=True)
-new_channel = found_data[0].data[:, channels]
+print("Accessing Data")
+cdfs = ieeg.componenets["cdfs"].get_cdfs()  # Get the data loading object
+proxy = cdfs.components["contents"].create_contents_proxy()
+
+print("Selecting Time")
+subject_start = proxy.start_datetime
+start_time = subject_start + datetime.timedelta(days=1)
+stop_time = subject_start + datetime.timedelta(minutes=1)
+
+print("Fetching Data")
+found_data = proxy.find_data_slice(start_time, stop_time, approx=True)
+
+print("Plotting Data")
+channels = slice(50, 100)  # Selects channels 50-99
+data = found_data[0].data[:, channels]

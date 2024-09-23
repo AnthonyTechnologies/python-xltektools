@@ -13,5 +13,5 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .exporters import *
+from .ieegxltekcomponent import IEEGXLTEKComponent
 from .ieegxltek import IEEGXLTEK
