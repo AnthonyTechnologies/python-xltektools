@@ -1,5 +1,5 @@
 """xltekcdfs.py
-
+The main API object for an XLTEK CDFS.
 """
 # Package Header #
 from ..header import *
@@ -29,14 +29,29 @@ from .components import XLTEKMetaInformationCDFSComponent, XLTEKContentsCDFSComp
 # Definitions #
 # Classes #
 class XLTEKCDFS(BaseCDFS):
-    """
+    """The main API object for an XLTEK CDFS.
+
+    This class extends the BaseCDFS class and provides additional functionality specific to XLTEK data files.
 
     Class Attributes:
+        default_component_types: A dictionary defining the default component types and their configurations.
 
     Attributes:
+        schema: The schema class for defining the database structure and used for database operations.
+        tables: The SQLAlchemy tables managed by this CDFS object.
 
     Args:
-
+        path: The path to the CDFS. Defaults to None.
+        name: The subject ID. Defaults to None.
+        mode: Determines if the contents of the CDFS will be editable or not. Defaults to "r".
+        open_: Determines if the CDFS will remain open after construction. Defaults to True.
+        load: Determines if the CDFS will be constructed. Defaults to True.
+        create: Determines if the CDFS will be created. Defaults to False.
+        build: Determines if the CDFS will be built upon creation. Defaults to True.
+        contents_name: The name of the contents main contents table. Defaults to None.
+        component_kwargs: Additional keyword arguments for components. Defaults to None.
+        init: Determines if the object will be constructed. Defaults to True.
+        **kwargs: Additional keyword arguments.
     """
 
     # Class Attributes #
@@ -57,7 +72,7 @@ class XLTEKCDFS(BaseCDFS):
     # Properties #
     @property
     def name(self) -> str | None:
-        """The subject ID from the file attributes."""
+        """The subject ID."""
         return self.components["meta_information"].name
 
     @name.setter
@@ -66,7 +81,7 @@ class XLTEKCDFS(BaseCDFS):
 
     @property
     def start_datetime(self) -> str | None:
-        """The start datetime from the file attributes."""
+        """The start datetime."""
         return self.components["meta_information"].start_datetime
 
     @start_datetime.setter
@@ -126,14 +141,18 @@ class XLTEKCDFS(BaseCDFS):
         """Constructs this object.
 
         Args:
-            path: The path for this proxy to wrap.
-            name: The subject ID.
-            mode: Determines if the contents of this proxy are editable or not.
-            update: Determines if this proxy will start_timestamp updating or not.
-            open_: Determines if the arrays will remain open after construction.
-            load: Determines if the arrays will be constructed.
-            **kwargs: The keyword arguments to create contained arrays.
+            path: The path to the CDFS. Defaults to None.
+            name: The subject ID. Defaults to None.
+            mode: Determines if the contents of the CDFS will be editable or not. Defaults to "r".
+            open_: Determines if the CDFS will remain open after construction. Defaults to True.
+            load: Determines if the CDFS will be constructed. Defaults to True.
+            create: Determines if the CDFS will be created. Defaults to False.
+            build: Determines if the CDFS will be built upon creation. Defaults to True.
+            contents_name: The name of the contents main contents table. Defaults to None.
+            component_kwargs: Additional keyword arguments for components. Defaults to None.
+            **kwargs: Additional keyword arguments.
         """
+        # Add default meta information to component kwargs
         meta_information = {"name": name}
         meta_kwargs = {"init_info": meta_information}
         new_component_kwargs = {"meta_information": meta_kwargs}
