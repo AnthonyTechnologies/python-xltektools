@@ -15,6 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 
 # Third-Party Packages #
+from ucsfbids.modalities import IEEG
 from ucsfbids.cdfsbids import IEEGCDFSComponent
 
 # Local Packages #
@@ -53,3 +54,7 @@ class IEEGXLTEKComponent(IEEGCDFSComponent):
         kwargs: The keyword arguments for inheritance.
     """
     cdfs_type: type[XLTEKCDFS] = XLTEKCDFS
+
+
+# Registration #
+IEEG.component_types_register.register_class(IEEGXLTEKComponent)

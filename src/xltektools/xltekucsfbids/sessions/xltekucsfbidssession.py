@@ -15,7 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 
 # Third-Party Packages #
-from ucsfbids.sessions import CDFSSession
+from ucsfbids.cdfsbids import CDFSSession
 
 # Local Packages #
 from ..modalities import IEEGXLTEK
@@ -52,4 +52,4 @@ class XLTEKUCSFBIDSSession(CDFSSession):
         init: Determines if this object will construct.
         kwargs: The keyword arguments for inheritance.
     """
-    default_modalities: dict = CDFSSession.default_modalities.copy() | {"ieeg": IEEGXLTEK}
+    default_modalities: dict = CDFSSession.default_modalities.copy() | {"ieeg": (IEEGXLTEK, {})}
