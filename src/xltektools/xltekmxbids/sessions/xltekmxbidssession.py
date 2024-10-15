@@ -1,8 +1,8 @@
-"""xltekucsfbidssession.py
-A UCSF BIDS Session which contains a XLTEKCDFS as part of its structure.
+"""xltekmxbidssession.py
+A MXBIDS Session which contains a XLTEKCDFS as part of its structure.
 """
 # Package Header #
-from xltektools.header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -13,9 +13,11 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from typing import ClassVar, Any
 
 # Third-Party Packages #
-from ucsfbids.cdfsbids import CDFSSession
+from mxbids.modalities import Modality
+from mxbids.cdfsbids import CDFSSession
 
 # Local Packages #
 from ..modalities import IEEGXLTEK
@@ -23,7 +25,7 @@ from ..modalities import IEEGXLTEK
 
 # Definitions #
 # Classes #
-class XLTEKUCSFBIDSSession(CDFSSession):
+class XLTEKMXBIDSSession(CDFSSession):
     """A UCSF BIDS Session which contains a XLTEKCDFS as part of its structure.
 
     Class Attributes:
@@ -52,4 +54,6 @@ class XLTEKUCSFBIDSSession(CDFSSession):
         init: Determines if this object will construct.
         kwargs: The keyword arguments for inheritance.
     """
-    default_modalities: dict = CDFSSession.default_modalities.copy() | {"ieeg": (IEEGXLTEK, {})}
+    default_modalities: ClassVar[dict[str, tuple[type[Modality], dict[str, Any]]]] = (
+        CDFSSession.default_modalities.copy() | {"ieeg": (IEEGXLTEK, {})}
+    )

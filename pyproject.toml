@@ -25,7 +25,7 @@ cdfs = ">=0.2.0"
 hdf5objects = ">=0.4.3"
 taskblocks = {git = "https://github.com/FongAnthonyM/python-taskblocks.git"}
 pyEDFlib = ">=0.1.36"
-ucsfbids = {git = "https://github.com/FongAnthonyM/python-ucsfbids.git"}
+mxbids = {git = "https://github.com/FongAnthonyM/python-mxbids.git"}
 
 [tool.poetry.dev-dependencies]
 Pygments = ">=2.10.0"

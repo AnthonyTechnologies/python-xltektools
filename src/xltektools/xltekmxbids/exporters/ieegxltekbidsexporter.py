@@ -2,7 +2,7 @@
 
 """
 # Package Header #
-from xltektools.header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -18,7 +18,7 @@ from typing import Any
 
 # Third-Party Packages #
 from baseobjects.functions import MethodMultiplexer, CallableMultiplexObject
-from ucsfbids.exporters import IEEGBIDSExporter
+from mxbids.exporters import IEEGBIDSExporter
 
 # Local Packages #
 from ...xltekcdfs import XLTEKCDFSEDFExporter
@@ -77,7 +77,7 @@ class IEEGXLTEKBIDSExporter(IEEGBIDSExporter, CallableMultiplexObject):
         """Constructs this object.
 
         Args:
-            bids_object: The UCSFBIDS object to export.
+            bids_object: The MXBIDS object to export.
             files_names: The set of file names to export.
             exclude_names: The set of file names to exclude from export.
             name_map: A mapping of names.

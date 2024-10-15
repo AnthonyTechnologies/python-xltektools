@@ -16,7 +16,7 @@ __email__ = __email__
 from typing import ClassVar, Any
 
 # Third-Party Packages #
-from ucsfbids.cdfsbids import IEEGCDFS
+from mxbids.cdfsbids import IEEGCDFS
 
 # Local Packages #
 from .ieegxltekcomponent import IEEGXLTEKComponent
@@ -33,7 +33,7 @@ class IEEGXLTEK(IEEGCDFS):
     """
 
     # Class Attributes #
-    _module_: ClassVar[str | None] = "xltektools.xltekucsfbids"
+    _module_: ClassVar[str | None] = "xltektools.xltekmxbids"
     default_component_types: ClassVar[dict[str, tuple[type, dict[str, Any]]]] = {
         "cdfs": (IEEGXLTEKComponent, {}),
     }

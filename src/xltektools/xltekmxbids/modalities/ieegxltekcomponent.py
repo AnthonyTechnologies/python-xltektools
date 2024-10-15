@@ -16,7 +16,7 @@ __email__ = __email__
 
 # Third-Party Packages #
 from ucsfbids.modalities import IEEG
-from ucsfbids.cdfsbids import IEEGCDFSComponent
+from mxbids.cdfsbids import IEEGCDFSComponent
 
 # Local Packages #
 from ...xltekcdfs import XLTEKCDFS
