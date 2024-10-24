@@ -16,7 +16,7 @@ import pathlib
 from dash import Dash, html, dcc, Input, Output, callback
 from dspobjects.plot import TimeSeriesPlot, HeatmapPlot, Figure
 import numpy as np
-from ucsfbids import Subject
+from mxbids import Subject
 
 
 # Definitions #

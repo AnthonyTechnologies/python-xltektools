@@ -15,7 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 
 # Third-Party Packages #
-from ucsfbids.modalities import IEEG
+from mxbids.modalities import IEEG
 from mxbids.cdfsbids import IEEGCDFSComponent
 
 # Local Packages #

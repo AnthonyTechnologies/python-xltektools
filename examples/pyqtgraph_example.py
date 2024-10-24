@@ -19,7 +19,7 @@ from PySide6.QtWidgets import QApplication, QWidget, QLabel
 from PySide6.QtCore import QTimer, Qt
 import pyqtgraph as pg
 import numpy as np
-from ucsfbids import Subject
+from mxbids import Subject
 
 
 # Definitions #

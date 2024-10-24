@@ -14,7 +14,7 @@ import pathlib
 
 # Third-Party Packages
 from dspobjects.plot import TimeSeriesPlot
-from ucsfbids import Subject
+from mxbids import Subject
 
 # Setup #
 path = pathlib.Path("//JasperNAS/root_store/temp_subjects/sub-EC0212")

@@ -14,7 +14,7 @@ import pathlib
 
 from select import select
 # Third-Party Packages
-from ucsfbids import Subject
+from mxbids import Subject
 import numpy as np
 
 from bokeh.layouts import column
