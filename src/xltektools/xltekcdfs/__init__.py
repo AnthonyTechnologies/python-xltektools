@@ -13,6 +13,10 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .contentsfile import *
+from .xltekcdfsasyncschema import XLTEKCDFSAsyncSchema
 from .xltekcdfs import XLTEKCDFS
+from .arrays import *
+from .components import *
+from .tables import *
+from .tasks import *
 from .xltekcdfsedfexporter import XLTEKCDFSEDFExporter

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" test_xltekucsfbids.py
+""" test_xltekmxbids.py
 
 """
 # Package Header #
@@ -21,6 +21,7 @@ import cProfile
 import datetime
 import io
 import os
+from pathlib import Path
 import pathlib
 import pickle
 import pstats
@@ -33,14 +34,16 @@ import numpy as np
 import pytest
 
 # Third-Party Packages #
-from ucsfbids import Subject, Session
+from mxbids import Subject, Session
+from mxbids.datasets import Dataset
+from mxbids.datasets.importers.pia import DatasetPiaImporter
 from pyedflib.highlevel import make_signal_headers, make_header, write_edf, read_edf
 import matplotlib.pyplot as plt
 
 # Local Packages #
 from src.xltektools.xltekhdf5.xltekhdf5_0 import HDF5XLTEK_0
 from src.xltektools.xltekcdfs import XLTEKCDFSEDFExporter
-from src.xltektools.xltekucsfbids import XLTEKUCSFBIDSSession
+from src.xltektools.xltekmxbids import XLTEKMXBIDSSession
 
 
 # Definitions #
@@ -66,25 +69,32 @@ class ClassTest:
         return lines
 
 
-class TestXLTEKUCSFBIDS(ClassTest):
+class TestXLTEKMXBIDS(ClassTest):
+    jasper_path = pathlib.Path("//JasperNAS/root_store/subjects")
     server_path = pathlib.Path("/data_store0/human/converted_clinical")
     server_out_path = pathlib.Path("/scratch/afong/bidstest")
-    server_path_kleen = pathlib.Path("/scratch/anthonyfong/ucsfbids")
-    server_out_path_kleen = pathlib.Path("/scratch/anthonyfong/bidstest")
+    subject_root = pathlib.Path("/data_store2/imaging/subjects")
+    path_kleen = pathlib.Path("/scratch/anthonyfong/mxbids")
+    out_path_kleen = pathlib.Path("/scratch/anthonyfong/bidstest")
+
+    convert_subjects = (
+        "EC300",
+        "EC303",
+    )
 
     def test_session_creation(self, tmp_path):
         subject = Subject(name="EC0212", parent_path=tmp_path, create=True)
-        new_session = subject.create_new_session(XLTEKUCSFBIDSSession, mode="w", create=True)
+        new_session = subject.create_new_session(XLTEKMXBIDSSession, mode="w", create=True)
         assert True
 
     def test_session_loading(self, tmp_path):
         subject = Subject(name="EC000", parent_path=tmp_path, create=True)
-        new_session = subject.create_new_session(XLTEKUCSFBIDSSession, mode="w", create=True)
+        new_session = subject.create_new_session(XLTEKMXBIDSSession, mode="w", create=True)
 
         subject_copy = Subject(name="EC000", parent_path=tmp_path)
         session = list(subject_copy.sessions.values())[0]
 
-        assert isinstance(session, XLTEKUCSFBIDSSession)
+        assert isinstance(session, XLTEKMXBIDSSession)
 
     def test_edf_exporter(self):
         subject = Subject(name="EC0291", parent_path=self.server_path, mode="r")
@@ -104,13 +114,13 @@ class TestXLTEKUCSFBIDS(ClassTest):
         exporter.export_as_days(self.server_out_path, name=session.full_name)
 
     def test_subject_exporter(self):
-        subject = Subject(name="EC0212", parent_path=self.server_path_kleen, mode="r")
+        subject = Subject(name="EC0212", parent_path=self.path_kleen, mode="r")
 
         exporter = subject.create_exporter("BIDS")
-        exporter.execute_export(self.server_out_path_kleen, name="UPenn0000")
+        exporter.execute_export(self.out_path_kleen, name="UPenn0000")
 
     def test_annotation_read(self):
-        path = self.server_out_path_kleen / f"UPenn0000_task-day1.edf"
+        path = self.out_path_kleen / f"UPenn0000_task-day1.edf"
         sigs, sig_headers, header = read_edf(path.as_posix())
         assert header["annotations"]
 
@@ -162,6 +172,7 @@ class TestXLTEKUCSFBIDS(ClassTest):
 
         data = cdfs.data.find_data_slice(start, stop, approx=True)
         new_channel = data[0].data[1024 * s_sec:1024*(secs+s_sec), 0]
+        data[0].time_axis.sample_rate
 
         t_512 = np.arange(0, secs, 1/512)
         t_1024 = np.arange(0, secs, 1 / 1024)
@@ -181,6 +192,40 @@ class TestXLTEKUCSFBIDS(ClassTest):
 
         plt.show()
 
+    def test_import_imaging(self):
+        subjects = (f"EC{int(n[2:]):04d}" for n in self.convert_subjects)
+        Dataset.default_importers["Pia"] = DatasetPiaImporter
+        dataset = Dataset(
+            path=self.server_path,
+            mode="w",
+            create=False,
+            load=False,
+        )
+        dataset.create_importer("Pia", Path("/"), subjects=subjects).execute_import(
+            source_patients=self.convert_subjects
+        )
+
+    def test_data_loading(self):
+        # Import Package
+        from xltektools.xltekmxbids import IEEGXLTEK
+
+        # Select Subject
+        bids_subject = Subject(name="EC0296", parent_path=self.jasper_path)
+        session = bids_subject.sessions["clinicalintracranial"]
+        ieeg = session.modalities["ieeg"]
+        cdfs = ieeg.require_cdfs()
+        cdfs.open(mode="r", load=True)
+
+        # Data
+        data_proxy = cdfs.components["contents"].create_contents_proxy()
+
+        # Times
+        start = datetime.datetime(1970, 1, 7, 0, 0, tzinfo=datetime.timezone.utc)
+        stop = datetime.datetime(1970, 1, 7, 0, 1, tzinfo=datetime.timezone.utc)
+
+        #
+        data, axis, start, end, start_index, send_index = data_proxy.find_data_slice(start, stop, approx=True)
+        one_second_slice = data[0:1024, :]
 
 
 # Main #

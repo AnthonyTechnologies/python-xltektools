@@ -71,8 +71,8 @@ class XLTEKHDF5(HDF5EEG):
     default_map: HDF5Map = XLTEKHDF5Map()
 
     # File Validation
-    @singlekwargdispatch("file")
     @classmethod
+    @singlekwargdispatch("file")
     def validate_file_type(cls, file: pathlib.Path | str | HDF5File | h5py.File) -> bool:
         """Checks if the given file or path is a valid type.
 
@@ -84,8 +84,8 @@ class XLTEKHDF5(HDF5EEG):
         """
         raise TypeError(f"{type(file)} is not a valid type for validate_file_type.")
 
-    @validate_file_type.register
     @classmethod
+    @validate_file_type.__wrapped__.register
     def _validate_file_type(cls, file: pathlib.Path) -> bool:
         """Checks if the given path is a valid type.
 
@@ -109,8 +109,8 @@ class XLTEKHDF5(HDF5EEG):
         else:
             return False
 
-    @validate_file_type.register
     @classmethod
+    @validate_file_type.__wrapped__.register
     def _validate_file_type(cls, file: str) -> bool:
         """Checks if the given path is a valid type.
 
@@ -136,8 +136,8 @@ class XLTEKHDF5(HDF5EEG):
         else:
             return False
 
-    @validate_file_type.register
     @classmethod
+    @validate_file_type.__wrapped__.register
     def _validate_file_type(cls, file: HDF5File) -> bool:
         """Checks if the given file is a valid type.
 
@@ -154,8 +154,8 @@ class XLTEKHDF5(HDF5EEG):
         else:
             return cls.get_version_class(TriNumberVersion(0, 1, 0)).validate_file_type(file)
 
-    @validate_file_type.register
     @classmethod
+    @validate_file_type.__wrapped__.register
     def _validate_file_type(cls, file: h5py.File) -> bool:
         """Checks if the given file is a valid type.
 
@@ -171,8 +171,8 @@ class XLTEKHDF5(HDF5EEG):
         else:
             return cls.get_version_class(TriNumberVersion(0, 1, 0)).validate_file_type(file)
 
-    @singlekwargdispatch("file")
     @classmethod
+    @singlekwargdispatch("file")
     def new_validated(cls, file: pathlib.Path | str | HDF5File | h5py.File, **kwargs: Any) -> Union["XLTEKHDF5", None]:
         """Checks if the given file or path is a valid type and returns the file if valid.
 
@@ -184,8 +184,8 @@ class XLTEKHDF5(HDF5EEG):
         """
         raise TypeError(f"{type(file)} is not a valid type for new_validate.")
 
-    @new_validated.register
     @classmethod
+    @new_validated.__wrapped__.register
     def _new_validated(cls, file: pathlib.Path, **kwargs: Any) -> Any:
         """Checks if the given path is a valid type and returns the file if valid.
 
@@ -209,8 +209,8 @@ class XLTEKHDF5(HDF5EEG):
         else:
             return None
 
-    @new_validated.register
     @classmethod
+    @new_validated.__wrapped__.register
     def _new_validated(cls, file: str, **kwargs: Any) -> Any:
         """Checks if the given path is a valid type and returns the file if valid.
 
@@ -235,8 +235,8 @@ class XLTEKHDF5(HDF5EEG):
         else:
             return None
 
-    @new_validated.register
     @classmethod
+    @new_validated.__wrapped__.register
     def _new_validated(cls, file: HDF5File, **kwargs: Any) -> Any:
         """Checks if the given file is a valid type and returns the file if valid.
 
@@ -253,8 +253,8 @@ class XLTEKHDF5(HDF5EEG):
         else:
             return cls.get_version_class(TriNumberVersion(0, 1, 0)).new_validated(file)
 
-    @new_validated.register
     @classmethod
+    @new_validated.__wrapped__.register
     def _new_validated(cls, file: h5py.File, **kwargs: Any) -> Any:
         """Checks if the given file is a valid type and returns the file if valid.
 

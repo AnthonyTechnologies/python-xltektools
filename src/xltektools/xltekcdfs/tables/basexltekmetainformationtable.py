@@ -2,7 +2,7 @@
 A node component which implements time content information in its dataset.
 """
 # Package Header #
-from ....header import *
+from ...header import *
 
 # Header #
 __author__ = __author__
@@ -20,9 +20,8 @@ import zoneinfo
 
 # Third-Party Packages #
 from baseobjects.operations import timezone_offset
-from cdfs.contentsfile import BaseMetaInformationTable
+from cdfs.tables import BaseMetaInformationTable
 from dspobjects.time import Timestamp, nanostamp
-from sqlalchemy import Column
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import BigInteger
 
@@ -105,4 +104,3 @@ class BaseXLTEKMetaInformationTable(BaseMetaInformationTable):
             recording_unit=self.recording_unit,
         )
         return entry
-

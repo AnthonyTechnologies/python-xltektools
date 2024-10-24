@@ -4,6 +4,7 @@ A HDF5 file which contains data for XLTEK EEG data.
 # Package Header #
 from xltektools.header import *
 
+
 # Header #
 __author__ = __author__
 __credits__ = __credits__
@@ -11,21 +12,27 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 
+import datetime
+import gc
+import traceback
+
 # Imports #
 # Standard Libraries #
 from collections.abc import Iterable
 from copy import deepcopy
-import gc
-import datetime
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 # Third-Party Packages #
 from baseobjects import BaseObject
-import numpy as np
 from proxyarrays import BlankTimeProxy
-from pyedflib import EdfWriter, FILETYPE_EDFPLUS, FILETYPE_BDFPLUS
-from pyedflib.highlevel import make_signal_headers, make_header
+from pyedflib import FILETYPE_BDFPLUS
+from pyedflib import FILETYPE_EDFPLUS
+from pyedflib import EdfWriter
+from pyedflib.highlevel import make_header
+from pyedflib.highlevel import make_signal_headers
 
 # Local Packages #
 from ..xltekcdfs import XLTEKCDFS
@@ -34,7 +41,6 @@ from ..xltekcdfs import XLTEKCDFS
 # Definitions #
 # Classes #
 class XLTEKCDFSEDFExporter(BaseObject):
-
     # Magic Methods #
     # Construction/Destruction
     def __init__(
@@ -92,8 +98,7 @@ class XLTEKCDFSEDFExporter(BaseObject):
         super().construct(**kwargs)
 
     def _write_proxy_samples(self, writer, data, start=None, stop=None, digital=False):
-        """
-        """
+        """ """
         samples_step = writer.get_smp_per_record(0)
         dtype = np.int32 if digital else np.float64
 
@@ -101,7 +106,7 @@ class XLTEKCDFSEDFExporter(BaseObject):
             if record.shape[0] < samples_step:
                 old_record = record
                 record = np.zeros(shape=(samples_step, old_record.shape[1]), dtype=dtype)
-                record[:old_record.shape[0], :] = old_record
+                record[: old_record.shape[0], :] = old_record
 
             if digital:
                 success = writer.blockWriteDigitalSamples(record.T.flatten())
@@ -109,7 +114,7 @@ class XLTEKCDFSEDFExporter(BaseObject):
                 success = writer.blockWritePhysicalSamples(record.T.flatten())
 
             if success < 0:
-                raise OSError(f'Unknown error while calling blockWriteSamples: {success}')
+                raise OSError(f"Unknown error while calling blockWriteSamples: {success}")
 
     def write_edf_proxy(
         self,
@@ -122,12 +127,11 @@ class XLTEKCDFSEDFExporter(BaseObject):
         digital: bool = False,
         file_type: str | None = None,
     ):
-        """
-        """
-        assert len(signal_headers) == signals.shape[1], 'signals and signal_headers must be same length'
+        """ """
+        assert len(signal_headers) == signals.shape[1], "signals and signal_headers must be same length"
 
         header = make_header() | ({} if header is None else header)
-        annotations = header.get('annotations', [])
+        annotations = header.get("annotations", [])
         signal_headers = deepcopy(signal_headers)
 
         if file_type is None:
@@ -216,7 +220,7 @@ class XLTEKCDFSEDFExporter(BaseObject):
                             copy_number = 0
                         day_data = p.find_data_range(
                             start=first_hour + datetime.timedelta(days=h),
-                            stop=first_hour + datetime.timedelta(days=h+1),
+                            stop=first_hour + datetime.timedelta(days=h + 1),
                             approx=True,
                             tails=True,
                         )
@@ -237,6 +241,19 @@ class XLTEKCDFSEDFExporter(BaseObject):
 
         # Flatten Data
         flat_data = self.cdfs.data.as_flattened()
+        if not self.cdfs:
+            print(
+                f"self.cdfs is not defined when it should be. export cannot be performed. self.cdsf value: {self.cdfs}"
+            )
+            return
+        try:
+            sample_frequency = 1 / flat_data.sample_period
+            print(f"sample frequency: {sample_frequency}")
+        except IndexError as e:
+            print("The following index error was raised:")
+            traceback.print_exc()
+            print(f"Unable to access sample period, export cannot be performed. flat_data value: {flat_data}")
+            return
 
         # Fill Missing Data
         if fill:
@@ -256,6 +273,12 @@ class XLTEKCDFSEDFExporter(BaseObject):
                 proxy_segment = flat_data.create_return_proxy()
                 proxy_segment.proxies.extend(proxies)
 
+                if proxy_segment.shape[1] != len(self.channel_names):
+                    print(f"The shape of the proxy does not match the length of the channels. export impossible")
+                    print(f"proxy: {proxy_segment}")
+                    print(f"proxy length: {proxy_segment.shape[1]}")
+                    print(f"channel length: {len(self.channel_names)}")
+                    continue
                 # Only Export Proxy Ranges that Match the Channels
                 if proxy_segment.shape[1] == len(self.channel_names):
                     # Create Signal Headers
@@ -274,6 +297,7 @@ class XLTEKCDFSEDFExporter(BaseObject):
                     n_days = (proxy_segment.end_date - proxy_segment.start_date).days + 1
                     first_date = proxy_segment.start_datetime.date()
                     for d in range(n_days):
+                        print(f"Exporting day {d + 1}...")
                         # Generate Date and File path
                         date = first_date + datetime.timedelta(days=d)
                         if date in days:
@@ -282,7 +306,9 @@ class XLTEKCDFSEDFExporter(BaseObject):
                             days.add(first_date + datetime.timedelta(days=d))
                             copy_number = 0
 
-                        file_name = f"{name}_task-day{len(days)}_ieeg{'' if copy_number == 0 else f'_{copy_number}'}.edf"
+                        file_name = (
+                            f"{name}_task-day{len(days)}_ieeg{'' if copy_number == 0 else f'_{copy_number}'}.edf"
+                        )
                         file_path = path / file_name
 
                         # Export to Non-Existing Files
