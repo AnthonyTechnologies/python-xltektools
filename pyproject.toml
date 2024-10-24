@@ -25,6 +25,7 @@ cdfs = ">=0.3.0"
 hdf5objects = ">=0.5.0"
 mxbids = ">=0.2.1"
 taskblocks = {git = "https://github.com/FongAnthonyM/python-taskblocks.git"}
+numpy = ">=1.21.2, <2.0.0"
 pyEDFlib = ">=0.1.36"
 
 [tool.poetry.dev-dependencies]
