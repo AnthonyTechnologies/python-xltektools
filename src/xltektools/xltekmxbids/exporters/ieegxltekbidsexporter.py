@@ -120,6 +120,7 @@ class IEEGXLTEKBIDSExporter(IEEGBIDSExporter, CallableMultiplexObject):
         path: Path,
         name: str | None = None,
         files: bool | set[str, ...] | None = True,
+        overwrite: bool | None = None,
         **kwargs: Any,
     ) -> None:
         """Executes the export process for the modality.
@@ -128,15 +129,22 @@ class IEEGXLTEKBIDSExporter(IEEGBIDSExporter, CallableMultiplexObject):
             path: The root path to export the modality to.
             name: The new name of the exported modality. Defaults to None, retaining the original name.
             files: A set of files to export or a boolean indicating whether to export files.
+            overwrite: Determines if existing files will be overwritten.
             **kwargs: Additional keyword arguments.
         """
         if name is None:
-            name = self.bids_object.full_name
+            name = self.bids_object.name
 
-        new_path = path / f"{self.bids_object.name}"
+        new_path = path / name
         new_path.mkdir(exist_ok=True)
         if files or files is None:
-            self.export_files(path=new_path, name=name, files=files)
+            new_name = f"{path.parts[-2]}_{path.parts[-1]}"
+            self.export_files(
+                path=new_path,
+                name=new_name,
+                files=None if isinstance(files, bool) else files,
+                overwrite=overwrite,
+            )
 
         self.export_data(path=new_path, name=name)
 
