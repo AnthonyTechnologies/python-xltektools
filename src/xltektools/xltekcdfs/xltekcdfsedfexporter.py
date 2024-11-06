@@ -2,8 +2,7 @@
 A HDF5 file which contains data for XLTEK EEG data.
 """
 # Package Header #
-from xltektools.header import *
-
+from ..header import *
 
 # Header #
 __author__ = __author__
@@ -12,22 +11,20 @@ __maintainer__ = __maintainer__
 __email__ = __email__
 
 
-import datetime
-import gc
-import traceback
-
 # Imports #
 # Standard Libraries #
 from collections.abc import Iterable
 from copy import deepcopy
+import datetime
+import gc
 from pathlib import Path
+import traceback
 from typing import Any
-
-import numpy as np
 
 # Third-Party Packages #
 from baseobjects import BaseObject
 from proxyarrays import BlankTimeProxy
+import numpy as np
 from pyedflib import FILETYPE_BDFPLUS
 from pyedflib import FILETYPE_EDFPLUS
 from pyedflib import EdfWriter
@@ -178,7 +175,7 @@ class XLTEKCDFSEDFExporter(BaseObject):
         )
 
     def create_header(self) -> dict:
-        info = self.cdfs.meta_information
+        info = self.cdfs.components["meta_information"].get_meta_information()
         return make_header(
             patientcode=self.new_name,
             sex="unknown" if info["sex"] == "U" else info["sex"],
@@ -240,7 +237,8 @@ class XLTEKCDFSEDFExporter(BaseObject):
         edf_header = self.create_header()
 
         # Flatten Data
-        flat_data = self.cdfs.data.as_flattened()
+        proxy = self.cdfs.components["contents"].create_contents_proxy()
+        flat_data = proxy.as_flattened()
         if not self.cdfs:
             print(
                 f"self.cdfs is not defined when it should be. export cannot be performed. self.cdsf value: {self.cdfs}"
