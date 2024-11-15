@@ -1,5 +1,5 @@
-""" basexltekcontentstable.py
-A node component which implements time content information in its dataset.
+""" xltekcontentstable.py
+
 """
 # Package Header #
 from ...header import *
@@ -13,18 +13,19 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-import pathlib
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 # Third-Party Packages #
-from cdfs.tables import BaseTimeContentsTable
-from sqlalchemy import select, func, lambda_stmt
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from cdfs import BaseTimeContentsTable, TimeContentsTableManifestation
+from sqlalchemy import select, lambda_stmt
+from sqlalchemy.orm import Session, mapped_column
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import BigInteger
 
 # Local Packages #
-from xltektools.xltekhdf5 import XLTEKHDF5
+from ...xltekhdf5 import XLTEKHDF5
 
 
 # Definitions #
@@ -38,7 +39,7 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
 
     # Class Methods #
     @classmethod
-    def _correct_contents(cls, session: Session, path: pathlib.Path) -> None:
+    def _correct_contents(cls, session: Session, path: Path) -> None:
         last_update_id = cls.get_last_update_id(session=session)
         update_id = 0 if last_update_id is None else last_update_id + 1
 
@@ -98,15 +99,7 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
             cls.insert_all(session=session, items=entries, as_entries=True)
 
     @classmethod
-    def correct_contents(cls, session: Session, path: pathlib.Path, begin: bool = False) -> None:
-        if begin:
-            with session.begin():
-                cls._correct_contents(session=session, path=path)
-        else:
-            cls._correct_contents(session=session, path=path)
-
-    @classmethod
-    async def _correct_contents_async(cls, session: AsyncSession, path: pathlib.Path) -> None:
+    async def _correct_contents_async(cls, session: AsyncSession, path: Path) -> None:
         last_update_id = await cls.get_last_update_id_async(session=session)
         update_id = 0 if last_update_id is None else last_update_id + 1
 
@@ -166,14 +159,6 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
             await cls.insert_all_async(session=session, items=entries, as_entries=True)
 
     @classmethod
-    async def correct_contents_async(cls, session: AsyncSession, path: pathlib.Path, begin: bool = False,) -> None:
-        if begin:
-            async with session.begin():
-                await cls._correct_contents_async(session=session, path=path)
-        else:
-            await cls._correct_contents_async(session=session, path=path)
-
-    @classmethod
     def get_start_end_ids(cls, session: Session) -> tuple[tuple[int, int], ...]:
         statement = lambda_stmt(lambda: select(cls.start_id, cls.end_id).order_by(cls.start_id))
         return tuple(session.execute(statement))
@@ -191,3 +176,21 @@ class BaseXLTEKContentsTable(BaseTimeContentsTable):
         if (end_id := dict_.get("end_id", None)) is not None:
             self.end_id = end_id
         super().update(dict_)
+
+
+class XLTEKContentsTableManifestation(TimeContentsTableManifestation):
+    # Instance Methods #
+    # Contents
+    def get_start_end_ids(self, session: Session | None = None) -> tuple[tuple[int, int], ...]:
+        if session is not None:
+            return self.table.get_start_end_ids(session=session)
+        else:
+            with self.create_session() as session:
+                return self.table.get_start_end_ids(session=session)
+
+    async def get_start_end_ids_async(self, session: AsyncSession | None = None) -> tuple[tuple[int, int], ...]:
+        if session is not None:
+            return await self.table.get_start_end_ids_async(session=session)
+        else:
+            async with self.create_async_session() as session:
+                return await self.table.get_start_end_ids_async(session=session)

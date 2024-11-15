@@ -13,7 +13,7 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-import pathlib
+from pathlib import Path
 from typing import Any
 
 # Third-Party Packages #
@@ -31,7 +31,7 @@ class XLTEKContentsLeafContainer(BaseTimeContentsLeafContainer):
 
     # Class Methods #
     @classmethod
-    def validate_path(cls, path: pathlib.Path | str) -> bool:
+    def validate_path(cls, path: Path | str) -> bool:
         """Validates if path to the file exists and is usable.
 
         Args:
@@ -40,8 +40,8 @@ class XLTEKContentsLeafContainer(BaseTimeContentsLeafContainer):
         Returns:
             Whether this path is valid or not.
         """
-        if not isinstance(path, pathlib.Path):
-            path = pathlib.Path(path)
+        if not isinstance(path, Path):
+            path = Path(path)
 
         if path.is_file():
             return cls.file_type.validate_file_type(path)
@@ -50,14 +50,14 @@ class XLTEKContentsLeafContainer(BaseTimeContentsLeafContainer):
 
     # Instance Methods #
     @property
-    def file(self) -> pathlib.Path:
+    def file(self) -> Path:
         """The file object."""
         if self._file is None:
             self._file = self.file_type(self._path, mode=self.mode, open_=self.remain_open, **self.file_kwargs)
         return self._file
 
     @file.setter
-    def file(self, value: str | pathlib.Path) -> None:
+    def file(self, value: str | Path) -> None:
         self.set_file(value)
 
     def _is_open(self) -> bool:

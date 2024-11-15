@@ -19,7 +19,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
 
 # Local Packages #
-from .tables import BaseXLTEKMetaInformationTable, BaseXLTEKContentsTable, BaseXLTEKVideosTable
+from .tables import BaseXLTEKMetaInformationTable, BaseXLTEKContentsTable
 
 
 # Definitions #
@@ -33,8 +33,4 @@ class XLTEKMetaInformationTable(BaseXLTEKMetaInformationTable, XLTEKCDFSAsyncSch
 
 
 class XLTEKContentsTable(BaseXLTEKContentsTable, XLTEKCDFSAsyncSchema):
-    pass
-
-
-class XLTEKVideosTable(BaseXLTEKVideosTable, XLTEKCDFSAsyncSchema):
     pass

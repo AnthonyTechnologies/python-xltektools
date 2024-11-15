@@ -10,7 +10,8 @@ __credits__ = __credits__
 __maintainer__ = __maintainer__
 __email__ = __email__
 
+
 # Imports #
 # Local Packages #
-from .xltekmetainformationcdfscomponent import XLTEKMetaInformationCDFSComponent
-from .xltekcontentscdfscomponent import XLTEKContentsCDFSComponent
+from .xltekcdfsmetainformationcdfscomponent import XLTEKCDFSMetaInformationComponent
+from .xltekcdfscontentscdfscomponent import XLTEKCDFSContentsComponent
