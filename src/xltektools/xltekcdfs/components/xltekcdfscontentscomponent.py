@@ -1,4 +1,4 @@
-""" xltekcdfscontentscdfscomponent.py.py
+""" xltekcdfscontentscomponent.py.py
 
 """
 # Package Header #
