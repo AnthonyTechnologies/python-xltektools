@@ -71,7 +71,7 @@ class XLTEKCDFS(BaseCDFS):
     meta_table_name: str = "meta_information"
 
     schema: type[DeclarativeBase] | None = XLTEKCDFSAsyncSchema
-    table_maps: dict[str, tuple[type[TableManifestation], type[DeclarativeBase], dict[str, Any]]] = {
+    table_map: dict[str, tuple[type[TableManifestation], type[DeclarativeBase], dict[str, Any]]] = {
         meta_table_name:  (XLTEKMetaInformationTableManifestation, XLTEKMetaInformationTable, {}),
         "contents": (XLTEKContentsTableManifestation, XLTEKContentsTable, {}),
     }
