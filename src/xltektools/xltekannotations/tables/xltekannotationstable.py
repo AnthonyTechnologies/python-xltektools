@@ -61,8 +61,8 @@ class BaseXLTEKAnnotationsTable(BaseUpdateTable):
     # Columns #
     tz_offset: Mapped[int]
     nanostamp = mapped_column(BigInteger)
-    title: Mapped[str]
     origin: Mapped[str]
+    system_text: Mapped[str]
     text: Mapped[str]
     type: Mapped[str]
 
