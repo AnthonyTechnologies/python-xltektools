@@ -31,7 +31,6 @@ from .xltekannotationsasyncschema import XLTEKAnnotationsTable
 # Definitions #
 # Classes #
 class XLTEKAnnotations(Database):
-    """"""
 
     # Attributes #
     meta_table_name: str = "meta_information"

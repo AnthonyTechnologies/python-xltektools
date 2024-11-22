@@ -24,7 +24,7 @@ from mxbids import Subject
 
 # Definitions #
 class MainWindow(QWidget):
-    def __init__(self, streamer):
+    def __init__(self, streamer, channels, scale=1.1, offset=250.0):
         super().__init__()
         self.streamer = streamer
 
@@ -36,12 +36,22 @@ class MainWindow(QWidget):
 
         self.plot_widget = pg.PlotWidget(title="Time Series Plot")
 
-        self.channels = 50
-        self.traces = [None] * self.channels
-        for i in range(self.channels):
+        if isinstance(channels, int):
+            self.channels = slice(channels)
+            self.n_channels = channels
+        if isinstance(channels, slice):
+            self.channels = channels
+            self.n_channels = channels.stop - channels.start
+        else:
+            self.channels = channels
+            self.n_channels = len(channels)
+
+        self.scale = scale
+        self.traces = [None] * self.n_channels
+        for i in range(self.n_channels):
             self.traces[i] = self.plot_widget.plot(pen=(i, 10))
 
-        self.offsets = np.expand_dims(np.arange(self.channels) * 500, axis=0)
+        self.offsets = np.expand_dims(np.arange(self.n_channels) * offset, axis=0)
 
         self.layout = PySide6.QtWidgets.QGridLayout()
         self.setLayout(self.layout)
@@ -50,7 +60,7 @@ class MainWindow(QWidget):
 
     def update_plot(self):
         try:
-            data = next(self.streamer)[:, :self.channels]
+            data = next(self.streamer)[:, self.channels] * self.scale
         except StopIteration:
             self.timer.stop()
         else:
@@ -63,7 +73,7 @@ class MainWindow(QWidget):
 # Main #
 if __name__ == "__main__":
     # Setup #
-    path = pathlib.Path("//JasperNAS/root_store/temp_subjects/sub-EC0212")
+    path = pathlib.Path("//JasperNAS/root_store/updated_subjects/sub-EC0322")
     update_interval = 0.1  # Update every 0.5 seconds
 
     # Load Session
@@ -78,7 +88,7 @@ if __name__ == "__main__":
 
     print("Selecting Time")
     subject_start = proxy.start_datetime
-    start_time = (subject_start + datetime.timedelta(days=4)).replace(hour=22, minute=29, second=0, microsecond=0)
+    start_time = (subject_start + datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
     stop_time = start_time + datetime.timedelta(minutes=10)
 
     print("Create Datastreamer")
@@ -93,6 +103,6 @@ if __name__ == "__main__":
 
     print("Plotting Data")
     app = QApplication(sys.argv)
-    window = MainWindow(streamer)
+    window = MainWindow(streamer, slice(6, 79))
     window.show()
     sys.exit(app.exec())
