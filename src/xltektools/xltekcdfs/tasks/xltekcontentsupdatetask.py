@@ -19,13 +19,13 @@ from typing import Any
 
 # Third-Party Packages #
 from cdfs import BaseCDFS
-from cdfs.components import TimeContentsCDFSComponent
 from taskblocks import AsyncEvent
 from taskblocks import AsyncQueue
 from taskblocks import AsyncQueueInterface
 from taskblocks import TaskBlock
 
 # Local Packages #
+from ..tables import XLTEKContentsTableManifestation
 
 
 # Definitions #
@@ -42,8 +42,8 @@ class XLTEKContentsUpdateTask(TaskBlock):
     """
     # Attributes #
     cdfs: BaseCDFS | None = None
-    component_name: str = "contents"
-    cdfs_component: TimeContentsCDFSComponent | None = None
+    table_name: str = "contents"
+    contents_table: XLTEKContentsTableManifestation | None = None
     was_open: bool = False
     update_key: str = "start_id"
     contents_update_id: int = 0
@@ -127,7 +127,7 @@ class XLTEKContentsUpdateTask(TaskBlock):
             self.cdfs = cdfs
 
         if component_name is not None:
-            self.component_name = component_name
+            self.table_name = component_name
 
         # Construct Parent #
         super().construct(
@@ -169,8 +169,8 @@ class XLTEKContentsUpdateTask(TaskBlock):
         """The method to run before executing task."""
         if not self.cdfs.is_open:
             self.cdfs.open()
-        self.cdfs_component = self.cdfs.components[self.component_name]
-        update_id = await self.cdfs_component.get_last_update_id_async()
+        self.contents_table = self.cdfs.contents_database.tables[self.tables_name]
+        update_id = await self.contents_table.get_last_update_id_async()
         self.contents_update_id = 0 if update_id is None else update_id
 
     # TaskBlock
@@ -185,7 +185,7 @@ class XLTEKContentsUpdateTask(TaskBlock):
             entry["update_id"] = update_id
         self.contents_update_id += 1
 
-        await self.cdfs_component.update_entries_async(
+        await self.contents_table.update_entries_async(
                 entries=entries,
                 key=self.update_key,
                 begin=True,

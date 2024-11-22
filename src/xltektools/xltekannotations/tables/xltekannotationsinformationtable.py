@@ -1,5 +1,5 @@
-""" basexltekmetainformationtable.py
-A node component which implements time content information in its dataset.
+""" xltekannotionsainformationtable.py
+Classes for storing annotations meta-information in a SQLAlchemy ORM model.
 """
 # Package Header #
 from ...header import *
@@ -20,25 +20,25 @@ import zoneinfo
 
 # Third-Party Packages #
 from baseobjects.operations import timezone_offset
-from cdfs.tables import BaseMetaInformationTable
 from dspobjects.time import Timestamp, nanostamp
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import BigInteger
+from sqlalchemyobjects.tables import BaseUpdateTable, UpdateTableManifestation
+from sqlalchemyobjects.tables import BaseMetaInformationTable, MetaInformationTableManifestation
 
 # Local Packages #
 
 
 # Definitions #
 # Classes #
-class BaseXLTEKMetaInformationTable(BaseMetaInformationTable):
-    __mapper_args__ = {"polymorphic_identity": "xltekmetainfromation"}
+class BaseXLTEKAnnotationsInformationTable(BaseMetaInformationTable, BaseUpdateTable):
+    __mapper_args__ = {"polymorphic_identity": "xltekannotationsinfromation"}
     name: Mapped[str] = mapped_column(nullable=True)
     start = mapped_column(BigInteger, nullable=True)
     tz_offset: Mapped[int] = mapped_column(nullable=True)
     age: Mapped[int] = mapped_column(nullable=True)
     sex: Mapped[str] = mapped_column(default="U", nullable=True)
     species: Mapped[str] = mapped_column(default="Homo Sapien", nullable=True)
-    recording_unit: Mapped[str] = mapped_column(default="microvolts", nullable=True)
 
     # Instance Methods #
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
@@ -104,3 +104,55 @@ class BaseXLTEKMetaInformationTable(BaseMetaInformationTable):
             recording_unit=self.recording_unit,
         )
         return entry
+
+
+class XLTEKAnnotationsInformationTableManifestation(MetaInformationTableManifestation, UpdateTableManifestation):
+    # Properties #
+    @property
+    def name(self) -> str | None:
+        """The subject ID from the file attributes."""
+        return self.meta_information["name"]
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self.set_meta_information(name=value)
+
+    @property
+    def start_datetime(self):
+        return self.meta_information["start"]
+
+    @start_datetime.setter
+    def start_datetime(self, value: datetime.datetime) -> None:
+        self.set_meta_information(start=value, timezone=value.tzinfo)
+    
+    @property
+    def timezone(self):
+        return self.meta_information["timezone"]
+    
+    @timezone.setter
+    def timezone(self, value: datetime.tzinfo | str) -> None:
+        self.set_meta_information(timezone=value)
+        
+    @property
+    def age(self):
+        return self.meta_information["age"]
+    
+    @age.setter
+    def age(self, value: int) -> None:
+        self.set_meta_information(age=value)
+
+    @property
+    def sex(self):
+        return self.meta_information["sex"]
+
+    @sex.setter
+    def sex(self, value: int) -> None:
+        self.set_meta_information(sex=value)
+
+    @property
+    def species(self):
+        return self.meta_information["species"]
+
+    @species.setter
+    def species(self, value: str) -> None:
+        self.set_meta_information(species=value)

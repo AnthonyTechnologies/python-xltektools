@@ -1,4 +1,4 @@
-""" xltekcontentscdfscomponent.py.py
+""" xltekcdfscontentscomponent.py.py
 
 """
 # Package Header #
@@ -14,11 +14,11 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from datetime import datetime
-import pathlib
+from pathlib import Path
 from typing import Any
 
 # Third-Party Packages #
-from cdfs.components import TimeContentsCDFSComponent
+from cdfs.components import CDFSTimeContentsComponent
 from dspobjects.time import Timestamp, nanostamp
 import numpy as np
 from sqlalchemy.orm import Session
@@ -27,151 +27,101 @@ from sqlalchemy.ext.asyncio import AsyncSession
 # Local Packages #
 from ...xltekhdf5 import XLTEKHDF5, XLTEKHDF5WriterTask
 from ..arrays import XLTEKContentsProxy
-from ..tables import BaseXLTEKContentsTable
 from ..tasks import XLTEKContentsUpdateTask
 
 
 # Definitions #
 # Classes #
-class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
+class XLTEKCDFSContentsComponent(CDFSTimeContentsComponent):
     # Attributes #
     date_format: str = "%d"
     time_format: str = "%H~%M~%S"
-
-    _table: type[BaseXLTEKContentsTable] | None = None
 
     data_file_type: type[XLTEKHDF5] = XLTEKHDF5.get_latest_version_class()
     proxy_type: type[XLTEKContentsProxy] = XLTEKContentsProxy
 
     # Instance Methods #
-    # Contents
+    # Contents and Files
     def correct_contents(
         self,
-        path: pathlib.Path | None = None,
+        path: Path | None = None,
         session: Session | None = None,
         begin: bool = False,
     ) -> None:
+        """Corrects the contents of the file.
+
+        Args:
+            path: The path to the file.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if path is None:
             path = self._composite().path
 
-        if session is not None:
-            self.table.correct_contents(session=session, path=path, begin=begin)
-        else:
-            with self.create_session() as session:
-                self.table.correct_contents(session=session, path=path, begin=True)
+        self.contents_table.correct_contents(session=session, path=path, begin=begin)
 
     async def correct_contents_async(
         self,
-        path: pathlib.Path | None = None,
+        path: Path | None = None,
         session: AsyncSession | None = None,
         begin: bool = False,
     ) -> None:
+        """Asynchronously corrects the contents of the file.
+
+        Args:
+            path: The path to the file.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
         if path is None:
             path = self._composite().path
 
-        if session is not None:
-            await self.table.correct_contents_async(session=session, path=path, begin=begin)
-        else:
-            async with self.create_async_session() as session:
-                await self.table.correct_contents_async(session=session, path=path, begin=True)
-
-    def get_start_end_ids(self, session: Session | None = None) -> tuple[tuple[int, int], ...]:
-        if session is not None:
-            return self.table.get_start_end_ids(session=session)
-        else:
-            with self.create_session() as session:
-                return self.table.get_start_end_ids(session=session)
-
-    async def get_start_end_ids_async(self, session: AsyncSession | None = None) -> tuple[tuple[int, int], ...]:
-        if session is not None:
-            return await self.table.get_start_end_ids_async(session=session)
-        else:
-            async with self.create_async_session() as session:
-                return await self.table.get_start_end_ids_async(session=session)
-
+        await self.contents_table.correct_contents_async(session=session, path=path, begin=begin)
+    
+    
     def insert_file_contents(
         self,
-        path: pathlib.Path | str,
+        path: Path | str,
         file: XLTEKHDF5,
         update_id: int = 0,
         session: Session | None = None,
         begin: bool = False,
     ) -> None:
-        if session is not None:
-            self._table.insert(
-                session=session,
-                begin=begin,
-                as_entry=True,
-                update_id=update_id,
-                path=path,
-                shape=file.data.shape,
-                axis=file.time_axis.axis,
-                start=file.start_datetime,
-                end=file.end_datetime,
-                timezone=file.time_axis.tzinfo,
-                sample_rate=file.sample_rate,
-                start_id=file.attributes["start_id"],
-                end_id=file.attributes["end_id"],
-            )
-        else:
-            with self.create_session() as session:
-                self._table.insert(
-                    session=session,
-                    begin=True,
-                    as_entry=True,
-                    update_id=update_id,
-                    path=path,
-                    shape=file.data.shape,
-                    axis=file.time_axis.axis,
-                    start=file.start_datetime,
-                    end=file.end_datetime,
-                    timezone=file.time_axis.tzinfo,
-                    sample_rate=file.sample_rate,
-                    start_id=file.attributes["start_id"],
-                    end_id=file.attributes["end_id"],
-                )
+        entry = {
+            "update_id": update_id,
+            "path": path,
+            "shape": file.data.shape,
+            "axis": file.time_axis.axis,
+            "start": file.start_datetime,
+            "end": file.end_datetime,
+            "timezone": file.time_axis.tzinfo,
+            "sample_rate": file.sample_rate,
+            "start_id": file.attributes["start_id"],
+            "end_id": file.attributes["end_id"],
+        }
+        self.contents_table.insert(entry=entry, session=session, begin=begin)
 
     async def insert_file_contents_async(
         self,
-        path: pathlib.Path | str,
+        path: Path | str,
         file: XLTEKHDF5,
         update_id: int = 0,
         session: AsyncSession | None = None,
         begin: bool = False,
     ) -> None:
-        if session is not None:
-            await self._table.insert_async(
-                session=session,
-                begin=begin,
-                as_entry=True,
-                update_id=update_id,
-                path=path,
-                shape=file.data.shape,
-                axis=file.time_axis.axis,
-                start=file.start_datetime,
-                end=file.end_datetime,
-                timezone=file.time_axis.tzinfo,
-                sample_rate=file.sample_rate,
-                start_id=file.attributes["start_id"],
-                end_id=file.attributes["end_id"],
-            )
-        else:
-            async with self.create_async_session() as session:
-                await self._table.insert_async(
-                    session=session,
-                    begin=begin,
-                    as_entry=True,
-                    update_id=update_id,
-                    path=path,
-                    shape=file.data.shape,
-                    axis=file.time_axis.axis,
-                    start=file.start_datetime,
-                    end=file.end_datetime,
-                    timezone=file.time_axis.tzinfo,
-                    sample_rate=file.sample_rate,
-                    start_id=file.attributes["start_id"],
-                    end_id=file.attributes["end_id"],
-                )
+        entry = {
+            "update_id": update_id,
+            "path": path,
+            "shape": file.data.shape,
+            "axis": file.time_axis.axis,
+            "start": file.start_datetime,
+            "end": file.end_datetime,
+            "timezone": file.time_axis.tzinfo,
+            "sample_rate": file.sample_rate,
+            "start_id": file.attributes["start_id"],
+            "end_id": file.attributes["end_id"],
+        }
+        await self.contents_table.insert_async(entry=entry, session=session, begin=begin)
 
     def generate_day_name(self, start: datetime, absolute_start=None):
         if absolute_start is None:
@@ -191,7 +141,7 @@ class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
 
         file_name = f"{composite.name}_{day_name}_acq-{start.strftime(f'{self.time_format}.%f')[:-3]}_ieeg.h5"
 
-        return day_path / file_name, pathlib.Path(f"{day_name}/{file_name}")
+        return day_path / file_name, Path(f"{day_name}/{file_name}")
 
     def generate_file_kwargs(self, start, tzinfo=None):
         file_path, _ = self.generate_file_path(start=start, tzinfo=tzinfo)

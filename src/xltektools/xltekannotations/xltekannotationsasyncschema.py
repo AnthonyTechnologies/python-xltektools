@@ -1,4 +1,4 @@
-"""xltekcdfsschema.py
+"""xltekannotationsschema.py
 
 """
 # Package Header #
@@ -19,18 +19,18 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
 
 # Local Packages #
-from .tables import BaseXLTEKMetaInformationTable, BaseXLTEKContentsTable
+from .tables import BaseXLTEKAnnotationsInformationTable, BaseXLTEKAnnotationsTable
 
 
 # Definitions #
 # Classes #
-class XLTEKCDFSAsyncSchema(AsyncAttrs, DeclarativeBase):
+class XLTEKAnnotationsAsyncSchema(AsyncAttrs, DeclarativeBase):
     pass
 
 
-class XLTEKMetaInformationTable(BaseXLTEKMetaInformationTable, XLTEKCDFSAsyncSchema):
+class XLTEKAnnotationsInformationTable(BaseXLTEKAnnotationsInformationTable, XLTEKAnnotationsAsyncSchema):
     pass
 
 
-class XLTEKContentsTable(BaseXLTEKContentsTable, XLTEKCDFSAsyncSchema):
+class XLTEKAnnotationsTable(BaseXLTEKAnnotationsTable, XLTEKAnnotationsAsyncSchema):
     pass

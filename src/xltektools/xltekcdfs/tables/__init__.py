@@ -13,6 +13,6 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .basexltekmetainformationtable import BaseXLTEKMetaInformationTable
-from .basexltekcontentstable import BaseXLTEKContentsTable
-from .basexltekvideostable import BaseXLTEKVideosTable
+from .xltekmetainformationtable import BaseXLTEKMetaInformationTable, XLTEKMetaInformationTableManifestation
+from .xltekcontentstable import BaseXLTEKContentsTable, XLTEKContentsTableManifestation
+# from .xltekvideostable import BaseXLTEKVideosTable, XLTEKVideosTableManifestation
