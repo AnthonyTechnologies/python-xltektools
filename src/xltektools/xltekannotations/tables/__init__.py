@@ -13,5 +13,6 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .xltekannotationsinformationtable import BaseXLTEKAnnotationsInformationTable, XLTEKAnnotationsInformationTableManifestation
-from .xltekannotationstable import BaseXLTEKAnnotationsTable, XLTEKAnnotationsTableManifestation
+from .xltekannotationsinformationtable import BaseXLTEKAnnotationsInformationTableSchema, XLTEKAnnotationsInformationTableManifestation
+from .xltekannotationstable import BaseXLTEKAnnotationsTableSchema, XLTEKAnnotationsTableManifestation
+from .xltekxlspiketable import BaseXLTEKXLSpikeTableSchema, XLTEKXLSpikeTableManifestation

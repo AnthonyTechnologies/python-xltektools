@@ -1,5 +1,5 @@
 """ xltekmetainformationtable.py
-A node component which implements time content information in its dataset.
+
 """
 # Package Header #
 from ...header import *
@@ -23,15 +23,15 @@ from baseobjects.operations import timezone_offset
 from dspobjects.time import Timestamp, nanostamp
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import BigInteger
-from sqlalchemyobjects.tables import BaseUpdateTable, UpdateTableManifestation
-from sqlalchemyobjects.tables import BaseMetaInformationTable, MetaInformationTableManifestation
+from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifestation
+from sqlalchemyobjects.tables import BaseMetaInformationTableSchema, MetaInformationTableManifestation
 
 # Local Packages #
 
 
 # Definitions #
 # Classes #
-class BaseXLTEKMetaInformationTable(BaseMetaInformationTable, BaseUpdateTable):
+class BaseXLTEKMetaInformationTableSchema(BaseMetaInformationTableSchema, BaseUpdateTableSchema):
     __mapper_args__ = {"polymorphic_identity": "xltekmetainfromation"}
     name: Mapped[str] = mapped_column(nullable=True)
     start = mapped_column(BigInteger, nullable=True)

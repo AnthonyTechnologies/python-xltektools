@@ -23,7 +23,7 @@ from sqlalchemyobjects.tables import TableManifestation
 
 # Local Packages #
 from .tables import XLTEKMetaInformationTableManifestation, XLTEKContentsTableManifestation
-from .xltekcdfsasyncschema import XLTEKCDFSAsyncSchema, XLTEKMetaInformationTable, XLTEKContentsTable
+from .xltekcdfsasyncschema import XLTEKCDFSAsyncSchema, XLTEKMetaInformationTableSchema, XLTEKContentsTableSchema
 from .components import XLTEKCDFSMetaInformationComponent, XLTEKCDFSContentsComponent
 
 
@@ -72,8 +72,8 @@ class XLTEKCDFS(BaseCDFS):
 
     schema: type[DeclarativeBase] | None = XLTEKCDFSAsyncSchema
     table_map: dict[str, tuple[type[TableManifestation], type[DeclarativeBase], dict[str, Any]]] = {
-        meta_table_name:  (XLTEKMetaInformationTableManifestation, XLTEKMetaInformationTable, {}),
-        "contents": (XLTEKContentsTableManifestation, XLTEKContentsTable, {}),
+        meta_table_name:  (XLTEKMetaInformationTableManifestation, XLTEKMetaInformationTableSchema, {}),
+        "contents": (XLTEKContentsTableManifestation, XLTEKContentsTableSchema, {}),
     }
 
     # Properties #

@@ -19,7 +19,8 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
 
 # Local Packages #
-from .tables import BaseXLTEKAnnotationsInformationTable, BaseXLTEKAnnotationsTable
+from .tables import BaseXLTEKAnnotationsInformationTableSchema, BaseXLTEKAnnotationsTableSchema
+from .tables import BaseXLTEKXLSpikeTableSchema
 
 
 # Definitions #
@@ -28,9 +29,13 @@ class XLTEKAnnotationsAsyncSchema(AsyncAttrs, DeclarativeBase):
     pass
 
 
-class XLTEKAnnotationsInformationTable(BaseXLTEKAnnotationsInformationTable, XLTEKAnnotationsAsyncSchema):
+class XLTEKAnnotationsInformationTableSchema(BaseXLTEKAnnotationsInformationTableSchema, XLTEKAnnotationsAsyncSchema):
     pass
 
 
-class XLTEKAnnotationsTable(BaseXLTEKAnnotationsTable, XLTEKAnnotationsAsyncSchema):
+class XLTEKAnnotationsTableSchema(BaseXLTEKAnnotationsTableSchema, XLTEKAnnotationsAsyncSchema):
+    pass
+
+
+class XLTEKXLSpikeTableSchema(BaseXLTEKXLSpikeTableSchema, XLTEKAnnotationsTableSchema):
     pass

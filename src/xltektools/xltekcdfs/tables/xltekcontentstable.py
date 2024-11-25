@@ -13,12 +13,11 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 # Third-Party Packages #
-from cdfs import BaseTimeContentsTable, TimeContentsTableManifestation
+from cdfs import BaseTimeContentsTableSchema, TimeContentsTableManifestation
 from sqlalchemy import select, lambda_stmt
 from sqlalchemy.orm import Session, mapped_column
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,7 +29,7 @@ from ...xltekhdf5 import XLTEKHDF5
 
 # Definitions #
 # Classes #
-class BaseXLTEKContentsTable(BaseTimeContentsTable):
+class BaseXLTEKContentsTableSchema(BaseTimeContentsTableSchema):
     __mapper_args__ = {"polymorphic_identity": "xltekcontents"}
     start_id = mapped_column(BigInteger, primary_key=True)
     end_id = mapped_column(BigInteger)
@@ -183,14 +182,14 @@ class XLTEKContentsTableManifestation(TimeContentsTableManifestation):
     # Contents
     def get_start_end_ids(self, session: Session | None = None) -> tuple[tuple[int, int], ...]:
         if session is not None:
-            return self.table.get_start_end_ids(session=session)
+            return self.table_schema.get_start_end_ids(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_start_end_ids(session=session)
+                return self.table_schema.get_start_end_ids(session=session)
 
     async def get_start_end_ids_async(self, session: AsyncSession | None = None) -> tuple[tuple[int, int], ...]:
         if session is not None:
-            return await self.table.get_start_end_ids_async(session=session)
+            return await self.table_schema.get_start_end_ids_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_start_end_ids_async(session=session)
+                return await self.table_schema.get_start_end_ids_async(session=session)

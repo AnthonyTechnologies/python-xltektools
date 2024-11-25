@@ -16,7 +16,7 @@ __email__ = __email__
 from typing import Any
 
 # Third-Party Packages #
-from cdfs import BaseTimeContentsTable, TimeContentsTableManifestation
+from cdfs import BaseTimeContentsTableSchema, TimeContentsTableManifestation
 from sqlalchemy import select, lambda_stmt
 from sqlalchemy.orm import Session, mapped_column
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +27,7 @@ from sqlalchemy.types import BigInteger
 
 # Definitions #
 # Classes #
-class BaseXLTEKVideosTable(BaseTimeContentsTable):
+class BaseXLTEKVideosTableSchema(BaseTimeContentsTableSchema):
     __tablename__ = "xltekvideos"
     __mapper_args__ = {"polymorphic_identity": "xltekvideos"}
     start_id = mapped_column(BigInteger)
@@ -60,14 +60,14 @@ class XLTEKVideosTableManifestation(TimeContentsTableManifestation):
     # Contents
     def get_start_end_ids(self, session: Session | None = None) -> tuple[tuple[int, int], ...]:
         if session is not None:
-            return self.table.get_start_end_ids(session=session)
+            return self.table_schema.get_start_end_ids(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_start_end_ids(session=session)
+                return self.table_schema.get_start_end_ids(session=session)
 
     async def get_start_end_ids_async(self, session: AsyncSession | None = None) -> tuple[tuple[int, int], ...]:
         if session is not None:
-            return await self.table.get_start_end_ids_async(session=session)
+            return await self.table_schema.get_start_end_ids_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_start_end_ids_async(session=session)
+                return await self.table_schema.get_start_end_ids_async(session=session)

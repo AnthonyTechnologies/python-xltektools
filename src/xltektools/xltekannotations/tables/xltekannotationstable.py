@@ -30,15 +30,15 @@ from sqlalchemy import select, func, lambda_stmt
 from sqlalchemy.orm import Mapped, Session, mapped_column
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import BigInteger
-from sqlalchemyobjects.tables import BaseUpdateTable, UpdateTableManifestation
+from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifestation
 
 # Local Packages #
 
 
 # Definitions #
 # Classes #
-class BaseXLTEKAnnotationsTable(BaseUpdateTable):
-    """A table containing the XLTEK annotation information common to all XLTEK annotations.
+class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
+    """"A schema for a containing the XLTEK annotation information common to all XLTEK annotations.
 
     Class Attributes:
         __tablename__: The name of the table.
@@ -327,10 +327,10 @@ class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):
             Timestamp: The distinct timezone offsets.
         """
         if session is not None:
-            return self.table.get_tz_offsets_distinct(session=session)
+            return self.table_schema.get_tz_offsets_distinct(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_tz_offsets_distinct(session=session)
+                return self.table_schema.get_tz_offsets_distinct(session=session)
 
     async def get_tz_offsets_distinct_async(self, session: Session | None = None) -> Timestamp:
         """Asynchronously gets distinct timezone offsets from the table.
@@ -342,10 +342,10 @@ class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):
             Timestamp: The distinct timezone offsets.
         """
         if session is not None:
-            return await self.table.get_tz_offsets_distinct_async(session=session)
+            return await self.table_schema.get_tz_offsets_distinct_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_tz_offsets_distinct_async(session=session)
+                return await self.table_schema.get_tz_offsets_distinct_async(session=session)
 
     def get_start_datetime(self, session: Session | None = None) -> Timestamp:
         """Gets the start datetime from the table.
@@ -357,10 +357,10 @@ class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):
             Timestamp: The start datetime.
         """
         if session is not None:
-            return self.table.get_start_datetime(session=session)
+            return self.table_schema.get_start_datetime(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_start_datetime(session=session)
+                return self.table_schema.get_start_datetime(session=session)
 
     async def get_start_datetime_async(self, session: AsyncSession | None = None) -> Timestamp:
         """Asynchronously gets the start datetime from the table.
@@ -372,10 +372,10 @@ class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):
             Timestamp: The start datetime.
         """
         if session is not None:
-            return await self.table.get_start_datetime_async(session=session)
+            return await self.table_schema.get_start_datetime_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_start_datetime_async(session=session)
+                return await self.table_schema.get_start_datetime_async(session=session)
 
     def get_end_datetime(self, session: Session | None = None) -> Timestamp:
         """Gets the end datetime from the table.
@@ -387,10 +387,10 @@ class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):
             Timestamp: The end datetime.
         """
         if session is not None:
-            return self.table.get_end_datetime(session=session)
+            return self.table_schema.get_end_datetime(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_end_datetime(session=session)
+                return self.table_schema.get_end_datetime(session=session)
 
     async def get_end_datetime_async(self, session: AsyncSession | None = None) -> Timestamp:
         """Asynchronously gets the end datetime from the table.
@@ -402,10 +402,10 @@ class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):
             Timestamp: The end datetime.
         """
         if session is not None:
-            return await self.table.get_end_datetime_async(session=session)
+            return await self.table_schema.get_end_datetime_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_end_datetime_async(session=session)
+                return await self.table_schema.get_end_datetime_async(session=session)
 
     def get_contents_nanostamps(self, session: Session | None = None) -> tuple[tuple[int, int, int], ...]:
         """Gets all nanostamps from the table.
@@ -417,10 +417,10 @@ class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):
             tuple[tuple[int, int, int], ...]: The nanostamps.
         """
         if session is not None:
-            return self.table.get_all_nanostamps(session=session)
+            return self.table_schema.get_all_nanostamps(session=session)
         else:
             with self.create_session() as session:
-                return self.table.get_all_nanostamps(session=session)
+                return self.table_schema.get_all_nanostamps(session=session)
 
     async def get_contents_nanostamps_async(
         self,
@@ -435,7 +435,7 @@ class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):
             tuple[tuple[int, int, int], ...]: The nanostamps.
         """
         if session is not None:
-            return await self.table.get_all_nanostamps_async(session=session)
+            return await self.table_schema.get_all_nanostamps_async(session=session)
         else:
             async with self.create_async_session() as session:
-                return await self.table.get_all_nanostamps_async(session=session)
+                return await self.table_schema.get_all_nanostamps_async(session=session)
