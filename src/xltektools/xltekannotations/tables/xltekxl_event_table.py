@@ -1,4 +1,4 @@
-"""xltekxlspiketable.py
+"""xltek_xl_event_table.py
 A schema for a containing the XLSpike annotations in an XLTEK Study.
 """
 # Package Header #
@@ -26,7 +26,7 @@ from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifesta
 
 # Definitions #
 # Classes #
-class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
+class BaseXLTEKXLEventTableSchema(BaseUpdateTableSchema):
     """A schema for a containing the XLSpike annotations in an XLTEK Study.
 
     Class Attributes:
@@ -40,8 +40,8 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
     """
 
     # Class Attributes #
-    __tablename__ = "xlspike"
-    __mapper_args__ = {"polymorphic_identity": "xlspike"}
+    __tablename__ = "xlevent"
+    __mapper_args__ = {"polymorphic_identity": "xlevent"}
 
     # Columns #
     analysis_context: Mapped[int] = mapped_column(nullable=True)
@@ -52,12 +52,12 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
     # Class Methods #
     @classmethod
     def format_entry_kwargs(
-        cls,
-        id_: str | UUID | None = None,
-        analysis_id: str | UUID | None = None,
-        **kwargs: Any,
+            cls,
+            id_: str | UUID | None = None,
+            analysis_id: str | UUID | None = None,
+            **kwargs: Any,
     ) -> dict[str, Any]:
-        """Formats entry keyword arguments for creating or updating table entries.
+        """Formats entry keyword arguments for creating or updating table entries. (Primarily for the special data type which need type casting like Uuid, Datetimes etc)
 
         Args:
             id_: The ID of the entry, if specified.
@@ -74,9 +74,11 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
 
         return kwargs
 
+
     # Instance Methods #
     def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
-        """Updates the row of the table with the provided dictionary or keyword arguments.
+        """
+        Updates the row of the table with the provided dictionary or keyword arguments. Same as the previous one format_entry but instead updates the entry which is already a part of the table in the correct format.
 
         Args:
             dict_: A dictionary of attributes/columns to update. Defaults to None.
@@ -88,6 +90,7 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
             self.analysis_id = UUID(hex=analysis_id) if isinstance(analysis_id, str) else analysis_id
 
         super().update(dict_)
+
 
     def as_dict(self) -> dict[str, Any]:
         """Creates a dictionary with all the contents of the row.
@@ -103,6 +106,7 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
             user=self.user,
         )
         return entry
+
 
     def as_entry(self) -> dict[str, Any]:
         """Creates a dictionary with the entry contents of the row.
@@ -120,8 +124,8 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
         return entry
 
 
-class XLTEKXLSpikeTableManifestation(UpdateTableManifestation):
-    """The manifestation of a XLTEKXLSpikeTable.
+class XLTEKXLEventTableManifestation(UpdateTableManifestation):
+    """The manifestation of a xltek_xl_event_table.
 
     Attributes:
         _database: A weak reference to the SQAlchemy database to interface with.

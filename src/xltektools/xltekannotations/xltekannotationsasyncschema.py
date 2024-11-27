@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncAttrs
 # Local Packages #
 from .tables import BaseXLTEKAnnotationsInformationTableSchema, BaseXLTEKAnnotationsTableSchema
 from .tables import BaseXLTEKXLSpikeTableSchema
+from .tables import BaseXLTEKXLEventTableSchema
 
 
 # Definitions #
@@ -38,4 +39,8 @@ class XLTEKAnnotationsTableSchema(BaseXLTEKAnnotationsTableSchema, XLTEKAnnotati
 
 
 class XLTEKXLSpikeTableSchema(BaseXLTEKXLSpikeTableSchema, XLTEKAnnotationsTableSchema):
+    pass
+
+
+class XLTEKXLEventTableSchema(BaseXLTEKXLEventTableSchema, XLTEKAnnotationsTableSchema):
     pass

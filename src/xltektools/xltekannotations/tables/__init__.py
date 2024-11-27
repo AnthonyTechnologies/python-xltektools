@@ -16,3 +16,5 @@ __email__ = __email__
 from .xltekannotationsinformationtable import BaseXLTEKAnnotationsInformationTableSchema, XLTEKAnnotationsInformationTableManifestation
 from .xltekannotationstable import BaseXLTEKAnnotationsTableSchema, XLTEKAnnotationsTableManifestation
 from .xltekxlspiketable import BaseXLTEKXLSpikeTableSchema, XLTEKXLSpikeTableManifestation
+from .xltekxl_event_table import BaseXLTEKXLEventTableSchema, XLTEKXLEventTableManifestation
+

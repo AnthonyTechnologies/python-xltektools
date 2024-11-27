@@ -27,11 +27,13 @@ from sqlalchemyobjects.tables import TableManifestation
 from .tables import XLTEKAnnotationsInformationTableManifestation
 from .tables import XLTEKAnnotationsTableManifestation
 from .tables import XLTEKXLSpikeTableManifestation
+from .tables import XLTEKXLEventTableManifestation
+
 from .xltekannotationsasyncschema import XLTEKAnnotationsAsyncSchema
 from .xltekannotationsasyncschema import XLTEKAnnotationsInformationTableSchema
 from .xltekannotationsasyncschema import XLTEKAnnotationsTableSchema
 from .xltekannotationsasyncschema import XLTEKXLSpikeTableSchema
-
+from .xltekannotationsasyncschema import XLTEKXLEventTableSchema
 
 # Definitions #
 # Classes #
@@ -45,11 +47,13 @@ class XLTEKAnnotations(Database):
         meta_table_name: (XLTEKAnnotationsInformationTableManifestation, XLTEKAnnotationsInformationTableSchema, {}),
         "annotations": (XLTEKAnnotationsTableManifestation, XLTEKAnnotationsTableSchema, {}),
         "xlspike":  (XLTEKXLSpikeTableManifestation, XLTEKXLSpikeTableSchema, {}),
+        "xlevent": (XLTEKXLEventTableManifestation, XLTEKXLEventTableSchema, {}),
     }
 
     type_map: dict[str, str] = {
         "annotations": "annotations",
         "xlspike": "xlspike",
+        "xlevent": "xlevent",
     }
     annotations_types: dict[str, TableManifestation]
 
@@ -95,7 +99,7 @@ class XLTEKAnnotations(Database):
             table_map: The map of tables to manifest the table from. If None, uses the default table map.
         """
         super().manifest_tables(table_map=table_map)
-        self.annotations_types.update(((a, self.tables[n]) for a, n in self.annotations_types.items()))
+        self.annotations_types.update(((a, self.tables[n]) for a, n in self.type_map.items()))
 
     # Annotations
     def insert_annotation(
