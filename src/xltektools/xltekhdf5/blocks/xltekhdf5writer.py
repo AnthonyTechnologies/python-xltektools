@@ -30,6 +30,7 @@ class XLTEKHDF5Writer(BaseBlock):
 
     Class Attributes:
         default_input_names: The default ordered tuple with the names of the inputs.
+        default_output_names: The default ordered tuple with the names of the outputs.
         init_setup: Determines if the setup will occur during initialization.
 
     Attributes:
@@ -40,6 +41,7 @@ class XLTEKHDF5Writer(BaseBlock):
 
     # Class Attributes #
     default_input_names: ClassVar[tuple[str, ...]] = ("write_info",)
+    default_output_names: ClassVar[tuple[str, ...]] = ("entry",)
     init_setup: ClassVar[bool] = False
 
     # Attributes #

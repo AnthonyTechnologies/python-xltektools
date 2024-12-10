@@ -13,3 +13,4 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
+from .xltekhdf5writer import XLTEKHDF5Writer
