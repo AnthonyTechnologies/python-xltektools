@@ -77,8 +77,7 @@ class XLTEKCDFSContentsComponent(CDFSTimeContentsComponent):
             path = self._composite().path
 
         await self.contents_table.correct_contents_async(session=session, path=path, begin=begin)
-    
-    
+
     def insert_file_contents(
         self,
         path: Path | str,
