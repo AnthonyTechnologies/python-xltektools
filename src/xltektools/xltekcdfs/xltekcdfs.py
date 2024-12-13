@@ -137,3 +137,6 @@ class XLTEKCDFS(BaseCDFS):
     @recording_unit.setter
     def recording_unit(self, value: str) -> None:
         self.contents_database.tables[self.meta_table_name].set_meta_information(recording_unit=value)
+
+    def get_meta_information(self) -> dict[str, Any]:
+        return self.contents_database.tables[self.meta_table_name].get_meta_information()
