@@ -13,11 +13,13 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from datetime import datetime, tzinfo
 from typing import Any, ClassVar
 
 # Third-Party Packages #
-from dspobjects.time import Timestamp
 from blockobjects import BaseBlock
+from dspobjects.time import Timestamp, nanostamp
+import numpy as np
 
 # Local Packages #
 from ..xltekhdf5 import XLTEKHDF5
@@ -40,65 +42,166 @@ class XLTEKHDF5Writer(BaseBlock):
     """
 
     # Class Attributes #
-    default_input_names: ClassVar[tuple[str, ...]] = ("write_info",)
+    default_input_names: ClassVar[tuple[str, ...]] = ("write_packet",)
     default_output_names: ClassVar[tuple[str, ...]] = ("entry",)
     init_setup: ClassVar[bool] = False
+
+    # Class Methods #
+    @classmethod
+    def create_write_info_packet(
+        cls,
+        subject_id: str,
+        full_path: str,
+        relative_path: str,
+        method: str,
+        shape: tuple[int, ...],
+        sample_rate: int,
+        start: datetime | float | int | np.dtype | np.ndarray,
+        end: datetime | float | int | np.dtype | np.ndarray | None = None,
+        tz: tzinfo = None,
+        start_id: int | None = None,
+        end_id: int | None = None,
+        axis: int = 0,
+        update_id: int = 0,
+        method_kwargs: dict[str, Any] | None = None,
+    ) -> dict:
+        if not isinstance(start, Timestamp):
+            start = Timestamp(start, tz=tz)
+
+        if end is None:
+            end = start
+        elif not isinstance(end, Timestamp):
+            end = Timestamp(end, tz=tz)
+
+        return {
+            "file": {"file": full_path, "s_id": subject_id},
+            "write": {"method": method} | (method_kwargs or {}),
+            "data": {
+                "update_id": update_id,
+                "path": relative_path,
+                "shape": shape,
+                "axis": axis,
+                "timezone": tzinfo,
+                "start": start,
+                "end": end,
+                "sample_rate": sample_rate,
+                "start_id": int(nanostamp(start)) if start_id is None else start_id,
+                "end_id": int(nanostamp(end)) if end_id is None else end_id,
+            },
+
+        }
 
     # Attributes #
     file_type: type[XLTEKHDF5] = XLTEKHDF5.get_latest_version_class()
 
     file: XLTEKHDF5 | None = None
-    file_kwargs: dict[str, Any] | None = None
+    file_kwargs: dict[str, Any] = {"file": ""}
+    data_info: dict[str, Any] = {}
+
+    # Magic Methods #
+    # Construction/Destruction
+    def __init__(
+        self,
+        file: XLTEKHDF5 | None = None,
+        file_type: type[XLTEKHDF5] = None,
+        *args: Any,
+        init: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        # New Attributes #
+
+        # Parent Attributes #
+        super().__init__(init=False)
+
+        # Construct #
+        if init:
+            self.construct(file, file_type, *args, **kwargs)
 
     # Instance Methods #
-    # Setup
-    def setup(self, *args: Any, **kwargs: Any) -> None:
-        """Sets up this block."""
-        if self.file_kwargs is None:
-            self.file_kwargs = {"file": ""}
+    # Constructors/Destructors
+    def construct(
+        self,
+        file: XLTEKHDF5 | None = None,
+        file_type: type[XLTEKHDF5] = None,
+        *args: Any,
+        init: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        # Assign Attributes #
+        if file is not None:
+            self.file = file
 
-    # Evaluate
-    def evaluate(self, write_info: tuple, *args: Any, **kwargs: Any) -> Any:
-        """Writes information to an XLTEKHDF5 file.
+        if file_type is not None:
+            self.file_type = file_type
 
-        Args:
-            write_info: The information to write to a file.
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments.
+        # Construct Parent #
+        super().construct(*args, **kwargs)
 
-        Returns:
-            An entry to insert into an XLTEKCDFS contents table.
-        """
-        # Separate Write Information
-        info, data, nanostamps = write_info
-        file_kwargs = info.pop("file")
+    # File
+    def change_file(
+        self,
+        start_id,
+        sample_rate,
+        timezone,
+        *args: Any,
+        file_kwargs: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        # Close Previous File
+        if self.file is not None:
+            self.file.close()
 
-        # Create New File if File Kwargs do not Match
-        if file_kwargs["file"] != self.file_kwargs["file"]:
-            # Close Previous File
-            if self.file is not None:
-                self.file.close()
+        # Open File
+        self.file = self.file_type(**({"mode": "w", "create": True, "construct": True} | (file_kwargs or {})))
 
-            # Open File
-            try:
-                self.file = self.file_type(mode="a", create=True, construct=True, **file_kwargs)
-            except OSError:
-                # If there is a corrupt file, delete it, and create a new file.
-                file_kwargs["file"].unlink(missing_ok=True)
-                self.file = self.file_type(mode="a", create=True, construct=True, **file_kwargs)
+        # Set Metadata
+        self.file.time_axis.components["axis"].set_time_zone(timezone)
+        self.file.time_axis.components["axis"].sample_rate = sample_rate
+        self.file.attributes["start_id"] = start_id
 
-            # Set Metadata
-            self.file.time_axis.components["axis"].set_time_zone(info["contents_insert"]["timezone"])
-            self.file.time_axis.components["axis"].sample_rate = info["contents_insert"]["sample_rate"]
-            self.file.attributes["start_id"] = info["contents_insert"]["start_id"]
+        # Set Single Write Multiple Read
+        self.file.swmr_mode = True
 
-            # Set Single Write Multiple Read
-            self.file.swmr_mode = True
+        # Update Stored File Kwargs
+        self.file_kwargs.clear()
+        self.file_kwargs.update(file_kwargs)
 
-            # Update Stored File Kwargs
-            self.file_kwargs.clear()
-            self.file_kwargs.update(file_kwargs)
+        # Clear Stored File Info
+        self.data_info.clear()
 
+    # Writing
+    def set_data_slice(self, data, nanostamps, slice_: slice, axis: int | None = None) -> None:
+        # Get File's Dataset
+        dataset = self.file.data
+        time_axis = dataset.components["timeseries"].time_axis
+
+        # Get Slicing
+        if axis is None:
+            axis = dataset.components["timeseries"].t_axis
+
+        file_shape = dataset.shape
+        n_samples = file_shape[axis]
+        d_slicing = [slice(None)] * len(file_shape)
+        d_slicing[axis] = slice(dataset.shape[0], data.shape[0])
+        d_slicing = tuple(d_slicing)
+
+        # Resize Data if needed
+        start = 0 if slice_ is None else slice_.start
+        stop = n_samples if slice_ is None else slice_.stop
+        if start > n_samples or stop > n_samples:
+            new_shape = list(file_shape)
+            new_shape[axis] = stop
+            dataset.reize(new_shape)
+            t_shape = list(time_axis.shape)
+            t_shape[axis] = n_samples
+            time_axis.reize(t_shape)
+
+        # Update Data
+        dataset[d_slicing] = data[d_slicing]
+        time_axis[slice_] = nanostamps
+        self.file.flush()
+
+    def append_data(self, data, nanostamps) -> None:
         # Get File's Dataset
         dataset = self.file.data
 
@@ -112,10 +215,53 @@ class XLTEKHDF5Writer(BaseBlock):
         dataset.append(data[d_slicing], component_kwargs={"timeseries": {"data": nanostamps[n_slicing]}})
         self.file.flush()
 
-        return info["contents_insert"]
+    # Setup
+    def setup(self, *args: Any, **kwargs: Any) -> None:
+        """Sets up this block."""
+        self.file_kwargs = self.file_kwargs.copy()
+        self.data_info = self.data_info.copy()
+
+    # Evaluate
+    def evaluate(self, write_packet: tuple, *args: Any, **kwargs: Any) -> Any:
+        """Writes information to an XLTEKHDF5 file.
+
+        Args:
+            write_packet: The information to write to a file.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            An entry to insert into an XLTEKCDFS contents table.
+        """
+        # Separate Write Information
+        info, data, nanostamps = write_packet
+        file_kwargs = info.pop("file")
+        write_info = info.pop("write_info")
+        data_info = info.pop("data_info")
+
+        # Change File if File Kwargs do not Match
+        if file_kwargs["file"] != self.file_kwargs["file"]:
+            self.change_file(
+                data_info["start_id"],
+                data_info["sample_rate"],
+                data_info["timezone"],
+                file_kwargs=file_kwargs,
+            )
+
+        # Write Data
+        method = getattr(self, write_info.pop("method"))  # Choose the data write method from string
+        method(data, nanostamps, **data_info)
+
+        # Update File Info
+        self.data_info.update(data_info)
+
+        # Return File Info
+        return self.data_info.copy()
 
     # Teardown
-    def teardown(self, *args: Any, **kwargs: Any) -> None:
+    async def teardown(self, *args: Any, **kwargs: Any) -> None:
         """Tears down this block."""
         if self.file is not None:
             self.file.close()
+
+        await self.outputs.put_item_async(self.signal_io_name, {"done_flag": True})

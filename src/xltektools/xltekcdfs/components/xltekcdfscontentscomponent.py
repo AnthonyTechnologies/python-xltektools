@@ -13,21 +13,21 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
-from datetime import datetime
+from datetime import datetime, tzinfo
 from pathlib import Path
 from typing import Any
 
 # Third-Party Packages #
 from cdfs.components import CDFSTimeContentsComponent
-from dspobjects.time import Timestamp, nanostamp
+from dspobjects.time import Timestamp
 import numpy as np
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
-from ...xltekhdf5 import XLTEKHDF5, XLTEKHDF5WriterTask
+from ...xltekhdf5 import XLTEKHDF5, XLTEKHDF5Writer
 from ..arrays import XLTEKContentsProxy
-from ..tasks import XLTEKContentsUpdateTask
+from ..blocks import XLTEKCDFSContentsUpdater
 
 
 # Definitions #
@@ -128,11 +128,11 @@ class XLTEKCDFSContentsComponent(CDFSTimeContentsComponent):
         n_days = 1 if absolute_start is None else (start.date() - absolute_start.date()).days + 1
         return f"task-day{n_days:03d}"
 
-    def generate_file_path(self, start, tzinfo=None, absolute_start=None):
+    def generate_file_path(self, start, tz=None, absolute_start=None):
         composite = self._composite()
 
         if not isinstance(start, datetime):
-            start = Timestamp(start, tz=tzinfo)
+            start = Timestamp(start, tz=tz)
 
         day_name = self.generate_day_name(start, absolute_start)
         day_path = composite.path / day_name
@@ -142,53 +142,54 @@ class XLTEKCDFSContentsComponent(CDFSTimeContentsComponent):
 
         return day_path / file_name, Path(f"{day_name}/{file_name}")
 
-    def generate_file_kwargs(self, start, tzinfo=None):
-        file_path, _ = self.generate_file_path(start=start, tzinfo=tzinfo)
+    def generate_file_kwargs(self, start, tz: tzinfo | None = None):
+        file_path, _ = self.generate_file_path(start=start, tz=tz)
         return {"file": file_path, "name": self._composite().name}
 
-    def generate_file_entry_kwargs(
+    def create_write_info_packet(
         self,
+        method: str,
         shape: tuple[int, ...],
         sample_rate: int,
         start: datetime | float | int | np.dtype | np.ndarray,
         end: datetime | float | int | np.dtype | np.ndarray | None = None,
-        tzinfo=None,
+        tz: tzinfo = None,
         absolute_start: datetime | float | int | np.dtype | np.ndarray | None = None,
         start_id: int | None = None,
         end_id: int | None = None,
         axis: int = 0,
         update_id: int = 0,
     ) -> dict:
-        if not isinstance(start, Timestamp):
-            start = Timestamp(start, tz=tzinfo)
+        full_path, relative_path = self.generate_file_path(start=start, tz=tz, absolute_start=absolute_start)
 
-        if end is None:
-            end = start
-        elif not isinstance(end, Timestamp):
-            end = Timestamp(end, tz=tzinfo)
+        return XLTEKHDF5Writer.create_write_info_packet(
+            subject_id=self._composite().name,
+            full_path=full_path.as_posix(),
+            relative_path=relative_path.as_posix(),
+            method=method,
+            shape=shape,
+            sample_rate=sample_rate,
+            start=start,
+            end=end,
+            tz=tz,
+            start_id=start_id,
+            end_id=end_id,
+            axis=axis,
+            update_id=update_id,
+        )
 
-        full_path, relative_path = self.generate_file_path(start=start, tzinfo=tzinfo, absolute_start=absolute_start)
+    def create_data_file(
+        self,
+        data,
+        nanostamps,
+        sample_rate,
+        tz: tzinfo | None = None,
+        update_id: int = 0,
+        open_: bool = False,
+    ):
+        start = Timestamp(nanostamps[0], tz=tz)
 
-        return {
-            "file": {"file": full_path, "s_id": self._composite().name},
-            "contents_insert": {
-                "update_id": update_id,
-                "path": relative_path,
-                "shape": shape,
-                "axis": axis,
-                "timezone": tzinfo,
-                "start": start,
-                "end": end,
-                "sample_rate": sample_rate,
-                "start_id": int(nanostamp(start)) if start_id is None else start_id,
-                "end_id": int(nanostamp(end)) if end_id is None else end_id,
-            },
-        }
-
-    def create_data_file(self, data, nanostamps, sample_rate, tzinfo=None, update_id: int = 0, open_: bool = False):
-        start = Timestamp(nanostamps[0], tz=tzinfo)
-
-        full_path, relative_path = self.generate_file_path(start=start, tzinfo=tzinfo)
+        full_path, relative_path = self.generate_file_path(start=start, tz=tz)
         f_obj = self.data_file_type(
             file=full_path,
             name=self._composite().name,
@@ -196,7 +197,7 @@ class XLTEKCDFSContentsComponent(CDFSTimeContentsComponent):
             create=True,
             construct=True,
         )
-        f_obj.time_axis.components["axis"].set_time_zone(tzinfo)
+        f_obj.time_axis.components["axis"].set_time_zone(tz)
         f_obj.time_axis.components["axis"].sample_rate = sample_rate
         f_obj.data.set_data(data, component_kwargs={"timeseries": {"data": nanostamps}})
 
@@ -207,8 +208,8 @@ class XLTEKCDFSContentsComponent(CDFSTimeContentsComponent):
 
         return f_obj
 
-    def create_data_writer(self, **kwargs) -> XLTEKHDF5WriterTask:
-        return XLTEKHDF5WriterTask(file_type=self.data_file_type, **kwargs)
+    def create_data_writer(self, **kwargs) -> XLTEKHDF5Writer:
+        return XLTEKHDF5Writer(file_type=self.data_file_type, **kwargs)
 
-    def create_contents_updater(self, component_name, **kwargs) -> XLTEKContentsUpdateTask:
-        return XLTEKContentsUpdateTask(cdfs=self.composite, component_name=component_name, **kwargs)
+    def create_contents_updater(self, **kwargs) -> XLTEKCDFSContentsUpdater:
+        return XLTEKCDFSContentsUpdater(cdfs=self.composite, **kwargs)

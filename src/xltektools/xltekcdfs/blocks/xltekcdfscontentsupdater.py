@@ -55,11 +55,44 @@ class XLTEKCDFSContentsUpdater(BaseBlock):
     id_key: str = "start_id"
     contents_update_id: int = 0
 
+    # Magic Methods #
+    # Construction/Destruction
+    def __init__(
+        self,
+        cdfs: BaseCDFS | None = None,
+        *args: Any,
+        init: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        # New Attributes #
+
+        # Parent Attributes #
+        super().__init__(init=False)
+
+        # Construct #
+        if init:
+            self.construct(cdfs, *args, **kwargs)
+
+    # Instance Methods #
+    # Constructors/Destructors
+    def construct(
+        self,
+        cdfs: BaseCDFS | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        # Assign Attributes #
+        if cdfs is not None:
+            self.cdfs = cdfs
+
+        # Construct Parent #
+        super().construct(*args, **kwargs)
+
     # Instance Methods #
     # Setup
     async def setup(self, *args: Any, **kwargs: Any) -> None:
         """Asynchronously sets up this block."""
-        if not self.cdfs.is_open:
+        if not self.cdfs:
             self.cdfs.open()
         self.contents_table = self.cdfs.contents_database.tables[self.table_name]
         update_id = await self.contents_table.get_last_update_id_async()
@@ -115,3 +148,5 @@ class XLTEKCDFSContentsUpdater(BaseBlock):
         """Asynchronously tears down this block."""
         if not self.was_open:
             await self.cdfs.close_async()
+
+        await self.outputs.put_item_async(self.signal_io_name, {"done_flag": True})
