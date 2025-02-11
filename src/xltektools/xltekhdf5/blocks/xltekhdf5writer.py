@@ -14,6 +14,7 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 from datetime import datetime, tzinfo
+from pathlib import Path
 from typing import Any, ClassVar
 
 # Third-Party Packages #
@@ -48,15 +49,15 @@ class XLTEKHDF5Writer(BaseBlock):
 
     # Class Methods #
     @classmethod
-    def create_write_info_packet(
+    def create_write_packet_info(
         cls,
-        subject_id: str,
-        full_path: str,
-        relative_path: str,
-        method: str,
-        shape: tuple[int, ...],
-        sample_rate: int,
-        start: datetime | float | int | np.dtype | np.ndarray,
+        subject_id: str = "",
+        full_path: str = "",
+        relative_path: str = "",
+        method: str = "",
+        shape: tuple[int, ...] = (),
+        sample_rate: int | float | None = None,
+        start: datetime | float | int | np.dtype | np.ndarray | None = None,
         end: datetime | float | int | np.dtype | np.ndarray | None = None,
         tz: tzinfo = None,
         start_id: int | None = None,
@@ -85,18 +86,18 @@ class XLTEKHDF5Writer(BaseBlock):
                 "start": start,
                 "end": end,
                 "sample_rate": sample_rate,
-                "start_id": int(nanostamp(start)) if start_id is None else start_id,
-                "end_id": int(nanostamp(end)) if end_id is None else end_id,
+                "start_id": int(nanostamp(start)) if start_id is None and start is not None else start_id,
+                "end_id": int(nanostamp(end)) if end_id is None and end is not None else end_id,
             },
-
         }
 
     # Attributes #
     file_type: type[XLTEKHDF5] = XLTEKHDF5.get_latest_version_class()
 
-    file: XLTEKHDF5 | None = None
     file_kwargs: dict[str, Any] = {"file": ""}
     data_info: dict[str, Any] = {}
+
+    file: XLTEKHDF5 | None = None
 
     # Magic Methods #
     # Construction/Destruction
@@ -152,6 +153,13 @@ class XLTEKHDF5Writer(BaseBlock):
             self.file.close()
 
         # Open File
+        match file_kwargs:
+            case {"remake": True, "file": file_path}:
+                Path(file_path).unlink()
+                del file_kwargs["remake"]
+            case {"remake": False, "file": file_path}:
+                del file_kwargs["remake"]
+
         self.file = self.file_type(**({"mode": "w", "create": True, "construct": True} | (file_kwargs or {})))
 
         # Set Metadata
@@ -200,6 +208,7 @@ class XLTEKHDF5Writer(BaseBlock):
         dataset[d_slicing] = data[d_slicing]
         time_axis[slice_] = nanostamps
         self.file.flush()
+        self.data_info["shape"] = dataset.shape
 
     def append_data(self, data, nanostamps) -> None:
         # Get File's Dataset
@@ -248,12 +257,12 @@ class XLTEKHDF5Writer(BaseBlock):
                 file_kwargs=file_kwargs,
             )
 
+        # Update File Info
+        self.data_info.update(data_info)
+
         # Write Data
         method = getattr(self, write_info.pop("method"))  # Choose the data write method from string
         method(data, nanostamps, **data_info)
-
-        # Update File Info
-        self.data_info.update(data_info)
 
         # Return File Info
         return self.data_info.copy()

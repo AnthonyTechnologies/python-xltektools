@@ -146,12 +146,12 @@ class XLTEKCDFSContentsComponent(CDFSTimeContentsComponent):
         file_path, _ = self.generate_file_path(start=start, tz=tz)
         return {"file": file_path, "name": self._composite().name}
 
-    def create_write_info_packet(
+    def create_write_packet_info(
         self,
-        method: str,
-        shape: tuple[int, ...],
-        sample_rate: int,
-        start: datetime | float | int | np.dtype | np.ndarray,
+        method: str = "",
+        shape: tuple[int, ...] = (),
+        sample_rate: int | float | None = None,
+        start: datetime | float | int | np.dtype | np.ndarray | None = None,
         end: datetime | float | int | np.dtype | np.ndarray | None = None,
         tz: tzinfo = None,
         absolute_start: datetime | float | int | np.dtype | np.ndarray | None = None,
@@ -159,10 +159,11 @@ class XLTEKCDFSContentsComponent(CDFSTimeContentsComponent):
         end_id: int | None = None,
         axis: int = 0,
         update_id: int = 0,
+        method_kwargs: dict[str, Any] | None = None,
     ) -> dict:
         full_path, relative_path = self.generate_file_path(start=start, tz=tz, absolute_start=absolute_start)
 
-        return XLTEKHDF5Writer.create_write_info_packet(
+        return XLTEKHDF5Writer.create_write_packet_info(
             subject_id=self._composite().name,
             full_path=full_path.as_posix(),
             relative_path=relative_path.as_posix(),
@@ -176,6 +177,7 @@ class XLTEKCDFSContentsComponent(CDFSTimeContentsComponent):
             end_id=end_id,
             axis=axis,
             update_id=update_id,
+            method_kwargs=method_kwargs,
         )
 
     def create_data_file(
