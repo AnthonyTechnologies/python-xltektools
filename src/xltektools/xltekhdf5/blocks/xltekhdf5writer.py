@@ -224,6 +224,17 @@ class XLTEKHDF5Writer(BaseBlock):
         dataset.append(data[d_slicing], component_kwargs={"timeseries": {"data": nanostamps[n_slicing]}})
         self.file.flush()
 
+    # IO
+    def build_io(self, *args: Any, override: bool = False, **kwargs: Any) -> None:
+        """Builds the IO with the default settings and routing.
+
+        Args:
+            *args: Positional arguments for creating the IO.
+            override: Determines if the IO will be overridden.
+            **kwargs: Keyword arguments for creating the IO.
+        """
+        self.inputs.io_objects["write_packet"].set_maxsize(3)
+
     # Setup
     def setup(self, *args: Any, **kwargs: Any) -> None:
         """Sets up this block."""
