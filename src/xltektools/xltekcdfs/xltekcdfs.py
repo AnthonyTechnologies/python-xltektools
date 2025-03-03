@@ -18,7 +18,8 @@ from typing import ClassVar, Any
 
 # Third-Party Packages #
 from cdfs import BaseCDFS
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemyobjects.tables import TableManifestation
 
 # Local Packages #
@@ -138,5 +139,8 @@ class XLTEKCDFS(BaseCDFS):
     def recording_unit(self, value: str) -> None:
         self.contents_database.tables[self.meta_table_name].set_meta_information(recording_unit=value)
 
-    def get_meta_information(self) -> dict[str, Any]:
-        return self.contents_database.tables[self.meta_table_name].get_meta_information()
+    def get_meta_information(self, session: Session) -> dict[str, Any]:
+        return self.contents_database.tables[self.meta_table_name].get_meta_information(session=session)
+
+    async def get_meta_information_async(self, session: AsyncSession) -> dict[str, Any]:
+        return await self.contents_database.tables[self.meta_table_name].get_meta_information_async(session=session)

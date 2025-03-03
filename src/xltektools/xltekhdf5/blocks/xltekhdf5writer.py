@@ -66,14 +66,6 @@ class XLTEKHDF5Writer(BaseBlock):
         update_id: int = 0,
         method_kwargs: dict[str, Any] | None = None,
     ) -> dict:
-        if not isinstance(start, Timestamp):
-            start = Timestamp(start, tz=tz)
-
-        if end is None:
-            end = start
-        elif not isinstance(end, Timestamp):
-            end = Timestamp(end, tz=tz)
-
         return {
             "file": {"file": full_path, "s_id": subject_id},
             "write": {"method": method} | (method_kwargs or {}),
@@ -82,7 +74,7 @@ class XLTEKHDF5Writer(BaseBlock):
                 "path": relative_path,
                 "shape": shape,
                 "axis": axis,
-                "timezone": tzinfo,
+                "timezone": tz,
                 "start": start,
                 "end": end,
                 "sample_rate": sample_rate,
@@ -145,6 +137,7 @@ class XLTEKHDF5Writer(BaseBlock):
         sample_rate,
         timezone,
         *args: Any,
+        axis: int = 0,
         file_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -162,51 +155,47 @@ class XLTEKHDF5Writer(BaseBlock):
 
         self.file = self.file_type(**({"mode": "w", "create": True, "construct": True} | (file_kwargs or {})))
 
-        # Set Metadata
+        # Set Metadata (Attributes cannot be written or read after file is in SWMR mode)
         self.file.time_axis.components["axis"].set_time_zone(timezone)
         self.file.time_axis.components["axis"].sample_rate = sample_rate
         self.file.attributes["start_id"] = start_id
 
-        # Set Single Write Multiple Read
-        self.file.swmr_mode = True
-
         # Update Stored File Kwargs
         self.file_kwargs.clear()
-        self.file_kwargs.update(file_kwargs)
+        self.file_kwargs.update({"axis": axis} | file_kwargs)
+
+        # Set Single Write Multiple Read
+        self.file.swmr_mode = True
 
         # Clear Stored File Info
         self.data_info.clear()
 
     # Writing
-    def set_data_slice(self, data, nanostamps, slice_: slice, axis: int | None = None) -> None:
+    def set_data_slice(self, data, nanostamps, slice_: slice, axis: int = 0) -> None:
         # Get File's Dataset
         dataset = self.file.data
-        time_axis = dataset.components["timeseries"].time_axis
+        time_axis = self.file.time_axis
 
         # Get Slicing
-        if axis is None:
-            axis = dataset.components["timeseries"].t_axis
-
         file_shape = dataset.shape
         n_samples = file_shape[axis]
-        d_slicing = [slice(None)] * len(file_shape)
-        d_slicing[axis] = slice(dataset.shape[0], data.shape[0])
+        data_shape = data.shape
+        d_slicing = list(slice(d) for d in data_shape)
+        d_slicing[axis] = slice_
         d_slicing = tuple(d_slicing)
 
         # Resize Data if needed
-        start = 0 if slice_ is None else slice_.start
-        stop = n_samples if slice_ is None else slice_.stop
-        if start > n_samples or stop > n_samples:
-            new_shape = list(file_shape)
-            new_shape[axis] = stop
-            dataset.reize(new_shape)
-            t_shape = list(time_axis.shape)
-            t_shape[axis] = n_samples
-            time_axis.reize(t_shape)
+        new_time_shape = (n_sample if slice_ is None or slice_.stop is None else max(n_samples, slice_.stop),)
+        new_data_shape = list(max(f, d) for f, d in zip(file_shape, data_shape))
+        new_data_shape[axis] = new_time_shape[0]
+        if tuple(new_data_shape) != file_shape:
+            dataset.resize(new_data_shape)
+            if new_time_shape[0] > time_axis.shape[0]:
+                time_axis.resize(new_time_shape)
 
         # Update Data
-        dataset[d_slicing] = data[d_slicing]
         time_axis[slice_] = nanostamps
+        dataset[d_slicing] = data
         self.file.flush()
         self.data_info["shape"] = dataset.shape
 
@@ -233,7 +222,8 @@ class XLTEKHDF5Writer(BaseBlock):
             override: Determines if the IO will be overridden.
             **kwargs: Keyword arguments for creating the IO.
         """
-        self.inputs.io_objects["write_packet"].set_maxsize(3)
+        # Todo: Determine if the CallbackIOWrapper should also be StaticWrapper to allow method calls
+        self.inputs.io_objects["write_packet"].wrapped.set_maxsize(3)
 
     # Setup
     def setup(self, *args: Any, **kwargs: Any) -> None:
@@ -256,8 +246,8 @@ class XLTEKHDF5Writer(BaseBlock):
         # Separate Write Information
         info, data, nanostamps = write_packet
         file_kwargs = info.pop("file")
-        write_info = info.pop("write_info")
-        data_info = info.pop("data_info")
+        write_info = info.pop("write")
+        data_info = info.pop("data")
 
         # Change File if File Kwargs do not Match
         if file_kwargs["file"] != self.file_kwargs["file"]:
@@ -265,6 +255,7 @@ class XLTEKHDF5Writer(BaseBlock):
                 data_info["start_id"],
                 data_info["sample_rate"],
                 data_info["timezone"],
+                axis=data_info["axis"],
                 file_kwargs=file_kwargs,
             )
 
@@ -273,7 +264,7 @@ class XLTEKHDF5Writer(BaseBlock):
 
         # Write Data
         method = getattr(self, write_info.pop("method"))  # Choose the data write method from string
-        method(data, nanostamps, **data_info)
+        method(data, nanostamps, **({"axis": self.file_kwargs["axis"]} | write_info))
 
         # Return File Info
         return self.data_info.copy()

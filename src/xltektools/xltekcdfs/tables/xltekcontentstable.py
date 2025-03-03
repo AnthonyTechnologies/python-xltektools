@@ -15,6 +15,7 @@ __email__ = __email__
 # Standard Libraries #
 from pathlib import Path
 from typing import Any
+from warnings import warn
 
 # Third-Party Packages #
 from cdfs import BaseTimeContentsTableSchema, TimeContentsTableManifestation
@@ -69,6 +70,12 @@ class BaseXLTEKContentsTableSchema(BaseTimeContentsTableSchema):
                     file.close()
             else:
                 cls.delete_item(session=session, item=item)
+                if full_path.exists():
+                    warn(f"Could open file: {full_path} could be corrupted.")
+                    try:
+                        full_path.unlink()
+                    except e:
+                        warn(f"Could not delete file: {full_path}")
             registered.add(full_path)
 
         # Correct unregistered
@@ -129,6 +136,12 @@ class BaseXLTEKContentsTableSchema(BaseTimeContentsTableSchema):
                     file.close()
             else:
                 await cls.delete_item_async(session=session, item=item)
+                if full_path.exists():
+                    warn(f"Could open file: {full_path} could be corrupted.")
+                    try:
+                        full_path.unlink()
+                    except e:
+                        warn(f"Could not delete file: {full_path}")
             registered.add(full_path)
 
         # Correct unregistered

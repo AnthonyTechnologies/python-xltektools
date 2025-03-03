@@ -48,6 +48,8 @@ class XLTEKCDFSContentsUpdater(BaseBlock):
     init_setup: ClassVar[bool] = False
 
     # Attributes #
+    no_output_sentinel: Any = None
+
     cdfs: BaseCDFS | None = None
     table_name: str = "contents"
     contents_table: XLTEKContentsTableManifestation | None = None
@@ -138,7 +140,7 @@ class XLTEKCDFSContentsUpdater(BaseBlock):
 
         # Update Contents
         await self.contents_table.update_entry_async(
-            entries=entry,
+            entry=entry,
             key=self.id_key,
             begin=True,
         )
