@@ -1,4 +1,4 @@
-"""xltekxlspiketable.py
+"""xltek_uuid_analyzers_table.py
 A schema for a containing the XLSpike annotations in an XLTEK Study.
 """
 # Package Header #
@@ -25,8 +25,8 @@ from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifesta
 
 # Definitions #
 # Classes #
-class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
-    """A schema for a containing the XLSpike annotations in an XLTEK Study.
+class BaseXLTEKUuidAnalyzersTableSchema(BaseUpdateTableSchema):
+    """A schema for a containing the UuidAnalyzers annotations in an XLTEK Study.
 
     Class Attributes:
         __tablename__: The name of the table.
@@ -39,8 +39,8 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
     """
 
     # Class Attributes #
-    __tablename__ = "xlspike"
-    __mapper_args__ = {"polymorphic_identity": "xlspike"}
+    __tablename__ = "uuid_analyzers"
+    __mapper_args__ = {"polymorphic_identity": "uuid_analyzers"}
 
     # Columns #
     analysis_context: Mapped[int] = mapped_column(nullable=True)
@@ -96,10 +96,14 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
         """
         entry = super().as_dict()
         entry.update(
-            analysis_context=self.analysis_context,
-            analysis_id=self.analysis_id,
-            channel_number=self.channel_number,
-            user=self.user,
+            type=self.Type,
+            user=self.User,
+            len=self.__len__,
+            analysis_context=self.AnalysisContext,
+            analyzer_name=self.AnalyzerName,
+            channel_number=self.ChannelNumber,
+            is_removeable=self.IsRemoveable,
+            use_creator=self.UseCreator,
         )
         return entry
 
@@ -111,16 +115,20 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
         """
         entry = super().as_entry()
         entry.update(
-            analysis_context=self.analysis_context,
-            analysis_id=self.analysis_id,
-            channel_number=self.channel_number,
-            user=self.user,
+            type=self.Type,
+            user=self.User,
+            len=self.__len__,
+            analysis_context=self.AnalysisContext,
+            analyzer_name=self.AnalyzerName,
+            channel_number=self.ChannelNumber,
+            is_removeable=self.IsRemoveable,
+            use_creator=self.UseCreator,
         )
         return entry
 
 
-class XLTEKXLSpikeTableManifestation(UpdateTableManifestation):
-    """The manifestation of a XLTEKXLSpikeTable.
+class XLTEKUuidAnalyzersTableManifestation(UpdateTableManifestation):
+    """The manifestation of a XLTEKUuidAnalyzersTable.
 
     Attributes:
         _database: A weak reference to the SQAlchemy database to interface with.

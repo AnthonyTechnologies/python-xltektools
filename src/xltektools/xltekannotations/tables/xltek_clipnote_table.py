@@ -1,5 +1,5 @@
-"""xltekxlspiketable.py
-A schema for a containing the XLSpike annotations in an XLTEK Study.
+"""xltek_clipnote_table.py
+A schema for a containing the Clipnote annotations in an XLTEK Study.
 """
 # Package Header #
 from ...header import *
@@ -25,8 +25,8 @@ from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifesta
 
 # Definitions #
 # Classes #
-class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
-    """A schema for a containing the XLSpike annotations in an XLTEK Study.
+class BaseXLTEKClipnoteTableSchema(BaseUpdateTableSchema):
+    """A schema for a containing the Clipnote annotations in an XLTEK Study.
 
     Class Attributes:
         __tablename__: The name of the table.
@@ -119,8 +119,8 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
         return entry
 
 
-class XLTEKXLSpikeTableManifestation(UpdateTableManifestation):
-    """The manifestation of a XLTEKXLSpikeTable.
+class XLTEKClipnoteTableManifestation(UpdateTableManifestation):
+    """The manifestation of a XLTEKClipnoteTable.
 
     Attributes:
         _database: A weak reference to the SQAlchemy database to interface with.

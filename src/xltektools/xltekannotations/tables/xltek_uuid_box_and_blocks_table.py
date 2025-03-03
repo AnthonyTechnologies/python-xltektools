@@ -1,4 +1,4 @@
-"""xltekxlspiketable.py
+"""xltek_uuid_box_and_blocks_table.py
 A schema for a containing the XLSpike annotations in an XLTEK Study.
 """
 # Package Header #
@@ -25,8 +25,8 @@ from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifesta
 
 # Definitions #
 # Classes #
-class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
-    """A schema for a containing the XLSpike annotations in an XLTEK Study.
+class BaseXLTEKUuidBoxAndBlocksTableSchema(BaseUpdateTableSchema):
+    """A schema for a containing the UuidBoxAndBlocks annotations in an XLTEK Study.
 
     Class Attributes:
         __tablename__: The name of the table.
@@ -39,8 +39,8 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
     """
 
     # Class Attributes #
-    __tablename__ = "xlspike"
-    __mapper_args__ = {"polymorphic_identity": "xlspike"}
+    __tablename__ = "uuid_box_and_blocks"
+    __mapper_args__ = {"polymorphic_identity": "uuid_box_and_blocks"}
 
     # Columns #
     analysis_context: Mapped[int] = mapped_column(nullable=True)
@@ -96,10 +96,8 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
         """
         entry = super().as_dict()
         entry.update(
-            analysis_context=self.analysis_context,
-            analysis_id=self.analysis_id,
-            channel_number=self.channel_number,
-            user=self.user,
+            type=self.Type,
+            len=self.__len__,
         )
         return entry
 
@@ -111,16 +109,14 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
         """
         entry = super().as_entry()
         entry.update(
-            analysis_context=self.analysis_context,
-            analysis_id=self.analysis_id,
-            channel_number=self.channel_number,
-            user=self.user,
+            type=self.Type,
+            len=self.__len__,
         )
         return entry
 
 
-class XLTEKXLSpikeTableManifestation(UpdateTableManifestation):
-    """The manifestation of a XLTEKXLSpikeTable.
+class XLTEKUuidBoxAndBlocksTableManifestation(UpdateTableManifestation):
+    """The manifestation of a XLTEKUuidBoxAndBlocksTable.
 
     Attributes:
         _database: A weak reference to the SQAlchemy database to interface with.
