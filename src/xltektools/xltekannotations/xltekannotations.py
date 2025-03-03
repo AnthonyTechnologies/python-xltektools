@@ -22,15 +22,44 @@ from sqlalchemy.orm import DeclarativeBase, Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemyobjects import Database
 from sqlalchemyobjects.tables import TableManifestation
+from uuid_gen import generate_uuid_for_token
+
 
 # Local Packages #
 from .tables import XLTEKAnnotationsInformationTableManifestation
 from .tables import XLTEKAnnotationsTableManifestation
 from .tables import XLTEKXLSpikeTableManifestation
-from .xltekannotationsasyncschema import XLTEKAnnotationsAsyncSchema
+from .tables import XLTEKXLEventTableManifestation
+from .tables import XLTEKCommentTableManifestation
+from .table import XLTEKCorticalStimTableManifestation
+from .table import XLTEKCorticalStimOffTableManifestation
+from .table import XLTEKCorticalStimEtcTableManifestation
+from .table import XLTEKClipnoteCommentTableManifestation
+from .table import XLTEKClipnoteTableManifestation
+from .table import XLTEKUuidAnalyzersTableManifestation
+from .table import XLTEKUuidVideoErrorsTableManifestation
+from .table import XLTEKUuidBoxAndBlocksTableManifestation
+from .table import XLTEKUuidPatientEventsTableManifestation
+from .table import XLTEKUuidVideoOpsTableManifestation
+from .table import XLTEKUuidSaturationOpsTableManifestation
+
+from .xltekannotationsasyncschema import XLTEKAnnotationsAsyncSchema, XLTEKXLCommentTableSchema
 from .xltekannotationsasyncschema import XLTEKAnnotationsInformationTableSchema
 from .xltekannotationsasyncschema import XLTEKAnnotationsTableSchema
 from .xltekannotationsasyncschema import XLTEKXLSpikeTableSchema
+from .xltekannotationsasyncschema import XLTEKXLEventTableSchema
+from .xltekannotationsasyncschema import XLTEKCommentTableSchema
+from .xltekannotationsasyncschema import XLTEKCorticalStimTableSchema
+from .xltekannotationsasyncschema import XLTEKCorticalStimOffTableSchema
+from .xltekannotationsasyncschema import XLTEKCorticalStimEtcTableSchema
+from .xltekannotationsasyncschema import XLTEKClipnoteCommentTableSchema
+from .xltekannotationsasyncschema import XLTEKClipnoteTableSchema
+from .xltekannotationsasyncschema import XLTEKUuidAnalyzersTableSchema
+from .xltekannotationsasyncschema import XLTEKUuidVideoErrorsTableSchema
+from .xltekannotationsasyncschema import XLTEKUuidBoxAndBlocksTableSchema
+from .xltekannotationsasyncschema import XLTEKUuidPatientEventsTableSchema
+from .xltekannotationsasyncschema import XLTEKUuidVideoOpsTableSchema
+from .xltekannotationsasyncschema import XLTEKUuidSaturationOpsTableSchema
 
 
 # Definitions #
@@ -45,11 +74,37 @@ class XLTEKAnnotations(Database):
         meta_table_name: (XLTEKAnnotationsInformationTableManifestation, XLTEKAnnotationsInformationTableSchema, {}),
         "annotations": (XLTEKAnnotationsTableManifestation, XLTEKAnnotationsTableSchema, {}),
         "xlspike":  (XLTEKXLSpikeTableManifestation, XLTEKXLSpikeTableSchema, {}),
+        "xlevent": (XLTEKXLEventTableManifestation, XLTEKXLEventTableSchema, {}),
+        "comment": (XLTEKCommentTableManifestation, XLTEKCommentTableSchema, {}),
+        "corticalstim": (XLTEKCorticalStimTableManifestation, XLTEKCorticalStimTableSchema, {}),
+        "corticalstimoff": (XLTEKCorticalStimOffTableManifestation, XLTEKCorticalStimOffTableSchema, {}),
+        "corticalstimetc": (XLTEKCorticalStimEtcTableManifestation, XLTEKCorticalStimEtcTableSchema, {}),
+        "clipnote_comment": (XLTEKClipnoteCommentTableManifestation, XLTEKClipnoteCommentTableSchema, {}),
+        "clipnote": (XLTEKClipnoteTableManifestation, XLTEKClipnoteTableSchema, {}),
+        "uuid_analyzers": (XLTEKUuidAnalyzersTableManifestation, XLTEKUuidAnalyzersTableSchema, {}),
+        "uuid_video_errors": (XLTEKUuidVideoErrorsTableManifestation, XLTEKUuidVideoErrorsTableSchema, {}),
+        "uuid_box_and_blocks": (XLTEKUuidBoxAndBlocksTableManifestation, XLTEKUuidBoxAndBlocksTableSchema, {}),
+        "uuid_patient_events": (XLTEKUuidPatientEventsTableManifestation, XLTEKUuidPatientEventsTableSchema, {}),
+        "uuid_video_ops": (XLTEKUuidVideoOpsTableManifestation, XLTEKUuidVideoOpsTableSchema, {}),
+        "uuid_saturation_ops": (XLTEKUuidSaturationOpsTableManifestation, XLTEKUuidSaturationOpsTableSchema, {}),
     }
 
     type_map: dict[str, str] = {
         "annotations": "annotations",
         "xlspike": "xlspike",
+        "xlevent": "xlevent",
+        "comment": "comment",
+        "corticalstim": "corticalstim",
+        "corticalstimoff": "corticalstimoff",
+        "corticalstimetc": "corticalstimetc",
+        'clipnote_comment': 'clipnote_comment',
+        "clipnote": "clipnote",
+        "uuid_analyzers": "uuid_analyzers",
+        "uuid_video_errors": "uuid_video_errors",
+        "uuid_box_and_blocks": "uuid_box_and_blocks",
+        "uuid_patient_events": "uuid_patient_events",
+        "uuid_video_ops": "uuid_video_ops",
+        "uuid_saturation_ops": "uuid_saturation_ops",
     }
     annotations_types: dict[str, TableManifestation]
 
@@ -95,7 +150,7 @@ class XLTEKAnnotations(Database):
             table_map: The map of tables to manifest the table from. If None, uses the default table map.
         """
         super().manifest_tables(table_map=table_map)
-        self.annotations_types.update(((a, self.tables[n]) for a, n in self.annotations_types.items()))
+        self.annotations_types.update(((a, self.tables[n]) for a, n in self.type_map.items()))
 
     # Annotations
     def insert_annotation(
@@ -153,7 +208,35 @@ class XLTEKAnnotations(Database):
 
         if begin:
             with session.begin():
+                stim_began = False
+
+                #Potential check point for whether we need to call the uuid_gen for the paired cortical_stim tokens
                 for entry in entries:
+
+                    #Updates begin here
+                    if entry['event'] == 'StartStimulation' :
+
+                        stim_began = True
+
+                        entry_token = entry['token']
+                        token_uuid = generate_uuid_for_token(entry_token)
+                        entry['token_uuid'] = token_uuid
+
+                    elif entry['event'] == 'OnStimulationEnded' :
+
+                        if stim_began :
+                            #No need to generate a new UUID, since this entry needs to be paired with its respective stimulation one
+                            entry['token_uuid'] = token_uuid
+                            stim_began = False
+
+                    else :
+
+                        if stim_began:
+                            entry['token_uuid'] = token_uuid
+                        else :
+                            entry_token = entry['token']
+                            entry['token_uuid'] = generate_uuid_for_token(entry_token)
+
                     self.annotations_types[entry["Type"]].insert(entry=entry, session=session, begin=False)
         else:
             for entry in entries:
