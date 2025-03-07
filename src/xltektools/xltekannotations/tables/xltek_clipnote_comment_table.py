@@ -44,10 +44,10 @@ class BaseXLTEKXLEventTableSchema(BaseUpdateTableSchema):
     __mapper_args__ = {"polymorphic_identity": "clipnote_comment"}
 
     # Columns #
-    analysis_context: Mapped[int] = mapped_column(nullable=True)
-    analysis_id = mapped_column(Uuid, nullable=True)
-    channel_number: Mapped[int] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=True)
     user: Mapped[str] = mapped_column(nullable=True)
+    len: Mapped[int] = mapped_column(nullable=True)
+    is_removeable: Mapped[bool] = mapped_column(nullable=True)
 
     # Class Methods #
     @classmethod

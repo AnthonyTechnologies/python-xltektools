@@ -49,7 +49,7 @@ from .xltekannotationsasyncschema import XLTEKAnnotationsTableSchema
 from .xltekannotationsasyncschema import XLTEKXLSpikeTableSchema
 from .xltekannotationsasyncschema import XLTEKXLEventTableSchema
 from .xltekannotationsasyncschema import XLTEKCommentTableSchema
-from .xltekannotationsasyncschema import XLTEKCorticalStimTableSchema
+from .xltekannotationsasyncschema import XLTEKCorticalStimOnTableSchema
 from .xltekannotationsasyncschema import XLTEKCorticalStimOffTableSchema
 from .xltekannotationsasyncschema import XLTEKCorticalStimEtcTableSchema
 from .xltekannotationsasyncschema import XLTEKClipnoteCommentTableSchema
@@ -76,7 +76,7 @@ class XLTEKAnnotations(Database):
         "xlspike":  (XLTEKXLSpikeTableManifestation, XLTEKXLSpikeTableSchema, {}),
         "xlevent": (XLTEKXLEventTableManifestation, XLTEKXLEventTableSchema, {}),
         "comment": (XLTEKCommentTableManifestation, XLTEKCommentTableSchema, {}),
-        "corticalstim": (XLTEKCorticalStimTableManifestation, XLTEKCorticalStimTableSchema, {}),
+        "corticalstimon": (XLTEKCorticalStimOnTableManifestation, XLTEKCorticalStimOnTableSchema, {}),
         "corticalstimoff": (XLTEKCorticalStimOffTableManifestation, XLTEKCorticalStimOffTableSchema, {}),
         "corticalstimetc": (XLTEKCorticalStimEtcTableManifestation, XLTEKCorticalStimEtcTableSchema, {}),
         "clipnote_comment": (XLTEKClipnoteCommentTableManifestation, XLTEKClipnoteCommentTableSchema, {}),
@@ -94,7 +94,7 @@ class XLTEKAnnotations(Database):
         "xlspike": "xlspike",
         "xlevent": "xlevent",
         "comment": "comment",
-        "corticalstim": "corticalstim",
+        "corticalstimon": "corticalstimon",
         "corticalstimoff": "corticalstimoff",
         "corticalstimetc": "corticalstimetc",
         'clipnote_comment': 'clipnote_comment',

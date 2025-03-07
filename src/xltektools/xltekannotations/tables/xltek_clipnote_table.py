@@ -43,10 +43,10 @@ class BaseXLTEKClipnoteTableSchema(BaseUpdateTableSchema):
     __mapper_args__ = {"polymorphic_identity": "xlspike"}
 
     # Columns #
-    analysis_context: Mapped[int] = mapped_column(nullable=True)
-    analysis_id = mapped_column(Uuid, nullable=True)
-    channel_number: Mapped[int] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=True)
     user: Mapped[str] = mapped_column(nullable=True)
+    len: Mapped[int] = mapped_column(nullable=True)
+    is_removeable: Mapped[bool] = mapped_column(nullable=True)
 
     # Class Methods #
     @classmethod
@@ -96,10 +96,10 @@ class BaseXLTEKClipnoteTableSchema(BaseUpdateTableSchema):
         """
         entry = super().as_dict()
         entry.update(
-            analysis_context=self.analysis_context,
-            analysis_id=self.analysis_id,
-            channel_number=self.channel_number,
-            user=self.user,
+            is_removeable=self.IsRemoveable,
+            type=self.Type,
+            user=self.User,
+            len=self.__len__,
         )
         return entry
 
@@ -111,10 +111,10 @@ class BaseXLTEKClipnoteTableSchema(BaseUpdateTableSchema):
         """
         entry = super().as_entry()
         entry.update(
-            analysis_context=self.analysis_context,
-            analysis_id=self.analysis_id,
-            channel_number=self.channel_number,
-            user=self.user,
+            is_removeable=self.IsRemoveable,
+            type=self.Type,
+            user=self.User,
+            len=self.__len__,
         )
         return entry
 
