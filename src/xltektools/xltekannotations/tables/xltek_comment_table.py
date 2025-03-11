@@ -45,7 +45,7 @@ class BaseXLTEKCommentTableSchema(BaseUpdateTableSchema):
 
     # Columns #
     user: Mapped[str] = mapped_column(nullable=True)
-    modification_user: Mapped[str] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=True)
 
     # Instance Methods #
 
@@ -57,7 +57,7 @@ class BaseXLTEKCommentTableSchema(BaseUpdateTableSchema):
         """
         entry = super().as_dict()
         entry.update(
-            modification_user=self.modification_user,
+            type=self.type,
             user=self.user,
         )
         return entry
@@ -70,7 +70,7 @@ class BaseXLTEKCommentTableSchema(BaseUpdateTableSchema):
         """
         entry = super().as_entry()
         entry.update(
-            modification_user=self.modification_user,
+            type=self.type,
             user=self.user,
         )
         return entry

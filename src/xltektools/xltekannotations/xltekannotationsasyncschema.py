@@ -27,9 +27,20 @@ from .tables import BaseXLTEKAnnotationsInformationTableSchema, BaseXLTEKAnnotat
 from .tables import BaseXLTEKXLSpikeTableSchema
 from .tables import BaseXLTEKXLEventTableSchema
 from .tables import BaseXLTEKCommentTableSchema
-from .tables import BaseXLTEKCorticalStimTableSchema
+from .tables import BaseXLTEKCorticalStimOnTableSchema
 from .tables import BaseXLTEKClipnoteTableSchema
 from .tables import BaseXLTEKClipnoteCommentTableSchema
+from .tables import BaseXLTEKCorticalStimEtcTableSchema
+from .tables import BaseXLTEKCorticalStimOffTableSchema
+from .tables import BaseXLTEKCommentTableSchema
+from .tables import BaseXLTEKUuidAnalyzersTableSchema
+from .tables import BaseXLTEKUuidBoxAndBlocksTableSchema
+from .tables import BaseXLTEKAnnotationsTableSchema
+from .tables import BaseXLTEKUuidSaturationOpsTableSchema
+from .tables import BaseXLTEKUuidVideoErrorsTableSchema
+from .tables import BaseXLTEKUuidVideoOpsTableSchema
+from .tables import BaseXLTEKUuidPatientEventsTableSchema
+
 
 # Definitions #
 # Classes #
@@ -57,7 +68,7 @@ class XLTEKCommentTableSchema(BaseXLTEKCommentTableSchema, XLTEKAnnotationsTable
     pass
 
 
-class XLTEKCorticalStimTableSchema(BaseXLTEKCorticalStimTableSchema, XLTEKAnnotationsTableSchema):
+class XLTEKCorticalStimOnTableSchema(BaseXLTEKCorticalStimOnTableSchema, XLTEKAnnotationsTableSchema):
     pass
 
 

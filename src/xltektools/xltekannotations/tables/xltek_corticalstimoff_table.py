@@ -44,8 +44,20 @@ class BaseXLTEKCorticalStimOffTableSchema(BaseUpdateTableSchema):
     __mapper_args__ = {"polymorphic_identity": "corticalstimoff"}
 
     # Columns #
-    user: Mapped[str] = mapped_column(nullable=True)
-    modification_user: Mapped[str] = mapped_column(nullable=True)
+    # user: Mapped[str] = mapped_column(nullable=True)
+    # modification_user: Mapped[str] = mapped_column(nullable=True)
+
+    cort_stim_event: Mapped[str] = mapped_column(nullable=True)
+    delivered_current: Mapped[float] = mapped_column(nullable=True)
+    event: Mapped[str] = mapped_column(nullable=True)
+    is_complete: Mapped[bool] = mapped_column(nullable=True)
+    never_displayed: Mapped[bool] = mapped_column(nullable=True)
+    relays_active: Mapped[int] = mapped_column(nullable=True)
+    secondary: Mapped[bool] = mapped_column(nullable=True)
+    stamp: Mapped[int] = mapped_column(nullable=True)
+    token: Mapped[int] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=True)
+    len: Mapped[int] = mapped_column(nullable=True)
 
     # Instance Methods #
 

@@ -44,8 +44,27 @@ class BaseXLTEKCorticalStimEtcTableSchema(BaseUpdateTableSchema):
     __mapper_args__ = {"polymorphic_identity": "corticalstimetc"}
 
     # Columns #
-    user: Mapped[str] = mapped_column(nullable=True)
-    modification_user: Mapped[str] = mapped_column(nullable=True)
+    cort_stim_event: Mapped[str] = mapped_column(nullable=True)
+    event: Mapped[str] = mapped_column(nullable=True)
+    relays_active: Mapped[str] = mapped_column(nullable=True)
+    token: Mapped[int] = mapped_column(nullable=True)
+    train_duration: Mapped[float] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=True)
+    len: Mapped[int] = mapped_column(nullable=True)
+    intensity: Mapped[float] = mapped_column(nullable=True)
+
+    delivered_current:Mapped[float] = mapped_column(nullable=True)
+    is_complete: Mapped[bool] = mapped_column(nullable=True)
+    never_displayed: Mapped[bool] = mapped_column(nullable=True)
+    secondary: Mapped[bool] = mapped_column(nullable=True)
+    stamp: Mapped[int] = mapped_column(nullable=True)
+
+    negative_electrode: Mapped[int] = mapped_column(nullable=True)
+    negative_electrode_label: Mapped[str] = mapped_column(nullable=True)
+    positive_electrode: Mapped[int] = mapped_column(nullable=True)
+    positive_electrode_label: Mapped[str] = mapped_column(nullable=True)
+    pulse_duration: Mapped[float] = mapped_column(nullable=True)
+    pulse_frequency: Mapped[float] = mapped_column(nullable=True)
 
     # Instance Methods #
 

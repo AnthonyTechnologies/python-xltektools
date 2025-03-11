@@ -1,5 +1,5 @@
-"""xltek_corticalstim_table.py
-A schema for a containing the corticalstim annotations in an XLTEK Study.
+"""xltek_corticalstimon_table.py
+A schema for a containing the corticalstimon annotations in an XLTEK Study.
 """
 # Package Header #
 from ...header import *
@@ -26,8 +26,8 @@ from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifesta
 
 # Definitions #
 # Classes #
-class BaseXLTEKCorticalStimTableSchema(BaseUpdateTableSchema):
-    """A schema for a containing the corticalstim annotations in an XLTEK Study.
+class BaseXLTEKCorticalStimOnTableSchema(BaseUpdateTableSchema):
+    """A schema for a containing the corticalstimon annotations in an XLTEK Study.
 
     Class Attributes:
         __tablename__: The name of the table.
@@ -40,12 +40,27 @@ class BaseXLTEKCorticalStimTableSchema(BaseUpdateTableSchema):
     """
 
     # Class Attributes #
-    __tablename__ = "corticalstim"
-    __mapper_args__ = {"polymorphic_identity": "corticalstim"}
+    __tablename__ = "corticalstimon"
+    __mapper_args__ = {"polymorphic_identity": "corticalstimon"}
 
     # Columns #
-    user: Mapped[str] = mapped_column(nullable=True)
-    modification_user: Mapped[str] = mapped_column(nullable=True)
+    # user: Mapped[str] = mapped_column(nullable=True)
+    # modification_user: Mapped[str] = mapped_column(nullable=True)
+    cort_stim_event: Mapped[str] = mapped_column(nullable=True)
+    event: Mapped[str] = mapped_column(nullable=True)
+    relays_active: Mapped[str] = mapped_column(nullable=True)
+    token: Mapped[int] = mapped_column(nullable=True)
+    train_duration: Mapped[float] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=True)
+    len: Mapped[int] = mapped_column(nullable=True)
+    intensity: Mapped[float] = mapped_column(nullable=True)
+
+    negative_electrode: Mapped[int] = mapped_column(nullable=True)
+    negative_electrode_label: Mapped[str] = mapped_column(nullable=True)
+    positive_electrode: Mapped[int] = mapped_column(nullable=True)
+    positive_electrode_label: Mapped[str] = mapped_column(nullable=True)
+    pulse_duration: Mapped[float] = mapped_column(nullable=True)
+    pulse_frequency: Mapped[float] = mapped_column(nullable=True)
 
     # Instance Methods #
 
@@ -58,14 +73,10 @@ class BaseXLTEKCorticalStimTableSchema(BaseUpdateTableSchema):
         entry = super().as_dict()
         entry.update(
             cort_stim_event=self.CortStimEvent,
-            delivered_current=self.DeliveredCurrent,
             event=self.Event,
-            is_complete=self.IsComplete,
-            never_displayed=self.NeverDisplayed,
             relays_active=self.RelaysActive,
-            secondary=self.Secondary,
-            stamp=self.Stamp,
             token=self.Token,
+            train_duration=self.TrainDuration,
             type=self.Type,
             len=self.__len__,
 
@@ -76,7 +87,6 @@ class BaseXLTEKCorticalStimTableSchema(BaseUpdateTableSchema):
             positive_electrode_label=self.PositiveElectrodeLabel,
             pulse_duration=self.PulseDuration,
             pulse_frequency=self.PulseFrequency,
-            train_duration=self.TrainDuration,
         )
         return entry
 
@@ -114,8 +124,8 @@ class BaseXLTEKCorticalStimTableSchema(BaseUpdateTableSchema):
         return entry
 
 
-class XLTEKCorticalStimTableManifestation(UpdateTableManifestation):
-    """The manifestation of a XLTEKCorticalStimTable.
+class XLTEKCorticalStimOnTableManifestation(UpdateTableManifestation):
+    """The manifestation of a XLTEKCorticalStimOnTable.
 
     Attributes:
         _database: A weak reference to the SQAlchemy database to interface with.
