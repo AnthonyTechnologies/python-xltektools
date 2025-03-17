@@ -17,15 +17,16 @@ from typing import Any
 from uuid import UUID
 
 # Third-Party Packages #
-from sqlalchemy import Uuid
+from sqlalchemy import Uuid, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifestation
 
 # Local Packages #
+from .xltekannotationstable import BaseXLTEKAnnotationsTableSchema, XLTEKAnnotationsTableManifestation
+
 
 # Definitions #
 # Classes #
-class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
+class BaseXLTEKXLSpikeTableSchema(BaseXLTEKAnnotationsTableSchema):
     """A schema for a containing the XLSpike annotations in an XLTEK Study.
 
     Class Attributes:
@@ -43,6 +44,7 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
     __mapper_args__ = {"polymorphic_identity": "xlspike"}
 
     # Columns #
+    id = mapped_column(ForeignKey("annotations.id"), primary_key=True)
     analysis_context: Mapped[int] = mapped_column(nullable=True)
     analysis_id = mapped_column(Uuid, nullable=True)
     channel_number: Mapped[int] = mapped_column(nullable=True)
@@ -119,7 +121,7 @@ class BaseXLTEKXLSpikeTableSchema(BaseUpdateTableSchema):
         return entry
 
 
-class XLTEKXLSpikeTableManifestation(UpdateTableManifestation):
+class XLTEKXLSpikeTableManifestation(XLTEKAnnotationsTableManifestation):
     """The manifestation of a XLTEKXLSpikeTable.
 
     Attributes:

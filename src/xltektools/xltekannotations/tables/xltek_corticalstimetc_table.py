@@ -32,11 +32,6 @@ class BaseXLTEKCorticalStimEtcTableSchema(BaseUpdateTableSchema):
     Class Attributes:
         __tablename__: The name of the table.
         __mapper_args__: Mapper arguments for SQLAlchemy.
-
-    Columns:
-        analysis_context: The analysis context for the spike.
-        analysis_id: The ID of the analysis of the spike.
-        channel_number: The channel number where the spike occured.
     """
 
     # Class Attributes #

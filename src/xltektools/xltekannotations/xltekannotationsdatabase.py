@@ -1,4 +1,4 @@
-""" xltekannotations.py.py
+""" xltekannotationsdatabase.py.py
 
 """
 # Package Header #
@@ -22,91 +22,83 @@ from sqlalchemy.orm import DeclarativeBase, Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemyobjects import Database
 from sqlalchemyobjects.tables import TableManifestation
-from uuid_gen import generate_uuid_for_token
+from .tables.uuid_gen import generate_uuid_for_token
 
 
 # Local Packages #
-from .tables import XLTEKAnnotationsInformationTableManifestation
-from .tables import XLTEKAnnotationsTableManifestation
-from .tables import XLTEKXLSpikeTableManifestation
-from .tables import XLTEKXLEventTableManifestation
-from .tables import XLTEKCommentTableManifestation
-from .table import XLTEKCorticalStimTableManifestation
-from .table import XLTEKCorticalStimOffTableManifestation
-from .table import XLTEKCorticalStimEtcTableManifestation
-from .table import XLTEKClipnoteCommentTableManifestation
-from .table import XLTEKClipnoteTableManifestation
-from .table import XLTEKUuidAnalyzersTableManifestation
-from .table import XLTEKUuidVideoErrorsTableManifestation
-from .table import XLTEKUuidBoxAndBlocksTableManifestation
-from .table import XLTEKUuidPatientEventsTableManifestation
-from .table import XLTEKUuidVideoOpsTableManifestation
-from .table import XLTEKUuidSaturationOpsTableManifestation
-
-from .xltekannotationsasyncschema import XLTEKAnnotationsAsyncSchema, XLTEKXLCommentTableSchema
-from .xltekannotationsasyncschema import XLTEKAnnotationsInformationTableSchema
-from .xltekannotationsasyncschema import XLTEKAnnotationsTableSchema
-from .xltekannotationsasyncschema import XLTEKXLSpikeTableSchema
-from .xltekannotationsasyncschema import XLTEKXLEventTableSchema
-from .xltekannotationsasyncschema import XLTEKCommentTableSchema
-from .xltekannotationsasyncschema import XLTEKCorticalStimOnTableSchema
-from .xltekannotationsasyncschema import XLTEKCorticalStimOffTableSchema
-from .xltekannotationsasyncschema import XLTEKCorticalStimEtcTableSchema
-from .xltekannotationsasyncschema import XLTEKClipnoteCommentTableSchema
-from .xltekannotationsasyncschema import XLTEKClipnoteTableSchema
-from .xltekannotationsasyncschema import XLTEKUuidAnalyzersTableSchema
-from .xltekannotationsasyncschema import XLTEKUuidVideoErrorsTableSchema
-from .xltekannotationsasyncschema import XLTEKUuidBoxAndBlocksTableSchema
-from .xltekannotationsasyncschema import XLTEKUuidPatientEventsTableSchema
-from .xltekannotationsasyncschema import XLTEKUuidVideoOpsTableSchema
-from .xltekannotationsasyncschema import XLTEKUuidSaturationOpsTableSchema
+from .tables import (
+    XLTEKAnnotationsInformationTableManifestation,
+    XLTEKAnnotationsTableManifestation,
+    XLTEKXLSpikeTableManifestation,
+    XLTEKXLEventTableManifestation,
+    XLTEKCommentTableManifestation,
+    XLTEKCorticalStimOnTableManifestation,
+    XLTEKCorticalStimOffTableManifestation,
+    XLTEKCorticalStimEtcTableManifestation,
+    XLTEKClipnoteTableManifestation,
+    XLTEKClipnoteCommentTableManifestation,
+    XLTEKUuidAnalyzersTableManifestation,
+    XLTEKUuidVideoErrorsTableManifestation,
+    XLTEKUuidBoxAndBlocksTableManifestation,
+    XLTEKUuidPatientEventsTableManifestation,
+    XLTEKUuidVideoOpsTableManifestation,
+    XLTEKUuidSaturationOpsTableManifestation,
+)
+from .xltekannotationsasyncschema import (
+    XLTEKAnnotationsAsyncSchema,
+    XLTEKAnnotationsInformationTableSchema,
+    XLTEKAnnotationsTableSchema,
+    XLTEKXLSpikeTableSchema,
+    XLTEKCommentTableSchema
+)
 
 
 # Definitions #
 # Classes #
-class XLTEKAnnotations(Database):
+class XLTEKAnnotationsDatabase(Database):
 
     # Attributes #
     meta_table_name: str = "meta_information"
 
     schema: type[DeclarativeBase] | None = XLTEKAnnotationsAsyncSchema
-    table_maps: dict[str, tuple[type[TableManifestation], type[DeclarativeBase], dict[str, Any]]] = {
+    table_map: dict[str, tuple[type[TableManifestation], type[DeclarativeBase], dict[str, Any]]] = {
         meta_table_name: (XLTEKAnnotationsInformationTableManifestation, XLTEKAnnotationsInformationTableSchema, {}),
         "annotations": (XLTEKAnnotationsTableManifestation, XLTEKAnnotationsTableSchema, {}),
         "xlspike":  (XLTEKXLSpikeTableManifestation, XLTEKXLSpikeTableSchema, {}),
-        "xlevent": (XLTEKXLEventTableManifestation, XLTEKXLEventTableSchema, {}),
-        "comment": (XLTEKCommentTableManifestation, XLTEKCommentTableSchema, {}),
-        "corticalstimon": (XLTEKCorticalStimOnTableManifestation, XLTEKCorticalStimOnTableSchema, {}),
-        "corticalstimoff": (XLTEKCorticalStimOffTableManifestation, XLTEKCorticalStimOffTableSchema, {}),
-        "corticalstimetc": (XLTEKCorticalStimEtcTableManifestation, XLTEKCorticalStimEtcTableSchema, {}),
-        "clipnote_comment": (XLTEKClipnoteCommentTableManifestation, XLTEKClipnoteCommentTableSchema, {}),
-        "clipnote": (XLTEKClipnoteTableManifestation, XLTEKClipnoteTableSchema, {}),
-        "uuid_analyzers": (XLTEKUuidAnalyzersTableManifestation, XLTEKUuidAnalyzersTableSchema, {}),
-        "uuid_video_errors": (XLTEKUuidVideoErrorsTableManifestation, XLTEKUuidVideoErrorsTableSchema, {}),
-        "uuid_box_and_blocks": (XLTEKUuidBoxAndBlocksTableManifestation, XLTEKUuidBoxAndBlocksTableSchema, {}),
-        "uuid_patient_events": (XLTEKUuidPatientEventsTableManifestation, XLTEKUuidPatientEventsTableSchema, {}),
-        "uuid_video_ops": (XLTEKUuidVideoOpsTableManifestation, XLTEKUuidVideoOpsTableSchema, {}),
-        "uuid_saturation_ops": (XLTEKUuidSaturationOpsTableManifestation, XLTEKUuidSaturationOpsTableSchema, {}),
+        # "xlevent": (XLTEKXLEventTableManifestation, XLTEKXLEventTableSchema, {}),
+        "comments": (XLTEKCommentTableManifestation, XLTEKCommentTableSchema, {}),
+        # "corticalstimon": (XLTEKCorticalStimOnTableManifestation, XLTEKCorticalStimOnTableSchema, {}),
+        # "corticalstimoff": (XLTEKCorticalStimOffTableManifestation, XLTEKCorticalStimOffTableSchema, {}),
+        # "corticalstimetc": (XLTEKCorticalStimEtcTableManifestation, XLTEKCorticalStimEtcTableSchema, {}),
+        # "clipnote_comment": (XLTEKClipnoteCommentTableManifestation, XLTEKClipnoteCommentTableSchema, {}),
+        # "clipnote": (XLTEKClipnoteTableManifestation, XLTEKClipnoteTableSchema, {}),
+        # "uuid_analyzers": (XLTEKUuidAnalyzersTableManifestation, XLTEKUuidAnalyzersTableSchema, {}),
+        # "uuid_video_errors": (XLTEKUuidVideoErrorsTableManifestation, XLTEKUuidVideoErrorsTableSchema, {}),
+        # "uuid_box_and_blocks": (XLTEKUuidBoxAndBlocksTableManifestation, XLTEKUuidBoxAndBlocksTableSchema, {}),
+        # "uuid_patient_events": (XLTEKUuidPatientEventsTableManifestation, XLTEKUuidPatientEventsTableSchema, {}),
+        # "uuid_video_ops": (XLTEKUuidVideoOpsTableManifestation, XLTEKUuidVideoOpsTableSchema, {}),
+        # "uuid_saturation_ops": (XLTEKUuidSaturationOpsTableManifestation, XLTEKUuidSaturationOpsTableSchema, {}),
     }
 
-    type_map: dict[str, str] = {
-        "annotations": "annotations",
+    annotation_type_map: dict[str, str] = {
+        "base": "annotations",
+        "annotation": "annotations",
         "xlspike": "xlspike",
-        "xlevent": "xlevent",
-        "comment": "comment",
-        "corticalstimon": "corticalstimon",
-        "corticalstimoff": "corticalstimoff",
-        "corticalstimetc": "corticalstimetc",
-        'clipnote_comment': 'clipnote_comment',
-        "clipnote": "clipnote",
-        "uuid_analyzers": "uuid_analyzers",
-        "uuid_video_errors": "uuid_video_errors",
-        "uuid_box_and_blocks": "uuid_box_and_blocks",
-        "uuid_patient_events": "uuid_patient_events",
-        "uuid_video_ops": "uuid_video_ops",
-        "uuid_saturation_ops": "uuid_saturation_ops",
+        # "xlevent": "xlevent",
+        "comment": "comments",
+        "comments": "comments",
+        # "corticalstimon": "corticalstimon",
+        # "corticalstimoff": "corticalstimoff",
+        # "corticalstimetc": "corticalstimetc",
+        # 'clipnote_comment': 'clipnote_comment',
+        # "clipnote": "clipnote",
+        # "uuid_analyzers": "uuid_analyzers",
+        # "uuid_video_errors": "uuid_video_errors",
+        # "uuid_box_and_blocks": "uuid_box_and_blocks",
+        # "uuid_patient_events": "uuid_patient_events",
+        # "uuid_video_ops": "uuid_video_ops",
+        # "uuid_saturation_ops": "uuid_saturation_ops",
     }
-    annotations_types: dict[str, TableManifestation]
 
     # Magic Methods #
     # Construction/Destruction
@@ -139,19 +131,6 @@ class XLTEKAnnotations(Database):
             )
 
     # Instance Methods #
-    # Tables
-    def manifest_tables(
-        self,
-        table_map: dict[str, tuple[type[TableManifestation], type[DeclarativeBase], dict[str, Any]]] | None = None,
-    ) -> None:
-        """Manifests the table from the table map.
-
-        Args:
-            table_map: The map of tables to manifest the table from. If None, uses the default table map.
-        """
-        super().manifest_tables(table_map=table_map)
-        self.annotations_types.update(((a, self.tables[n]) for a, n in self.type_map.items()))
-
     # Annotations
     def insert_annotation(
         self,
@@ -168,9 +147,12 @@ class XLTEKAnnotations(Database):
             begin: If True, begins a transaction for the operation. Defaults to False.
             **kwargs: Additional keyword arguments for the entry.
         """
-        self.annotations_types[entry["Type"]].insert(entry=entry, session=session, begin=begin, **kwargs)
+        table_name = self.annotation_type_map.get(entry["type"], "annotations")
+        if "table_type" not in entry and table_name != "annotations":
+            entry["table_type"] = table_name
+        self.tables[table_name].insert(entry=entry, session=session, begin=begin, **kwargs)
 
-    async def insert_async(
+    async def insert_annotation_async(
         self,
         entry: dict[str, Any] | None = None,
         session: AsyncSession | None = None,
@@ -185,7 +167,10 @@ class XLTEKAnnotations(Database):
             begin: If True, begins a transaction for the operation. Defaults to False.
             **kwargs: Additional keyword arguments for the entry.
         """
-        await self.annotations_types[entry["Type"]].insert_async(entry=entry, session=session, begin=begin, **kwargs)
+        table_name = self.annotation_type_map.get(entry["type"], "annotations")
+        if "table_type" not in entry and table_name != "annotations":
+            entry["table_type"] = table_name
+        await self.tables[table_name].insert_async(entry=entry, session=session, begin=begin, **kwargs)
 
     def insert_annotations(
         self,
@@ -237,10 +222,10 @@ class XLTEKAnnotations(Database):
                             entry_token = entry['token']
                             entry['token_uuid'] = generate_uuid_for_token(entry_token)
 
-                    self.annotations_types[entry["Type"]].insert(entry=entry, session=session, begin=False)
+                    self.annotations_types[entry["type"]].insert(entry=entry, session=session, begin=False)
         else:
             for entry in entries:
-                self.annotations_types[entry["Type"]].insert(entry=entry, session=session, begin=False)
+                self.annotations_types[entry["type"]].insert(entry=entry, session=session, begin=False)
 
         if not was_open:
             session.close()
@@ -264,14 +249,20 @@ class XLTEKAnnotations(Database):
         else:
             was_open = True
 
+
         if begin:
             async with session.begin():
                 for entry in entries:
-                    await self.annotations_types[entry["Type"]].insert_async(entry=entry, session=session, begin=False)
+                    table_name = self.annotation_type_map.get(entry["type"], "annotations")
+                    if "table_type" not in entry and table_name != "annotations":
+                        entry["table_type"] = table_name
+                    await self.tables[table_name].insert_async(entry=entry, session=session, begin=False)
         else:
             for entry in entries:
-                await self.annotations_types[entry["Type"]].insert_async(entry=entry, session=session, begin=False)
+                table_name = self.annotation_type_map.get(entry["type"], "annotations")
+                if "table_type" not in entry and table_name != "annotations":
+                    entry["table_type"] = table_name
+                await self.tables[table_name].insert_async(entry=entry, session=session, begin=False)
 
         if not was_open:
             await session.close()
-

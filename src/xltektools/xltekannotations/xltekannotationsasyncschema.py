@@ -1,9 +1,6 @@
 """xltekannotationsschema.py
-
+The SQLAlchemy schema for an XLTEK annotations SQLite database and its component tables.
 """
-from .tables.xltek_clipnote_table import BaseXLTEKClipnoteTableSchema
-from .tables.xltek_comment_table import BaseXLTEKCommentTableSchema
-from .tables.xltek_uuid_box_and_blocks_table import BaseXLTEKUuidBoxAndBlocksTableSchema
 # Package Header #
 from ..header import *
 
@@ -22,91 +19,96 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs
 
 # Local Packages #
-from .tables import BaseXLTEKAnnotationsInformationTableSchema, BaseXLTEKAnnotationsTableSchema, \
-    BaseXLTEKUuidAnalyzersTableSchema
-from .tables import BaseXLTEKXLSpikeTableSchema
-from .tables import BaseXLTEKXLEventTableSchema
-from .tables import BaseXLTEKCommentTableSchema
-from .tables import BaseXLTEKCorticalStimOnTableSchema
-from .tables import BaseXLTEKClipnoteTableSchema
-from .tables import BaseXLTEKClipnoteCommentTableSchema
-from .tables import BaseXLTEKCorticalStimEtcTableSchema
-from .tables import BaseXLTEKCorticalStimOffTableSchema
-from .tables import BaseXLTEKCommentTableSchema
-from .tables import BaseXLTEKUuidAnalyzersTableSchema
-from .tables import BaseXLTEKUuidBoxAndBlocksTableSchema
-from .tables import BaseXLTEKAnnotationsTableSchema
-from .tables import BaseXLTEKUuidSaturationOpsTableSchema
-from .tables import BaseXLTEKUuidVideoErrorsTableSchema
-from .tables import BaseXLTEKUuidVideoOpsTableSchema
-from .tables import BaseXLTEKUuidPatientEventsTableSchema
+from .tables import (
+    BaseXLTEKAnnotationsInformationTableSchema,
+    BaseXLTEKAnnotationsTableSchema,
+    BaseXLTEKXLSpikeTableSchema,
+    BaseXLTEKXLEventTableSchema,
+    BaseXLTEKCommentTableSchema,
+    BaseXLTEKCorticalStimOnTableSchema,
+    BaseXLTEKCorticalStimOffTableSchema,
+    BaseXLTEKCorticalStimEtcTableSchema,
+    BaseXLTEKClipnoteTableSchema,
+    BaseXLTEKClipnoteCommentTableSchema,
+    BaseXLTEKUuidAnalyzersTableSchema,
+    BaseXLTEKUuidVideoErrorsTableSchema,
+    BaseXLTEKUuidBoxAndBlocksTableSchema,
+    BaseXLTEKUuidPatientEventsTableSchema,
+    BaseXLTEKUuidVideoOpsTableSchema,
+    BaseXLTEKUuidSaturationOpsTableSchema,
+)
 
 
 # Definitions #
 # Classes #
 class XLTEKAnnotationsAsyncSchema(AsyncAttrs, DeclarativeBase):
-    pass
+    """The root SQLAlchemy schema for an XLTEK annotations SQLite database in an asynchronous context.
+
+    This class is used for defining the schema of an XLTEK annotations database and serves as a base class for managing
+    database operations asynchronously. It inherits attributes and methods from the `AsyncAttrs` and `DeclarativeBase`
+    classes to facilitate interaction with an SQL database in an asynchronous environment.
+    """
 
 
 class XLTEKAnnotationsInformationTableSchema(BaseXLTEKAnnotationsInformationTableSchema, XLTEKAnnotationsAsyncSchema):
-    pass
+    """The SQLAlchemy schema for the information table of an XLTEK annotations SQLite database."""
 
 
 class XLTEKAnnotationsTableSchema(BaseXLTEKAnnotationsTableSchema, XLTEKAnnotationsAsyncSchema):
-    pass
+    """The SQLAlchemy schema for the main table of an XLTEK annotations SQLite database."""
 
 
 class XLTEKXLSpikeTableSchema(BaseXLTEKXLSpikeTableSchema, XLTEKAnnotationsTableSchema):
-    pass
+    """The SQLAlchemy schema for the spike table of an XLTEK annotations SQLite database."""
 
 
-class XLTEKXLEventTableSchema(BaseXLTEKXLEventTableSchema, XLTEKAnnotationsTableSchema):
-    pass
+# class XLTEKXLEventTableSchema(BaseXLTEKXLEventTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
 
 
 class XLTEKCommentTableSchema(BaseXLTEKCommentTableSchema, XLTEKAnnotationsTableSchema):
-    pass
+    """The SQLAlchemy schema for the comment table of an XLTEK annotations SQLite database."""
 
 
-class XLTEKCorticalStimOnTableSchema(BaseXLTEKCorticalStimOnTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKCorticalStimOffTableSchema(BaseXLTEKCorticalStimOffTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKCorticalStimEtcTableSchema(BaseXLTEKCorticalStimEtcTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKClipnoteTableSchema(BaseXLTEKClipnoteTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKClipnoteCommentTableSchema(BaseXLTEKClipnoteCommentTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKUuidAnalyzersTableSchema(BaseXLTEKUuidAnalyzersTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKUuidVideoErrorsTableSchema(BaseXLTEKUuidVideoErrorsTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKUuidBoxAndBlocksTableSchema(BaseXLTEKUuidBoxAndBlocksTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKUuidPatientEventsTableSchema(BaseXLTEKUuidPatientEventsTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKUuidVideoOpsTableSchema(BaseXLTEKUuidVideoOpsTableSchema, XLTEKAnnotationsTableSchema):
-    pass
-
-
-class XLTEKUuidSaturationOpsTableSchema(BaseXLTEKUuidSaturationOpsTableSchema, XLTEKAnnotationsTableSchema):
-    pass
+# class XLTEKCorticalStimOnTableSchema(BaseXLTEKCorticalStimOnTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKCorticalStimOffTableSchema(BaseXLTEKCorticalStimOffTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKCorticalStimEtcTableSchema(BaseXLTEKCorticalStimEtcTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKClipnoteTableSchema(BaseXLTEKClipnoteTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKClipnoteCommentTableSchema(BaseXLTEKClipnoteCommentTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKUuidAnalyzersTableSchema(BaseXLTEKUuidAnalyzersTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKUuidVideoErrorsTableSchema(BaseXLTEKUuidVideoErrorsTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKUuidBoxAndBlocksTableSchema(BaseXLTEKUuidBoxAndBlocksTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKUuidPatientEventsTableSchema(BaseXLTEKUuidPatientEventsTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKUuidVideoOpsTableSchema(BaseXLTEKUuidVideoOpsTableSchema, XLTEKAnnotationsTableSchema):
+#     pass
+#
+#
+# class XLTEKUuidSaturationOpsTableSchema(BaseXLTEKUuidSaturationOpsTableSchema, XLTEKAnnotationsTableSchema):
+#     pass

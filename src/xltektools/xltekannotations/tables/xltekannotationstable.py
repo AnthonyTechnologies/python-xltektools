@@ -38,7 +38,7 @@ from sqlalchemyobjects.tables import BaseUpdateTableSchema, UpdateTableManifesta
 # Definitions #
 # Classes #
 class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
-    """"A schema for a containing the XLTEK annotation information common to all XLTEK annotations.
+    """A schema for a containing the XLTEK annotation information common to all XLTEK annotations.
 
     Class Attributes:
         __tablename__: The name of the table.
@@ -56,7 +56,7 @@ class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
 
     # Class Attributes #
     __tablename__ = "annotations"
-    __mapper_args__ = {"polymorphic_identity": "annotations", "polymorphic_on": "type"}
+    __mapper_args__ = {"polymorphic_identity": "annotations", "polymorphic_on": "table_type"}
 
     # Columns #
     tz_offset: Mapped[int]
@@ -65,6 +65,7 @@ class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
     system_text: Mapped[str]
     text: Mapped[str]
     type: Mapped[str]
+    table_type: Mapped[str] = mapped_column(nullable=True)
 
     # Class Methods #
     @classmethod
@@ -88,18 +89,20 @@ class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
         """
         kwargs = super().format_entry_kwargs(id_=id_, **kwargs)
 
-        if isinstance(timezone, str):
-            if timezone.lower() == "local" or timezone.lower() == "localtime":
-                timezone = time.localtime().tm_gmtoff
-            else:
-                timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
+        if timezone is not None:
+            if isinstance(timezone, str):
+                if timezone.lower() == "local" or timezone.lower() == "localtime":
+                    timezone = time.localtime().tm_gmtoff
+                else:
+                    timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
 
-        tz_offset = timezone_offset(timezone).total_seconds() if isinstance(timezone, TZInfo) else timezone
+            kwargs["tz_offset"] = timezone_offset(timezone).total_seconds() if isinstance(timezone, TZInfo) else timezone
 
-        kwargs.update(
-            tz_offset=tz_offset,
-            timestamp=int(Nanostamp(nanostamp)),
-        )
+        if isinstance(nanostamp, int):
+            kwargs["nanostamp"] = nanostamp
+        elif nanostamp is not None:
+            kwargs["nanostamp"] = int(Nanostamp(nanostamp))
+
         return kwargs
 
     @classmethod
@@ -276,8 +279,10 @@ class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
         entry = super().as_entry()
         tzone = Timezone(timedelta(seconds=self.tz_offset))
         entry.update(
-            tz_offset=tzone,
+            timezone=tzone,
+            tz_offset=self.tz_offset,
             nanostamp=Timestamp.fromnanostamp(self.nanostamp, tzone),
+            type=self.type,
         )
         return entry
 
@@ -287,10 +292,10 @@ class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):
 
     Attributes:
         _database: A weak reference to the SQAlchemy database to interface with.
-        table: The SQLAlchemy declarative table which this object act as the interface for.
+        table_schema: The SQLAlchemy declarative table which this object act as the interface for.
 
     Args:
-        table: The SQLAlchemy declarative table which this object act as the interface for.
+        table_schema: The SQLAlchemy declarative table which this object act as the interface for.
         database: The SQAlchemy database to interface with.
         init: Determines if this object will construct.
         **kwargs: Additional keyword arguments.

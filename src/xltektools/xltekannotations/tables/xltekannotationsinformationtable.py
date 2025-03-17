@@ -33,6 +33,7 @@ from sqlalchemyobjects.tables import BaseMetaInformationTableSchema, MetaInforma
 # Classes #
 class BaseXLTEKAnnotationsInformationTableSchema(BaseMetaInformationTableSchema, BaseUpdateTableSchema):
     __mapper_args__ = {"polymorphic_identity": "xltekannotationsinfromation"}
+
     name: Mapped[str] = mapped_column(nullable=True)
     start = mapped_column(BigInteger, nullable=True)
     tz_offset: Mapped[int] = mapped_column(nullable=True)

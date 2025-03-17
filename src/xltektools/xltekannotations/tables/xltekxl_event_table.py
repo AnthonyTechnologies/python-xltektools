@@ -52,10 +52,10 @@ class BaseXLTEKXLEventTableSchema(BaseUpdateTableSchema):
     # Class Methods #
     @classmethod
     def format_entry_kwargs(
-            cls,
-            id_: str | UUID | None = None,
-            analysis_id: str | UUID | None = None,
-            **kwargs: Any,
+        cls,
+        id_: str | UUID | None = None,
+        analysis_id: str | UUID | None = None,
+        **kwargs: Any,
     ) -> dict[str, Any]:
         """Formats entry keyword arguments for creating or updating table entries. (Primarily for the special data type which need type casting like Uuid, Datetimes etc)
 
