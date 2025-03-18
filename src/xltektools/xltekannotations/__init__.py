@@ -13,5 +13,11 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .xltekannotationsasyncschema import XLTEKAnnotationsAsyncSchema
+from .xltekannotationsasyncschema import (
+    XLTEKAnnotationsAsyncSchema,
+    XLTEKAnnotationsInformationTableSchema,
+    XLTEKAnnotationsTableSchema,
+    XLTEKXLSpikeTableSchema,
+    XLTEKCommentTableSchema,
+)
 from .xltekannotationsdatabase import  XLTEKAnnotationsDatabase

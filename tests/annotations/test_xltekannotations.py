@@ -119,6 +119,7 @@ class TestXLTEKAnnotations:
             open_=True,
         )
         xlspike_entry = {
+            "id": uuid4(),
             "tz_offset": 0,
             "nanostamp": 1,
             "origin": "test_computer",
