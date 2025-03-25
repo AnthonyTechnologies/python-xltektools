@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 # Third-Party Packages #
-from baseobjects.functions import MethodMultiplexer, CallableMultiplexObject
+from baseobjects.functions import MethodMultiplexer
 from mxbids.exporters import IEEGBIDSExporter
 
 # Local Packages #
@@ -27,7 +27,7 @@ from ..modalities import IEEGXLTEK
 
 # Definitions #
 # Classes #
-class IEEGXLTEKBIDSExporter(IEEGBIDSExporter, CallableMultiplexObject):
+class IEEGXLTEKBIDSExporter(IEEGBIDSExporter):
 
     # Attributes #
     cdfs_exporter: XLTEKCDFSEDFExporter | None = None
