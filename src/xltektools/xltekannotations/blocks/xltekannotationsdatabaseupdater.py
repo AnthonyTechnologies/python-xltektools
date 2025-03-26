@@ -1,4 +1,4 @@
-""" annotationsdatabaseupdater.py
+""" xltekannotationsdatabaseupdater.py
 A block object which writes updates to the XLTEK annotations_database contents table.
 """
 # Package Header #
@@ -25,7 +25,7 @@ from ..xltekannotationsdatabase import XLTEKAnnotationsDatabase
 
 # Definitions #
 # Classes #
-class AnnotationsDatabaseUpdater(BaseBlock):
+class XLTEKAnnotationsDatabaseUpdater(BaseBlock):
     """A block object which writes updates to the XLTEK annotations_database contents table.
 
     Class Attributes:
@@ -37,26 +37,12 @@ class AnnotationsDatabaseUpdater(BaseBlock):
         init_setup: Indicates whether the initial setup is complete.
         annotations_database: Represents the annotations_database with which this block interacts.
         was_open: Tracks whether the annotations_database was open before setup.
-        id_key: Identifies the unique key used to determine if an entry should be updated or inserted in the table.
+        id_key: Identifies the unique key used to determine if an entry should be updated or updateed in the table.
     """
 
     # Class Attributes #
-    default_input_names: ClassVar[tuple[str, ...]] = ("write_packet",)
+    default_input_names: ClassVar[tuple[str, ...]] = ("entry",)
     init_setup: ClassVar[bool] = False
-
-    # Class Methods #
-    @classmethod
-    def create_write_packet_info(
-        cls,
-        type_: str = "",
-        nanostamp: int | None = None,
-        tz: tzinfo | None = None,
-        entry: dict[str, Any] | None = None,
-    ) -> dict:
-        return {
-            "type": type_,
-            "entry": {"tz_offset": tz, "nanostamp": nanostamp} | entry,
-        }
 
     # Attributes #
     no_output_sentinel: Any = None
@@ -102,11 +88,11 @@ class AnnotationsDatabaseUpdater(BaseBlock):
     # Setup
     async def setup(self, *args: Any, **kwargs: Any) -> None:
         """Asynchronously sets up this block."""
-        if not self.annotations_database:
+        if not self.annotations_database.is_open:
             self.annotations_database.open()
 
     # Evaluate
-    def evaluate(self, write_packet: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+    def evaluate(self, entry: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
         """Updates an entry in the annotations' database.
 
         Args:
@@ -116,17 +102,14 @@ class AnnotationsDatabaseUpdater(BaseBlock):
         Returns:
             Any: The result from updating the entry in the contents table.
         """
-        # Get table to add entry to
-        entry = write_packet["entry"]
-
         # Update Contents
-        self.annotations_database.insert_annotation(
+        self.annotations_database.update_annotation(
             entry=entry,
             key=self.id_key,
             begin=True,
         )
 
-    async def evaluate_async(self, write_packet: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+    async def evaluate_async(self, entry: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
         """Asynchronously updates an entry in the annotations' database.
 
         Args:
@@ -136,11 +119,8 @@ class AnnotationsDatabaseUpdater(BaseBlock):
         Returns:
             Any: The result from updating the entry in the contents table.
         """
-        # Get table to add entry to
-        entry = write_packet["entry"]
-
         # Update Contents
-        await self.annotations_database.insert_annotation_async(
+        await self.annotations_database.update_annotation_async(
             entry=entry,
             key=self.id_key,
             begin=True,

@@ -17,7 +17,7 @@ from dspobjects.plot import TimeSeriesPlot
 from mxbids import Subject
 
 # Setup #
-path = pathlib.Path("//JasperNAS/root_store/temp_subjects/sub-EC0320")
+path = pathlib.Path("//JasperNAS/root_store/epilepsy_subjects/sub-EC0320")
 
 # Load Session
 print("Opening Subject")

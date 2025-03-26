@@ -20,6 +20,7 @@ from mxbids.cdfsbids import IEEGCDFS
 
 # Local Packages #
 from .ieegxltekcomponent import IEEGXLTEKComponent
+from .ieegxltekannotationscomponent import IEEGXLTEKAnnotationsComponent
 
 
 # Definitions #
@@ -36,4 +37,5 @@ class IEEGXLTEK(IEEGCDFS):
     _module_: ClassVar[str | None] = "xltektools.xltekmxbids"
     default_component_types: ClassVar[dict[str, tuple[type, dict[str, Any]]]] = {
         "cdfs": (IEEGXLTEKComponent, {}),
+        "annotations": (IEEGXLTEKAnnotationsComponent, {}),
     }

@@ -84,8 +84,9 @@ class XLTEKAnnotationsDatabase(Database):
         "base": "annotations",
         "annotation": "annotations",
         "xlspike": "xlspike",
+        "XLSpike": "xlspike",
         # "xlevent": "xlevent",
-        "comment": "comments",
+        "Custom [Comment]": "comments",
         "comments": "comments",
         # "corticalstimon": "corticalstimon",
         # "corticalstimoff": "corticalstimoff",
@@ -198,7 +199,7 @@ class XLTEKAnnotationsDatabase(Database):
                 #Potential check point for whether we need to call the uuid_gen for the paired cortical_stim tokens
                 for entry in entries:
 
-                    #Updates begin here
+                    #update_entrys begin here
                     if entry['event'] == 'StartStimulation' :
 
                         stim_began = True
@@ -249,7 +250,6 @@ class XLTEKAnnotationsDatabase(Database):
         else:
             was_open = True
 
-
         if begin:
             async with session.begin():
                 for entry in entries:
@@ -266,3 +266,138 @@ class XLTEKAnnotationsDatabase(Database):
 
         if not was_open:
             await session.close()
+    
+    def update_annotation(
+        self,
+        entry: dict[str, Any] | None = None,
+        session: Session | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        """update_entrys an item into the table.
+
+        Args:
+            entry: A dictionary representing the entry to update_entry. Defaults to None.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
+        table_name = self.annotation_type_map.get(entry["type"], "annotations")
+        if "table_type" not in entry and table_name != "annotations":
+            entry["table_type"] = table_name
+        self.tables[table_name].update_entry(entry=entry, session=session, begin=begin, **kwargs)
+
+    async def update_annotation_async(
+        self,
+        entry: dict[str, Any] | None = None,
+        session: AsyncSession | None = None,
+        begin: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        """Asynchronously update_entrys an item into the table.
+
+        Args:
+            entry: A dictionary representing the entry to update_entry. Defaults to None.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+            **kwargs: Additional keyword arguments for the entry.
+        """
+        table_name = self.annotation_type_map.get(entry["type"], "annotations")
+        if "table_type" not in entry and table_name != "annotations":
+            entry["table_type"] = table_name
+        await self.tables[table_name].update_entry_async(entry=entry, session=session, begin=begin, **kwargs)
+
+    def update_annotations(
+        self,
+        entries: Iterable[dict[str, Any]] = (),
+        session: Session | None = None,
+        begin: bool = False,
+    ) -> None:
+        """update_entrys multiple annotations into the table.
+
+        Args:
+            entries: The entries to update_entry. Defaults to an empty iterable.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
+        if session is None:
+            session = self.create_session()
+            was_open = False
+        else:
+            was_open = True
+
+        if begin:
+            with session.begin():
+                stim_began = False
+
+                #Potential check point for whether we need to call the uuid_gen for the paired cortical_stim tokens
+                for entry in entries:
+
+                    #update_entrys begin here
+                    if entry['event'] == 'StartStimulation' :
+
+                        stim_began = True
+
+                        entry_token = entry['token']
+                        token_uuid = generate_uuid_for_token(entry_token)
+                        entry['token_uuid'] = token_uuid
+
+                    elif entry['event'] == 'OnStimulationEnded' :
+
+                        if stim_began :
+                            #No need to generate a new UUID, since this entry needs to be paired with its respective stimulation one
+                            entry['token_uuid'] = token_uuid
+                            stim_began = False
+
+                    else :
+
+                        if stim_began:
+                            entry['token_uuid'] = token_uuid
+                        else :
+                            entry_token = entry['token']
+                            entry['token_uuid'] = generate_uuid_for_token(entry_token)
+
+                    self.annotations_types[entry["type"]].update_entry(entry=entry, session=session, begin=False)
+        else:
+            for entry in entries:
+                self.annotations_types[entry["type"]].update_entry(entry=entry, session=session, begin=False)
+
+        if not was_open:
+            session.close()
+
+    async def update_annotations_async(
+        self,
+        entries: Iterable[dict[str, Any]] = (),
+        session: AsyncSession | None = None,
+        begin: bool = False,
+    ) -> None:
+        """Asynchronously updates multiple annotations into the table.
+
+        Args:
+            entries: The entries to update. Defaults to an empty iterable.
+            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            begin: If True, begins a transaction for the operation. Defaults to False.
+        """
+        if session is None:
+            session = self.create_async_session()
+            was_open = False
+        else:
+            was_open = True
+
+        if begin:
+            async with session.begin():
+                for entry in entries:
+                    table_name = self.annotation_type_map.get(entry["type"], "annotations")
+                    if "table_type" not in entry and table_name != "annotations":
+                        entry["table_type"] = table_name
+                    await self.tables[table_name].update_entry_async(entry=entry, session=session, begin=False)
+        else:
+            for entry in entries:
+                table_name = self.annotation_type_map.get(entry["type"], "annotations")
+                if "table_type" not in entry and table_name != "annotations":
+                    entry["table_type"] = table_name
+                await self.tables[table_name].update_entry_async(entry=entry, session=session, begin=False)
+
+        if not was_open:
+            await session.close()
+    

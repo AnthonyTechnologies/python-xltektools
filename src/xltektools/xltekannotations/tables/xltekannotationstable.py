@@ -61,10 +61,10 @@ class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
     # Columns #
     tz_offset: Mapped[int]
     nanostamp = mapped_column(BigInteger)
-    origin: Mapped[str]
-    system_text: Mapped[str]
-    text: Mapped[str]
-    type: Mapped[str]
+    origin: Mapped[str] = mapped_column(nullable=True)
+    system_text: Mapped[str] = mapped_column(nullable=True)
+    text: Mapped[str] = mapped_column(nullable=True)
+    type: Mapped[str] = mapped_column(nullable=True)
     table_type: Mapped[str] = mapped_column(nullable=True)
 
     # Class Methods #
@@ -96,7 +96,12 @@ class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
                 else:
                     timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
 
-            kwargs["tz_offset"] = timezone_offset(timezone).total_seconds() if isinstance(timezone, TZInfo) else timezone
+            if isinstance(timezone, TZInfo):
+                timezone = int(timezone_offset(timezone).total_seconds())
+            elif isinstance(timezone, float):
+                timezone = int(timezone)
+
+            kwargs["tz_offset"] = timezone
 
         if isinstance(nanostamp, int):
             kwargs["nanostamp"] = nanostamp

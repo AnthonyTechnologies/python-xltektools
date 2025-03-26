@@ -13,4 +13,4 @@ __email__ = __email__
 
 # Imports #
 # Local Packages #
-from .xltekcdfscontentsupdater import AnnnotationsDatabaseUpdater
+from .xltekannotationsdatabaseupdater import XLTEKAnnotationsDatabaseUpdater
