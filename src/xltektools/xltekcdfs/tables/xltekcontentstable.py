@@ -179,15 +179,6 @@ class BaseXLTEKContentsTableSchema(BaseTimeContentsTableSchema):
     async def get_start_end_ids_async(cls, session: AsyncSession) -> tuple[tuple[int, int], ...]:
         statement = lambda_stmt(lambda: select(cls.start_id, cls.end_id).order_by(cls.start_id))
         return tuple(await session.execute(statement))
-    
-    # Instance Methods #
-    def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
-        dict_ = ({} if dict_ is None else dict_) | kwargs
-        if (start_id := dict_.get("start_id", None)) is not None:
-            self.start_id = start_id
-        if (end_id := dict_.get("end_id", None)) is not None:
-            self.end_id = end_id
-        super().update(dict_)
 
 
 class XLTEKContentsTableManifestation(TimeContentsTableManifestation):

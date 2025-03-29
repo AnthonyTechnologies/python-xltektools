@@ -51,74 +51,38 @@ class BaseXLTEKXLSpikeTableSchema(BaseXLTEKAnnotationsTableSchema):
     user: Mapped[str] = mapped_column(nullable=True)
 
     # Class Methods #
+    # Base
     @classmethod
-    def format_entry_kwargs(
-        cls,
-        id_: str | UUID | None = None,
-        analysis_id: str | UUID | None = None,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Formats entry keyword arguments for creating or updating table entries.
+    def to_sql_types(cls, dict_: dict[str, Any] | None = None, /, **kwargs) -> dict[str, Any]:
+        """Casts Python types of an entry to SQLAlchemy types.
+
+        Only table item elements (columns) which must cast to an SQLAlchemy type are cast to SQLAlchemy types.
+        Additionally, all elements are optional, such that they do not need to be provided. This way any subset of the
+        elements can cast. For example: when updating a table item, a few elements can updated without providing all
+        elements.
 
         Args:
-            id_: The ID of the entry, if specified.
-            analysis_id: The analysis ID of the entry, if specified. Defaults to None.
+            dict_: A dictionary representing the entry with Python types.
             **kwargs: Additional keyword arguments for the entry.
 
         Returns:
-            dict[str, Any]: A dictionary of keyword arguments for the entry.
+            dict[str, Any]: A dictionary representing the entry with SQLAlchemy types.
         """
-        kwargs = super().format_entry_kwargs(id_=id_, **kwargs)
+        # Format parent entry
+        sql_entry = super().to_sql_types(dict_, **kwargs)
 
-        if analysis_id is not None:
-            kwargs["analysis_id"] = UUID(hex=analysis_id) if isinstance(analysis_id, str) else analysis_id
+        # Format ID
+        if (id_ := sql_entry.get("analysis_id", None)) is not None:
+            match id_:
+                case UUID():
+                    pass
+                case str():
+                    sql_entry["analysis_id"] = UUID(hex=id_)
+                case int():
+                    sql_entry["analysis_id"] = UUID(int=id_)
 
-        return kwargs
-
-    # Instance Methods #
-    def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
-        """Updates the row of the table with the provided dictionary or keyword arguments.
-
-        Args:
-            dict_: A dictionary of attributes/columns to update. Defaults to None.
-            **kwargs: Additional keyword arguments for the attributes to update.
-        """
-        dict_ = ({} if dict_ is None else dict_) | kwargs
-
-        if (analysis_id := dict_.get("analysis_id", None)) is not None:
-            self.analysis_id = UUID(hex=analysis_id) if isinstance(analysis_id, str) else analysis_id
-
-        super().update(dict_)
-
-    def as_dict(self) -> dict[str, Any]:
-        """Creates a dictionary with all the contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the row.
-        """
-        entry = super().as_dict()
-        entry.update(
-            analysis_context=self.analysis_context,
-            analysis_id=self.analysis_id,
-            channel_number=self.channel_number,
-            user=self.user,
-        )
-        return entry
-
-    def as_entry(self) -> dict[str, Any]:
-        """Creates a dictionary with the entry contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the entry.
-        """
-        entry = super().as_entry()
-        entry.update(
-            analysis_context=self.analysis_context,
-            analysis_id=self.analysis_id,
-            channel_number=self.channel_number,
-            user=self.user,
-        )
-        return entry
+        # Return formated entry
+        return sql_entry
 
 
 class XLTEKXLSpikeTableManifestation(XLTEKAnnotationsTableManifestation):

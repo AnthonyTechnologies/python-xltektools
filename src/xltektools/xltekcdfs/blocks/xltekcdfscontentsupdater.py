@@ -139,11 +139,7 @@ class XLTEKCDFSContentsUpdater(BaseBlock):
         entry["update_id"] = self.contents_update_id
 
         # Update Contents
-        await self.contents_table.update_entry_async(
-            entry=entry,
-            key=self.id_key,
-            begin=True,
-        )
+        await self.contents_table.upsert_entry_async(entry=entry, key=self.id_key, begin=True)
 
     # Teardown
     async def teardown(self, *args: Any, **kwargs: Any) -> None:

@@ -13,7 +13,10 @@ __email__ = __email__
 
 # Imports #
 # Standard Libraries #
+from asyncio import gather
 from collections.abc import Iterable
+from collections import deque
+from itertools import chain
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +26,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemyobjects import Database
 from sqlalchemyobjects.tables import TableManifestation
 from .tables.uuid_gen import generate_uuid_for_token
-
 
 # Local Packages #
 from .tables import (
@@ -244,6 +246,13 @@ class XLTEKAnnotationsDatabase(Database):
             session: The SQLAlchemy session to apply the modification. Defaults to None.
             begin: If True, begins a transaction for the operation. Defaults to False.
         """
+        items = []
+        for entry in entries:
+            table_name = self.annotation_type_map.get(entry["type"], "annotations")
+            if "table_type" not in entry and table_name != "annotations":
+                entry["table_type"] = table_name
+            items.append(self.tables[table_name].item_from_dict(entry))
+
         if session is None:
             session = self.create_async_session()
             was_open = False
@@ -252,29 +261,21 @@ class XLTEKAnnotationsDatabase(Database):
 
         if begin:
             async with session.begin():
-                for entry in entries:
-                    table_name = self.annotation_type_map.get(entry["type"], "annotations")
-                    if "table_type" not in entry and table_name != "annotations":
-                        entry["table_type"] = table_name
-                    await self.tables[table_name].insert_async(entry=entry, session=session, begin=False)
+                await self.insert_all_async(items, session=session, begin=False)
         else:
-            for entry in entries:
-                table_name = self.annotation_type_map.get(entry["type"], "annotations")
-                if "table_type" not in entry and table_name != "annotations":
-                    entry["table_type"] = table_name
-                await self.tables[table_name].insert_async(entry=entry, session=session, begin=False)
+            await self.insert_all_async(items, session=session, begin=False)
 
         if not was_open:
             await session.close()
     
-    def update_annotation(
+    def upsert_annotation(
         self,
         entry: dict[str, Any] | None = None,
         session: Session | None = None,
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
-        """update_entrys an item into the table.
+        """Updates an entry in the table if it exists, otherwise, creates a new entry.
 
         Args:
             entry: A dictionary representing the entry to update_entry. Defaults to None.
@@ -285,16 +286,16 @@ class XLTEKAnnotationsDatabase(Database):
         table_name = self.annotation_type_map.get(entry["type"], "annotations")
         if "table_type" not in entry and table_name != "annotations":
             entry["table_type"] = table_name
-        self.tables[table_name].update_entry(entry=entry, session=session, begin=begin, **kwargs)
+        self.tables[table_name].upsert_entry(entry=entry, session=session, begin=begin, **kwargs)
 
-    async def update_annotation_async(
+    async def upsert_annotation_async(
         self,
         entry: dict[str, Any] | None = None,
         session: AsyncSession | None = None,
         begin: bool = False,
         **kwargs: Any,
     ) -> None:
-        """Asynchronously update_entrys an item into the table.
+        """Asynchronously, updates an entry in the table if it exists, otherwise, creates a new entry.
 
         Args:
             entry: A dictionary representing the entry to update_entry. Defaults to None.
@@ -305,79 +306,119 @@ class XLTEKAnnotationsDatabase(Database):
         table_name = self.annotation_type_map.get(entry["type"], "annotations")
         if "table_type" not in entry and table_name != "annotations":
             entry["table_type"] = table_name
-        await self.tables[table_name].update_entry_async(entry=entry, session=session, begin=begin, **kwargs)
+        await self.tables[table_name].upsert_entry_async(entry=entry, session=session, begin=begin, **kwargs)
 
-    def update_annotations(
+    def upsert_annotations(
         self,
-        entries: Iterable[dict[str, Any]] = (),
+        entries: Iterable[dict[str, Any]],
         session: Session | None = None,
+        key: str = "id",
         begin: bool = False,
     ) -> None:
-        """update_entrys multiple annotations into the table.
+        """Updates multiple entries in the table if they exist, otherwise, creates new entries.
 
         Args:
-            entries: The entries to update_entry. Defaults to an empty iterable.
-            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            entries: A list of dictionaries representing the entries to update. Defaults to None.
+            session: The SQLAlchemy async session to use for the operation.
+            key: The key (column name) to search by. Defaults to "id_".
             begin: If True, begins a transaction for the operation. Defaults to False.
         """
+        # Get root annotations schema
+        annotations_table_schema = self.tables["annotations"].table_schema
+
+        # Prepare entries
+        entry_dict = {}
+        entry_dequed = deque()
+        for entry in entries:
+            # Get annotations type
+            table_name = self.annotation_type_map.get(entry["type"], "annotations")
+            if "table_type" not in entry and table_name != "annotations":
+                entry["table_type"] = table_name
+
+            # Separate entries with and without "key"
+            if (value := entry.get(key, None)) is not None:
+                entry_dict[value] = entry
+            else:
+                entry_dequed.append(self.tables[table_name].item_from_dict(entry))
+
+        # Create find statement to find all items to update
+        find_statement = annotations_table_schema.create_find_column_values_statement(key, entry_dict.keys())
+
+        # Create Session
         if session is None:
-            session = self.create_session()
+            session = self.create_async_session()
             was_open = False
         else:
             was_open = True
 
         if begin:
             with session.begin():
-                stim_began = False
+                # Find all items to update
+                items = session.execute(find_statement)
 
-                #Potential check point for whether we need to call the uuid_gen for the paired cortical_stim tokens
-                for entry in entries:
+                # Update found items and remove them from dict
+                for item in items.scalars():
+                    item.update(entry_dict.pop(getattr(item, key)))
 
-                    #update_entrys begin here
-                    if entry['event'] == 'StartStimulation' :
+                # Item creation iterable
+                item_iter = (self.tables[e["table_type"]].item_from_dict(e) for e in entry_dict.values())
 
-                        stim_began = True
-
-                        entry_token = entry['token']
-                        token_uuid = generate_uuid_for_token(entry_token)
-                        entry['token_uuid'] = token_uuid
-
-                    elif entry['event'] == 'OnStimulationEnded' :
-
-                        if stim_began :
-                            #No need to generate a new UUID, since this entry needs to be paired with its respective stimulation one
-                            entry['token_uuid'] = token_uuid
-                            stim_began = False
-
-                    else :
-
-                        if stim_began:
-                            entry['token_uuid'] = token_uuid
-                        else :
-                            entry_token = entry['token']
-                            entry['token_uuid'] = generate_uuid_for_token(entry_token)
-
-                    self.annotations_types[entry["type"]].update_entry(entry=entry, session=session, begin=False)
+                # Insert all other entries in the deque
+                self.insert_all_async(chain(item_iter, entry_dequed), session=session, begin=False)
         else:
-            for entry in entries:
-                self.annotations_types[entry["type"]].update_entry(entry=entry, session=session, begin=False)
+            # Find all items to update
+            items = session.execute(find_statement)
+
+            # Update found items and remove them from dict
+            for item in items.scalars():
+                item.update(entry_dict.pop(getattr(item, key)))
+
+            # Item creation iterable
+            item_iter = (self.tables[e["table_type"]].item_from_dict(e) for e in entry_dict.values())
+
+            # Insert all other entries in the deque
+            self.insert_all_async(chain(item_iter, entry_dequed), session=session, begin=False)
 
         if not was_open:
             session.close()
 
-    async def update_annotations_async(
+    async def upsert_annotations_async(
         self,
-        entries: Iterable[dict[str, Any]] = (),
+        entries: Iterable[dict[str, Any]],
         session: AsyncSession | None = None,
+        key: str = "id",
         begin: bool = False,
     ) -> None:
-        """Asynchronously updates multiple annotations into the table.
+        """Asynchronously, updates multiple entries in the table if they exist, otherwise, creates new entries.
 
         Args:
-            entries: The entries to update. Defaults to an empty iterable.
-            session: The SQLAlchemy session to apply the modification. Defaults to None.
+            entries: A list of dictionaries representing the entries to update. Defaults to None.
+            session: The SQLAlchemy async session to use for the operation.
+            key: The key (column name) to search by. Defaults to "id_".
             begin: If True, begins a transaction for the operation. Defaults to False.
         """
+        # Get root annotations schema
+        annotations_table_schema = self.tables["annotations"].table_schema
+
+        # Prepare entries
+        entry_dict = {}
+        entry_dequed = deque()
+        for entry in entries:
+            # Get annotations type
+            table_name = self.annotation_type_map.get(entry["type"], "annotations")
+            if "table_type" not in entry and table_name != "annotations":
+                entry["table_type"] = table_name
+
+            # Separate entries with and without "key"
+            if (value := entry.get(key, None)) is not None:
+                entry_dict[value] = entry
+            else:
+                entry_dequed.append(self.tables[table_name].item_from_dict(entry))
+
+        # Create find statement to find all items to update
+        find_statement = annotations_table_schema.create_find_column_values_statement(key, entry_dict.keys())
+
+        # Create Session
         if session is None:
             session = self.create_async_session()
             was_open = False
@@ -386,17 +427,33 @@ class XLTEKAnnotationsDatabase(Database):
 
         if begin:
             async with session.begin():
-                for entry in entries:
-                    table_name = self.annotation_type_map.get(entry["type"], "annotations")
-                    if "table_type" not in entry and table_name != "annotations":
-                        entry["table_type"] = table_name
-                    await self.tables[table_name].update_entry_async(entry=entry, session=session, begin=False)
+                # Find all items to update
+                items = await session.execute(find_statement)
+
+                # Update found items and remove them from dict
+                items = list(items.scalars())
+                for item, value in zip(items, await gather(*(getattr(i.awaitable_attrs, key) for i in items))):
+                    item.update(entry_dict.pop(value))
+
+                # Item creation iterable
+                item_iter = (self.tables[e["table_type"]].item_from_dict(e) for e in entry_dict.values())
+
+                # Insert all other entries in the deque
+                await self.insert_all_async(chain(item_iter, entry_dequed), session=session, begin=False)
         else:
-            for entry in entries:
-                table_name = self.annotation_type_map.get(entry["type"], "annotations")
-                if "table_type" not in entry and table_name != "annotations":
-                    entry["table_type"] = table_name
-                await self.tables[table_name].update_entry_async(entry=entry, session=session, begin=False)
+            # Find all items to update
+            items = await session.execute(find_statement)
+
+            # Update found items and remove them from dict
+            items = list(items.scalars())
+            for item, value in zip(items, await gather(*(getattr(i.awaitable_attrs, key) for i in items))):
+                item.update(entry_dict.pop(value))
+
+            # Item creation iterable
+            item_iter = (self.tables[e["table_type"]].item_from_dict(e) for e in entry_dict.values())
+
+            # Insert all other entries in the deque
+            await self.insert_all_async(chain(item_iter, entry_dequed), session=session, begin=False)
 
         if not was_open:
             await session.close()

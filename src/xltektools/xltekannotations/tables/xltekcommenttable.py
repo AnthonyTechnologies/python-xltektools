@@ -41,31 +41,6 @@ class BaseXLTEKCommentTableSchema(BaseXLTEKAnnotationsTableSchema):
     id = mapped_column(ForeignKey("annotations.id"), primary_key=True)
     user: Mapped[str] = mapped_column(nullable=True)
 
-    # Instance Methods #
-    def as_dict(self) -> dict[str, Any]:
-        """Creates a dictionary with all the contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the row.
-        """
-        entry = super().as_dict()
-        entry.update(
-            user=self.user,
-        )
-        return entry
-
-    def as_entry(self) -> dict[str, Any]:
-        """Creates a dictionary with the entry contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the entry.
-        """
-        entry = super().as_entry()
-        entry.update(
-            user=self.user,
-        )
-        return entry
-
 
 class XLTEKCommentTableManifestation(XLTEKAnnotationsTableManifestation):
     """The manifestation of a XLTEKCommentTable.

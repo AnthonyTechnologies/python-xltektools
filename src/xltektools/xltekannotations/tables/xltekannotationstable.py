@@ -68,47 +68,80 @@ class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
     table_type: Mapped[str] = mapped_column(nullable=True)
 
     # Class Methods #
+    # Base
     @classmethod
-    def format_entry_kwargs(
-        cls,
-        id_: str | UUID | None = None,
-        timezone: str | datetime | int | None = None,
-        nanostamp: datetime | float | int | np.dtype | None = None,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        """Formats entry keyword arguments for creating or updating table entries.
+    def to_sql_types(cls, dict_: dict[str, Any] | None = None, /, **kwargs) -> dict[str, Any]:
+        """Casts Python types of an entry to SQLAlchemy types.
+
+        Only table item elements (columns) which must cast to an SQLAlchemy type are cast to SQLAlchemy types.
+        Additionally, all elements are optional, such that they do not need to be provided. This way any subset of the
+        elements can cast. For example: when updating a table item, a few elements can updated without providing all
+        elements.
 
         Args:
-            id_: The ID of the entry, if specified.
-            timezone: The timezone information. Defaults to None.
-            nanostamp: The time of the annotation as a nanostamp. Defaults to None.
+            dict_: A dictionary representing the entry with Python types.
             **kwargs: Additional keyword arguments for the entry.
 
         Returns:
-            dict[str, Any]: A dictionary of keyword arguments for the entry.
+            dict[str, Any]: A dictionary representing the entry with SQLAlchemy types.
         """
-        kwargs = super().format_entry_kwargs(id_=id_, **kwargs)
+        # Format parent entry
+        sql_entry = super().to_sql_types(dict_, **kwargs)
 
-        if timezone is not None:
-            if isinstance(timezone, str):
-                if timezone.lower() == "local" or timezone.lower() == "localtime":
-                    timezone = time.localtime().tm_gmtoff
-                else:
-                    timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
+        # Format
+        if (tz_offset := sql_entry.get("tz_offset", None)) is not None:
+            match tz_offset:
+                case int():
+                    pass
+                case ZoneInfo():
+                    sql_entry["tz_offset"] = int(timezone_offset(tz_offset).total_seconds())
+                case str():
+                    if tz_offset.lower() in {"local", "localtime"}:
+                        sql_entry["tz_offset"] = time.localtime().tm_gmtoff
+                    else:
+                        sql_entry["tz_offset"] = int(timezone_offset(ZoneInfo(tz_offset)).total_seconds())
 
-            if isinstance(timezone, TZInfo):
-                timezone = int(timezone_offset(timezone).total_seconds())
-            elif isinstance(timezone, float):
-                timezone = int(timezone)
+        if (nanostamp := sql_entry.get("nanostamp", None)) is not None:
+            match nanostamp:
+                case int():
+                    pass
+                case _:
+                    sql_entry["start"] = int(Nanostamp(nanostamp))
 
-            kwargs["tz_offset"] = timezone
+        if (sample_rate := sql_entry.get("sample_rate", None)) is not None:
+            sql_entry["sample_rate"] = float(sample_rate)
 
-        if isinstance(nanostamp, int):
-            kwargs["nanostamp"] = nanostamp
-        elif nanostamp is not None:
-            kwargs["nanostamp"] = int(Nanostamp(nanostamp))
+        # Return Entry
+        return sql_entry
 
-        return kwargs
+    @classmethod
+    def from_sql_types(cls, dict_: dict[str, Any] | None = None, /, **kwargs: Any) -> dict[str, Any]:
+        """Casts SQLAlchemy types of an entry to Python types.
+
+        Only table item elements (columns) which must cast to a Python type are cast to Python types. Additionally, all
+        elements are optional, such that they do not need to be provided. This way any subset of the elements can cast.
+        For example: when querying a table item, a few columns can be selected without providing all columns.
+
+        Args:
+            dict_: A dictionary representing the entry with SQLAlchemy types.
+            **kwargs: Additional keyword arguments for the entry.
+
+        Returns:
+            dict[str, Any]: A dictionary representing the entry with Python types.
+        """
+        # Format parent entry
+        python_entry = super().from_sql_types(dict_, **kwargs)
+
+        # Format
+        t_zone = None
+        if (tz_offset := python_entry.get("tz_offset", None)) is not None:
+            python_entry["tz_offset"] = t_zone = Timezone(timedelta(seconds=tz_offset))
+
+        if (nanostamp := python_entry.get("nanostamp", None)) is not None:
+            python_entry["nanostamp"] = Timestamp.fromnanostamp(nanostamp, t_zone)
+
+        # Return formatted entry
+        return python_entry
 
     @classmethod
     def get_tz_offsets_distinct(cls, session: Session) -> tuple | None:
@@ -235,61 +268,6 @@ class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
         """
         statement = lambda_stmt(lambda: select(cls.nanostamp, cls.tz_offset).order_by(cls.nanostamp))
         return tuple(await session.execute(statement))
-
-    # Instance Methods #
-    def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
-        """Updates the row of the table with the provided dictionary or keyword arguments.
-
-        Args:
-            dict_: A dictionary of attributes/columns to update. Defaults to None.
-            **kwargs: Additional keyword arguments for the attributes to update.
-        """
-        dict_ = ({} if dict_ is None else dict_) | kwargs
-
-        if (timezone := dict_.get("timezone", None)) is not None:
-            if isinstance(timezone, str):
-                if timezone.lower() == "local" or timezone.lower() == "localtime":
-                    timezone = time.localtime().tm_gmtoff
-                else:
-                    timezone = ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
-
-            if isinstance(timezone, TZInfo):
-                self.tz_offset = int(timezone_offset(timezone).total_seconds())
-            else:
-                self.tz_offset = timezone
-
-        if (nanostamp := dict_.get("naostampe", None)) is not None:
-            self.nanostamp = int(Nanostamp(nanostamp))
-        super().update(dict_)
-
-    def as_dict(self) -> dict[str, Any]:
-        """Creates a dictionary with all the contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the row.
-        """
-        entry = super().as_dict()
-        entry.update(
-            tz_offset=self.tz_offset,
-            nanostamp=self.nanostamp,
-        )
-        return entry
-
-    def as_entry(self) -> dict[str, Any]:
-        """Creates a dictionary with the entry contents of the row.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the entry.
-        """
-        entry = super().as_entry()
-        tzone = Timezone(timedelta(seconds=self.tz_offset))
-        entry.update(
-            timezone=tzone,
-            tz_offset=self.tz_offset,
-            nanostamp=Timestamp.fromnanostamp(self.nanostamp, tzone),
-            type=self.type,
-        )
-        return entry
 
 
 class XLTEKAnnotationsTableManifestation(UpdateTableManifestation):

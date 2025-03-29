@@ -92,7 +92,7 @@ class XLTEKAnnotationsDatabaseUpdater(BaseBlock):
             self.annotations_database.open()
 
     # Evaluate
-    def evaluate(self, entry: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+    def evaluate(self, entries: tuple[dict[str, Any], ...], *args: Any, **kwargs: Any) -> Any:
         """Updates an entry in the annotations' database.
 
         Args:
@@ -103,13 +103,9 @@ class XLTEKAnnotationsDatabaseUpdater(BaseBlock):
             Any: The result from updating the entry in the contents table.
         """
         # Update Contents
-        self.annotations_database.update_annotation(
-            entry=entry,
-            key=self.id_key,
-            begin=True,
-        )
+        self.annotations_database.upsert_annotations(entries=entries, key=self.id_key, begin=True)
 
-    async def evaluate_async(self, entry: dict[str, Any], *args: Any, **kwargs: Any) -> Any:
+    async def evaluate_async(self, entries: tuple[dict[str, Any], ...], *args: Any, **kwargs: Any) -> Any:
         """Asynchronously updates an entry in the annotations' database.
 
         Args:
@@ -120,11 +116,7 @@ class XLTEKAnnotationsDatabaseUpdater(BaseBlock):
             Any: The result from updating the entry in the contents table.
         """
         # Update Contents
-        await self.annotations_database.update_annotation_async(
-            entry=entry,
-            key=self.id_key,
-            begin=True,
-        )
+        await self.annotations_database.upsert_annotations_async(entries=entries, key=self.id_key, begin=True)
 
     # Teardown
     async def teardown(self, *args: Any, **kwargs: Any) -> None:
