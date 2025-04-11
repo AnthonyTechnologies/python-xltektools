@@ -39,14 +39,14 @@ class BaseXLTEKContentsTableSchema(BaseTimeContentsTableSchema):
 
     # Class Methods #
     @classmethod
-    def _correct_contents(cls, session: Session, path: Path) -> None:
+    def _correct_contents(cls, session: Session, path: Path, delete_invalid: bool = False) -> None:
         last_update_id = cls.get_last_update_id(session=session)
         update_id = 0 if last_update_id is None else last_update_id + 1
 
         # Correct registered entries
         registered = set()
-        for item, in cls.get_all(session=session, as_entries=False):
-            entry = item.as_entry()
+        for item, in cls.get_all(session=session, as_python=False):
+            entry = item.as_python_dict()
             full_path = path / entry["path"]
             file = cls.file_type.new_validated(full_path)
             if file is not None:
@@ -102,17 +102,17 @@ class BaseXLTEKContentsTableSchema(BaseTimeContentsTableSchema):
                     })
                     file.close()
         if entries:
-            cls.insert_all(session=session, items=entries, as_entries=True)
+            cls.insert_all(session=session, items=entries, as_dict=True)
 
     @classmethod
-    async def _correct_contents_async(cls, session: AsyncSession, path: Path) -> None:
+    async def _correct_contents_async(cls, session: AsyncSession, path: Path, delete_invalid: bool = False) -> None:
         last_update_id = await cls.get_last_update_id_async(session=session)
         update_id = 0 if last_update_id is None else last_update_id + 1
 
         # Correct registered entries
         registered = set()
-        for item, in await cls.get_all_async(session=session, as_entries=False):
-            entry = item.as_entry()
+        for item, in await cls.get_all_async(session=session, as_python=False):
+            entry = await item.as_python_dict_async()
             full_path = path / entry["path"]
             file = cls.file_type.new_validated(full_path)
             if file is not None:
@@ -138,10 +138,14 @@ class BaseXLTEKContentsTableSchema(BaseTimeContentsTableSchema):
                 await cls.delete_item_async(session=session, item=item)
                 if full_path.exists():
                     warn(f"Could open file: {full_path} could be corrupted.")
-                    try:
-                        full_path.unlink()
-                    except e:
-                        warn(f"Could not delete file: {full_path}")
+                    if delete_invalid:
+                        warn(f"Attemping to delete: {full_path}")
+                        try:
+                            full_path.unlink()
+                        except e:
+                            warn(f"Could not delete file: {full_path}")
+                        else:
+                            warn(f"Successfully deleted: {full_path}")
             registered.add(full_path)
 
         # Correct unregistered
@@ -168,7 +172,7 @@ class BaseXLTEKContentsTableSchema(BaseTimeContentsTableSchema):
                     })
                     file.close()
         if entries:
-            await cls.insert_all_async(session=session, items=entries, as_entries=True)
+            await cls.insert_all_async(session=session, items=entries, as_dict=True)
 
     @classmethod
     def get_start_end_ids(cls, session: Session) -> tuple[tuple[int, int], ...]:

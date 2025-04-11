@@ -21,7 +21,7 @@ path = pathlib.Path("//JasperNAS/root_store/epilepsy_subjects/sub-EC0320")
 
 # Load Session
 print("Opening Subject")
-bids_subject = Subject(path=path, load=True)
+bids_subject = Subject(path=path, load=True, load_sessions=True, load_modalities=True)
 session = bids_subject.sessions["clinicalintracranial"]  # The recording name
 cdfs = session.modalities["ieeg"].components["cdfs"].get_cdfs()  # Get the data loading object
 

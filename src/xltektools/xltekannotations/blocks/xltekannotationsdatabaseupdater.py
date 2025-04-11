@@ -41,7 +41,7 @@ class XLTEKAnnotationsDatabaseUpdater(BaseBlock):
     """
 
     # Class Attributes #
-    default_input_names: ClassVar[tuple[str, ...]] = ("entry",)
+    default_input_names: ClassVar[tuple[str, ...]] = ("entries",)
     init_setup: ClassVar[bool] = False
 
     # Attributes #

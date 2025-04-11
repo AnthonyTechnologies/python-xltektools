@@ -106,7 +106,7 @@ class BaseXLTEKAnnotationsTableSchema(BaseUpdateTableSchema):
                 case int():
                     pass
                 case _:
-                    sql_entry["start"] = int(Nanostamp(nanostamp))
+                    sql_entry["nanostamp"] = int(Nanostamp(nanostamp))
 
         if (sample_rate := sql_entry.get("sample_rate", None)) is not None:
             sql_entry["sample_rate"] = float(sample_rate)

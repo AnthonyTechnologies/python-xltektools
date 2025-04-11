@@ -74,7 +74,7 @@ class XLTEKHDF5Writer(BaseBlock):
                 "path": relative_path,
                 "shape": shape,
                 "axis": axis,
-                "timezone": tz,
+                "tz_offset": tz,
                 "start": start,
                 "end": end,
                 "sample_rate": sample_rate,
@@ -254,7 +254,7 @@ class XLTEKHDF5Writer(BaseBlock):
             self.change_file(
                 data_info["start_id"],
                 data_info["sample_rate"],
-                data_info["timezone"],
+                data_info["tz_offset"],
                 axis=data_info["axis"],
                 file_kwargs=file_kwargs,
             )

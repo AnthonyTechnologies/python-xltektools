@@ -304,7 +304,7 @@ class XLTEKAnnotationsDatabase(Database):
             **kwargs: Additional keyword arguments for the entry.
         """
         table_name = self.annotation_type_map.get(entry["type"], "annotations")
-        if "table_type" not in entry and table_name != "annotations":
+        if "table_type" not in entry:
             entry["table_type"] = table_name
         await self.tables[table_name].upsert_entry_async(entry=entry, session=session, begin=begin, **kwargs)
 
@@ -406,7 +406,7 @@ class XLTEKAnnotationsDatabase(Database):
         for entry in entries:
             # Get annotations type
             table_name = self.annotation_type_map.get(entry["type"], "annotations")
-            if "table_type" not in entry and table_name != "annotations":
+            if "table_type" not in entry:
                 entry["table_type"] = table_name
 
             # Separate entries with and without "key"
