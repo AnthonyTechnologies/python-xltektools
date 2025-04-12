@@ -315,7 +315,7 @@ class TestXLTEKAnnotations:
         sample_entries2 = sample_entries + [xlspike_entry | {"id": uuid4()},]
 
         await annotation_database.upsert_annotations_async(entries=sample_entries2, begin=True)
-        assert len(list((await annotation_database.tables["annotations"].get_all_async()).scalars())) == n_entries2
+        assert len(await annotation_database.tables["annotations"].get_all_async(as_python=True)) == n_entries2
 
         annotation_schema = annotation_database.tables["annotations"].table_schema
         statement = annotation_schema.create_find_column_value_statement("id", xlspike_entry["id"])

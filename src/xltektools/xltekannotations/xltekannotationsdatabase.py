@@ -428,10 +428,9 @@ class XLTEKAnnotationsDatabase(Database):
         if begin:
             async with session.begin():
                 # Find all items to update
-                items = await session.execute(find_statement)
+                items = [i async for i in (await session.stream(find_statement)).scalars()]
 
                 # Update found items and remove them from dict
-                items = list(items.scalars())
                 for item, value in zip(items, await gather(*(getattr(i.awaitable_attrs, key) for i in items))):
                     item.update(entry_dict.pop(value))
 
@@ -442,10 +441,9 @@ class XLTEKAnnotationsDatabase(Database):
                 await self.insert_all_async(chain(item_iter, entry_dequed), session=session, begin=False)
         else:
             # Find all items to update
-            items = await session.execute(find_statement)
+            items = [i async for i in (await session.stream(find_statement)).scalars()]
 
             # Update found items and remove them from dict
-            items = list(items.scalars())
             for item, value in zip(items, await gather(*(getattr(i.awaitable_attrs, key) for i in items))):
                 item.update(entry_dict.pop(value))
 

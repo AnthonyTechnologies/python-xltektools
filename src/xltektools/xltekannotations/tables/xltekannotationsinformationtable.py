@@ -14,9 +14,10 @@ __email__ = __email__
 # Imports #
 # Standard Libraries #
 import datetime
+from datetime import timedelta, timezone as Timezone
 from typing import Any
 import time
-import zoneinfo
+from zoneinfo import ZoneInfo
 
 # Third-Party Packages #
 from baseobjects.operations import timezone_offset
@@ -41,70 +42,78 @@ class BaseXLTEKAnnotationsInformationTableSchema(BaseMetaInformationTableSchema,
     sex: Mapped[str] = mapped_column(default="U", nullable=True)
     species: Mapped[str] = mapped_column(default="Homo Sapien", nullable=True)
 
-    # Instance Methods #
-    def update(self, dict_: dict[str, Any] | None = None, /, **kwargs) -> None:
-        dict_ = ({} if dict_ is None else dict_) | kwargs
+    # Class Methods #
+    # Base
+    @classmethod
+    def to_sql_types(cls, dict_: dict[str, Any] | None = None, /, **kwargs) -> dict[str, Any]:
+        """Casts Python types of an entry to SQLAlchemy types.
 
-        if (timezone := dict_.get("timezone", None)) is not None:
-            if isinstance(timezone, str):
-                if timezone.lower() == "local" or timezone.lower() == "localtime":
-                    timezone = time.localtime().tm_gmtoff
-                else:
-                    timezone = zoneinfo.ZoneInfo(timezone)  # Raises an error if the given string is not a time zone.
+        Only table item elements (columns) which must cast to an SQLAlchemy type are cast to SQLAlchemy types.
+        Additionally, all elements are optional, such that they do not need to be provided. This way any subset of the
+        elements can cast. For example: when updating a table item, a few elements can updated without providing all
+        elements.
 
-            if isinstance(timezone, datetime.tzinfo):
-                self.tz_offset = timezone_offset(timezone).total_seconds()
-            else:
-                self.tz_offset = timezone
+        Args:
+            dict_: A dictionary representing the entry with Python types.
+            **kwargs: Additional keyword arguments for the entry.
 
-        if (start := dict_.get("start", None)) is not None:
-            self.start = int(nanostamp(start))
+        Returns:
+            dict[str, Any]: A dictionary representing the entry with SQLAlchemy types.
+        """
+        # Format parent entry
+        sql_entry = super().to_sql_types(dict_, **kwargs)
 
-        if (name := dict_.get("name", None)) is not None:
-            self.name = name
-        if (age := dict_.get("age", None)) is not None:
-            self.age = age
-        if (sex := dict_.get("sex", None)) is not None:
-            self.sex = sex
-        if (sepcies := dict_.get("sepcies", None)) is not None:
-            self.sepcies = sepcies
-        if (recording_unit := dict_.get("recording_unit", None)) is not None:
-            self.recording_unit = recording_unit
+        # Format
+        if (tz_offset := sql_entry.get("tz_offset", None)) is not None:
+            match tz_offset:
+                case int():
+                    pass
+                case ZoneInfo():
+                    sql_entry["tz_offset"] = int(timezone_offset(tz_offset).total_seconds())
+                case str():
+                    if tz_offset.lower() in {"local", "localtime"}:
+                        sql_entry["tz_offset"] = time.localtime().tm_gmtoff
+                    else:
+                        sql_entry["tz_offset"] = int(timezone_offset(ZoneInfo(tz_offset)).total_seconds())
 
-        super().update(dict_)
+        if (start := sql_entry.get("start", None)) is not None:
+            match start:
+                case int():
+                    pass
+                case _:
+                    sql_entry["start"] = int(nanostamp(start))
 
-    def as_dict(self) -> dict[str, Any]:
-        entry = super().as_dict()
-        entry.update(
-            name=self.name,
-            start=self.start,
-            tz_offset=self.tz_offset,
-            age=self.age,
-            sex=self.sex,
-            species=self.species,
-            recording_unit=self.recording_unit,
-        )
-        return entry
+        # Return formatted entry
+        return sql_entry
 
-    def as_entry(self) -> dict[str, Any]:
-        entry = super().as_entry()
-        tzone = None if self.tz_offset is None else datetime.timezone(datetime.timedelta(seconds=self.tz_offset))
-        if self.start is None:
-            start = None
-        elif tzone is None:
-            start = Timestamp.fromnanostamp(self.start)
-        else:
-            start = Timestamp.fromnanostamp(self.start, tzone)
-        entry.update(
-            name=self.name,
-            tz_offset=tzone,
-            start=start,
-            age=self.age,
-            sex=self.sex,
-            species=self.species,
-            recording_unit=self.recording_unit,
-        )
-        return entry
+    @classmethod
+    def from_sql_types(cls, dict_: dict[str, Any] | None = None, /, **kwargs: Any) -> dict[str, Any]:
+        """Casts SQLAlchemy types of an entry to Python types.
+
+        Only table item elements (columns) which must cast to a Python type are cast to Python types. Additionally, all
+        elements are optional, such that they do not need to be provided. This way any subset of the elements can cast.
+        For example: when querying a table item, a few columns can be selected without providing all columns.
+
+        Args:
+            dict_: A dictionary representing the entry with SQLAlchemy types.
+            **kwargs: Additional keyword arguments for the entry.
+
+        Returns:
+            dict[str, Any]: A dictionary representing the entry with Python types.
+        """
+        # Format parent entry
+        python_entry = super().from_sql_types(dict_, **kwargs)
+
+        # Format
+        t_zone = None
+        if (tz_offset := python_entry.get("tz_offset", None)) is not None:
+            python_entry["tz_offset"] = t_zone = Timezone(timedelta(seconds=tz_offset))
+
+        if (start := python_entry.get("start", None)) is not None:
+            python_entry["start"] = Timestamp.fromnanostamp(start, t_zone)
+
+        # Return formatted entry
+        return python_entry
 
 
 class XLTEKAnnotationsInformationTableManifestation(MetaInformationTableManifestation, UpdateTableManifestation):
