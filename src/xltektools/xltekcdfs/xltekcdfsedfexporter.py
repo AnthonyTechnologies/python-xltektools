@@ -237,7 +237,7 @@ class XLTEKCDFSEDFExporter(BaseObject):
         edf_header = self.create_header()
 
         # Flatten Data
-        proxy = self.cdfs.components["contents"].create_contents_proxy()
+        proxy = self.cdfs.components["contents"].require_contents_proxy()
         flat_data = proxy.as_flattened()
         if not self.cdfs:
             print(

@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     # Get data
     print("Accessing Data")
-    proxy = cdfs.components["contents"].create_contents_proxy()
+    proxy = cdfs.components["contents"].require_contents_proxy()
 
     print("Selecting Time")
     subject_start = proxy.start_datetime

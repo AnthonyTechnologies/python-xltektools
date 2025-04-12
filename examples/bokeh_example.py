@@ -33,7 +33,7 @@ cdfs = session.modalities["ieeg"].components["cdfs"].get_cdfs()  # Get the data 
 
 # Get data
 print("Accessing Data")
-proxy = cdfs.components["contents"].create_contents_proxy()
+proxy = cdfs.components["contents"].require_contents_proxy()
 
 print("Selecting Time")
 subject_start = proxy.start_datetime

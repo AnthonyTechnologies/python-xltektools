@@ -217,7 +217,7 @@ class TestXLTEKMXBIDS(ClassTest):
         cdfs.open(mode="r", load=True)
 
         # Data
-        data_proxy = cdfs.components["contents"].create_contents_proxy()
+        data_proxy = cdfs.components["contents"].require_contents_proxy()
 
         # Times
         start = datetime.datetime(1970, 1, 7, 0, 0, tzinfo=datetime.timezone.utc)
