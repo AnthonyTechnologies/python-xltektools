@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "xltektools"
-version = "0.5.1"
+version = "0.5.2"
 description = "xltektools"
 authors = ["Anthony Fong <fonganthonym@gmail.com>"]
 license = "MIT"

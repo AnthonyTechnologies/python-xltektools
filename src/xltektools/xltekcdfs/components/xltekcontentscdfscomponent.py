@@ -25,10 +25,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # Local Packages #
-from ...xltekhdf5 import XLTEKHDF5, XLTEKHDF5WriterTask
+from ...xltekhdf5 import XLTEKHDF5 # XLTEKHDF5WriterTask
 from ..arrays import XLTEKContentsProxy
 from ..tables import BaseXLTEKContentsTable
-from ..tasks import XLTEKContentsUpdateTask
+# from ..tasks import XLTEKContentsUpdateTask
 
 
 # Definitions #
@@ -258,8 +258,8 @@ class XLTEKContentsCDFSComponent(TimeContentsCDFSComponent):
 
         return f_obj
 
-    def create_data_writer(self, **kwargs) -> XLTEKHDF5WriterTask:
-        return XLTEKHDF5WriterTask(file_type=self.data_file_type, **kwargs)
-
-    def create_contents_updater(self, component_name, **kwargs) -> XLTEKContentsUpdateTask:
-        return XLTEKContentsUpdateTask(cdfs=self.composite, component_name=component_name, **kwargs)
+    # def create_data_writer(self, **kwargs) -> XLTEKHDF5WriterTask:
+    #     return XLTEKHDF5WriterTask(file_type=self.data_file_type, **kwargs)
+    #
+    # def create_contents_updater(self, component_name, **kwargs) -> XLTEKContentsUpdateTask:
+    #     return XLTEKContentsUpdateTask(cdfs=self.composite, component_name=component_name, **kwargs)
